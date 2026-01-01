@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sic Bo Pro - Physics Casino</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #eee;
+            user-select: none;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* --- HUD & Top Area --- */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px 20px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud-pill {
+            background: rgba(20, 20, 20, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #balance-display { color: #4ade80; font-size: 1.1rem; }
+        
+        input#bet-amount {
+            background: transparent;
+            border: none;
+            color: #fff;
+            width: 60px;
+            text-align: right;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        input#bet-amount:focus { outline: none; border-bottom: 1px solid #fff; }
+
+        /* --- Result Display --- */
+        #result-display {
+            position: absolute;
+            top: 15%;
+            width: 100%;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 5;
+        }
+
+        #result-sum {
+            font-size: 5rem;
+            font-weight: 200;
+            display: block;
+            line-height: 1;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        
+        #result-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 10px;
+            background: rgba(0,0,0,0.6);
+            padding: 5px 15px;
+            border-radius: 15px;
+            display: inline-block;
+        }
+
+        .win-anim { animation: pulseGreen 0.5s ease-in-out; color: #4ade80 !important; }
+        .lose-anim { color: #ef4444 !important; }
+        .house-anim { color: #f59e0b !important; }
+        
+        @keyframes pulseGreen {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); text-shadow: 0 0 20px #4ade80; }
+            100% { transform: scale(1); }
+        }
+
+        /* --- Betting Interface (Bottom Sheet) --- */
+        #betting-sheet {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(15, 15, 15, 0.95);
+            backdrop-filter: blur(15px);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: max(10px, env(safe-area-inset-bottom));
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            color: #666;
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .tab.active { color: #fff; background: rgba(255,255,255,0.05); border-bottom: 2px solid #4ade80; }
+
+        /* Panels */
+        .panel { display: none; padding: 15px; max-height: 250px; overflow-y: auto; }
+        .panel.active { display: grid; }
+
+        /* Grids */
+        .grid-main { grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+        .grid-sums { grid-template-columns: repeat(7, 1fr); gap: 6px; }
+        .grid-triples { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+        /* Bet Buttons */
+        .bet-btn {
+            background: rgba(40, 40, 40, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ccc;
+            padding: 15px 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s;
+            position: relative;
+        }
+
+        .bet-btn:active { transform: scale(0.96); }
+        .bet-btn.selected { 
+            background: #eab308; /* Yellow/Gold */
+            color: #000; 
+            border-color: #eab308;
+            box-shadow: 0 0 15px rgba(234, 179, 8, 0.4);
+        }
+
+        .bet-label { font-size: 0.9rem; font-weight: 700; }
+        .bet-payout { font-size: 0.65rem; opacity: 0.7; margin-top: 2px; }
+
+        /* Roll Action Area */
+        .roll-area {
+            display: flex;
+            justify-content: center;
+            padding: 10px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.2));
+        }
+
+        #roll-btn {
+            background: #fff;
+            color: #000;
+            border: none;
+            padding: 12px 40px;
+            font-size: 1.1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 800;
+            letter-spacing: 1px;
+            box-shadow: 0 0 20px rgba(255,255,255,0.15);
+            transition: transform 0.1s;
+        }
+        #roll-btn:active { transform: scale(0.95); }
+        #roll-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        #odds-btn {
+            background: transparent;
+            color: #4ade80;
+            border: 1px solid #4ade80;
+            padding: 12px 20px;
+            font-size: 0.9rem;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 700;
+            margin-right: 10px;
+            transition: all 0.2s;
+        }
+        #odds-btn:active { background: rgba(74, 222, 128, 0.2); }
+
+        #error-overlay {
+            display: none; position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.9); z-index: 100; color: red;
+            align-items: center; justify-content: center; text-align: center; padding: 20px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="error-overlay">
+        <h3>Critical Error</h3>
+        <p id="error-msg">Script failed to load.</p>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div class="hud-pill">
+            <span>€</span><span id="balance-display">1000</span>
+        </div>
+        <div class="hud-pill">
+            <span style="opacity:0.6; font-size:0.8rem">BET</span>
+            <input type="number" id="bet-amount" value="100" min="10" step="10">
+        </div>
+    </div>
+
+    <!-- 3D Result Overlay -->
+    <div id="result-display">
+        <span id="result-sum">0</span>
+        <br>
+        <span id="result-text">Ready</span>
+    </div>
+
+    <!-- Betting UI -->
+    <div id="betting-sheet">
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" data-target="main">Basic</div>
+            <div class="tab" data-target="sums">Totals</div>
+            <div class="tab" data-target="triples">Triples</div>
+        </div>
+
+        <!-- Panels -->
+        <!-- Basic Panel -->
+        <div id="panel-main" class="panel grid-main active">
+            <button class="bet-btn" data-cat="main" data-val="small">
+                <span class="bet-label">SMALL</span><span class="bet-payout">4-10 (1:1)</span>
+            </button>
+            <button class="bet-btn" data-cat="main" data-val="odd">
+                <span class="bet-label">ODD</span><span class="bet-payout">1:1</span>
+            </button>
+            <button class="bet-btn" data-cat="main" data-val="even">
+                <span class="bet-label">EVEN</span><span class="bet-payout">1:1</span>
+            </button>
+            <button class="bet-btn" data-cat="main" data-val="big">
+                <span class="bet-label">BIG</span><span class="bet-payout">11-17 (1:1)</span>
+            </button>
+        </div>
+
+        <!-- Sums Panel -->
+        <div id="panel-sums" class="panel grid-sums">
+            <button class="bet-btn" data-cat="sum" data-val="4"><span class="bet-label">4</span><span class="bet-payout">60:1</span></button>
+            <button class="bet-btn" data-cat="sum" data-val="5"><span class="bet-label">5</span><span class="bet-payout">30:1</span></button>
+            <button class="bet-btn" data-cat="sum" data-val="6"><span class="bet-label">6</span><span class="bet-payout">18:1</span></button>
+            <button class="bet-btn" data-cat="sum" data-val="7"><span class="bet-label">7</span><span class="bet-payout">12:1</span></button>
+            <button class="bet-btn" data-cat="sum" data-val="8"><span class="bet-label">8</span><span class="bet-payout">8:1</span></button>
+            <button class="bet-btn" data-cat="sum" data-val="9"><span class="bet-label">9</span><span class="bet-payout">7:1</span></button>
+            <button class="bet-btn" data-cat="sum" data-val="10"><span class="bet-label">10</span><span class="bet-payout">6:1</span></button>
+            
+            <button class="bet-btn" data-cat="sum" data-val="11"><span class="bet-label">11</span><span class="bet-payout">6:1</span></button>
+            <button class="bet-btn" data-cat="sum" data-val="12"><span class="bet-label">12</span><span class="bet-payout">7:1</span></button>
+            <button class="bet-btn" data-cat="sum" data-val="13"><span class="bet-label">13</span><span class="bet-payout">8:1</span></button>
+            <button class="bet-btn" data-cat="sum" data-val="14"><span class="bet-label">14</span><span class="bet-payout">12:1</span></button>
+            <button class="bet-btn" data-cat="sum" data-val="15"><span class="bet-label">15</span><span class="bet-payout">18:1</span></button>
+            <button class="bet-btn" data-cat="sum" data-val="16"><span class="bet-label">16</span><span class="bet-payout">30:1</span></button>
+            <button class="bet-btn" data-cat="sum" data-val="17"><span class="bet-label">17</span><span class="bet-payout">60:1</span></button>
+        </div>
+
+        <!-- Triples Panel -->
+        <div id="panel-triples" class="panel grid-triples">
+            <button class="bet-btn" style="grid-column: span 3; background:rgba(60,20,20,0.5);" data-cat="triple" data-val="any">
+                <span class="bet-label">ANY TRIPLE</span><span class="bet-payout">30:1</span>
+            </button>
+            <button class="bet-btn" data-cat="triple_specific" data-val="1"><span class="bet-label">1-1-1</span><span class="bet-payout">210:1</span></button>
+            <button class="bet-btn" data-cat="triple_specific" data-val="2"><span class="bet-label">2-2-2</span><span class="bet-payout">210:1</span></button>
+            <button class="bet-btn" data-cat="triple_specific" data-val="3"><span class="bet-label">3-3-3</span><span class="bet-payout">210:1</span></button>
+            <button class="bet-btn" data-cat="triple_specific" data-val="4"><span class="bet-label">4-4-4</span><span class="bet-payout">210:1</span></button>
+            <button class="bet-btn" data-cat="triple_specific" data-val="5"><span class="bet-label">5-5-5</span><span class="bet-payout">210:1</span></button>
+            <button class="bet-btn" data-cat="triple_specific" data-val="6"><span class="bet-label">6-6-6</span><span class="bet-payout">210:1</span></button>
+        </div>
+
+        <div class="roll-area">
+            <button id="odds-btn">CHECK ODDS</button>
+            <button id="roll-btn">ROLL DICE</button>
+        </div>
+    </div>
+
+    <!-- Import Map -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+                "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import * as CANNON from 'cannon-es';
+
+        // Error handling
+        window.onerror = function(msg, url, line) {
+            const errDiv = document.getElementById('error-overlay');
+            const errMsg = document.getElementById('error-msg');
+            errDiv.style.display = 'flex';
+            errMsg.innerHTML = `Error: ${msg}<br>Line: ${line}`;
+            console.error(msg);
+        };
+
+        // --- Config ---
+        const CONFIG = {
+            diceColor: 0xffffff,
+            floorColor: 0x222222,
+            wallColor: 0x333333,
+            gravity: -9.82 * 4,
+            diceSize: 1.5,
+            trayWidth: 16,
+            trayDepth: 12
+        };
+
+        const PAYOUTS = {
+            main: { small: 1, big: 1, odd: 1, even: 1 },
+            sum: { 
+                4: 60, 17: 60, 
+                5: 30, 16: 30, 
+                6: 18, 15: 18, 
+                7: 12, 14: 12, 
+                8: 8, 13: 8, 
+                9: 7, 10: 6, 11: 6, 12: 7
+            },
+            triple: { any: 30 },
+            triple_specific: { 1: 210, 2: 210, 3: 210, 4: 210, 5: 210, 6: 210 }
+        };
+
+        // --- State ---
+        let balance = 1000;
+        let activeSelections = []; 
+        let lockedBets = [];
+        
+        let scene, camera, renderer, world;
+        let diceMeshes = [];
+        let diceBodies = [];
+        let isRolling = false;
+        
+        // Sound
+        const rollSound = new Audio('diceroll.mp3');
+
+        // --- Elements ---
+        const uiResult = document.getElementById('result-display');
+        const sumText = document.getElementById('result-sum');
+        const resultText = document.getElementById('result-text');
+        const rollBtn = document.getElementById('roll-btn');
+        const oddsBtn = document.getElementById('odds-btn');
+        const balanceEl = document.getElementById('balance-display');
+        const betInput = document.getElementById('bet-amount');
+        const tabBtns = document.querySelectorAll('.tab');
+        const panels = document.querySelectorAll('.panel');
+        const betBtns = document.querySelectorAll('.bet-btn');
+
+        function init() {
+            try {
+                initScene();
+                initPhysics();
+                initObjects();
+                setupUI();
+                animate();
+            } catch (e) {
+                console.error(e);
+                document.getElementById('error-overlay').style.display = 'flex';
+                document.getElementById('error-msg').innerText = "Init Failed: " + e.message;
+            }
+        }
+
+        function initScene() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0a0a);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+            
+            adjustCameraForMobile();
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+            dirLight.position.set(10, 25, 10);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
+            scene.add(dirLight);
+        }
+
+        function initPhysics() {
+            world = new CANNON.World();
+            world.gravity.set(0, CONFIG.gravity, 0);
+            world.broadphase = new CANNON.NaiveBroadphase();
+            world.solver.iterations = 10;
+            world.allowSleep = true;
+        }
+
+        function initObjects() {
+            // Materials
+            const materials = {
+                floor: new CANNON.Material({ friction: 0.5, restitution: 0.3 }),
+                wall: new CANNON.Material({ friction: 0.0, restitution: 0.6 }),
+                dice: new CANNON.Material({ friction: 0.1, restitution: 0.5 })
+            };
+
+            // Contacts
+            world.addContactMaterial(new CANNON.ContactMaterial(materials.floor, materials.dice, { friction: 0.5, restitution: 0.3 }));
+            world.addContactMaterial(new CANNON.ContactMaterial(materials.wall, materials.dice, { friction: 0.0, restitution: 0.6 }));
+            world.addContactMaterial(new CANNON.ContactMaterial(materials.dice, materials.dice, { friction: 0.1, restitution: 0.5 }));
+
+            createTray(materials.floor, materials.wall);
+            
+            createDie(-2.5, 5, 0, materials.dice);
+            createDie(0, 5, 0, materials.dice);
+            createDie(2.5, 5, 0, materials.dice);
+        }
+
+        // --- UI Setup ---
+        function setupUI() {
+            window.addEventListener('resize', onWindowResize);
+            rollBtn.addEventListener('click', handleRollClick);
+            oddsBtn.addEventListener('click', calculateWinChance);
+
+            // Tabs
+            tabBtns.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabBtns.forEach(t => t.classList.remove('active'));
+                    panels.forEach(p => p.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(`panel-${tab.dataset.target}`).classList.add('active');
+                });
+            });
+
+            // Betting Buttons
+            betBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (isRolling) return;
+                    
+                    const cat = btn.dataset.cat;
+                    const val = btn.dataset.val;
+
+                    const index = activeSelections.findIndex(s => s.category === cat && s.value === val);
+
+                    if (index >= 0) {
+                        activeSelections.splice(index, 1);
+                        btn.classList.remove('selected');
+                    } else {
+                        activeSelections.push({ category: cat, value: val });
+                        btn.classList.add('selected');
+                    }
+                    
+                    updateRollButton();
+                });
+            });
+        }
+        
+        function updateRollButton() {
+            const count = activeSelections.length;
+            if (count > 0) {
+                rollBtn.innerText = `ROLL (${count} BET${count > 1 ? 'S' : ''})`;
+            } else {
+                rollBtn.innerText = "ROLL DICE";
+            }
+        }
+
+        // --- Odds Calculator ---
+        function calculateWinChance() {
+            if (activeSelections.length === 0) {
+                alert("Place a bet first, Chef.");
+                return;
+            }
+
+            let winningCombos = 0;
+            const totalCombos = 6 * 6 * 6; // 216
+
+            for (let d1 = 1; d1 <= 6; d1++) {
+                for (let d2 = 1; d2 <= 6; d2++) {
+                    for (let d3 = 1; d3 <= 6; d3++) {
+                        
+                        const sum = d1 + d2 + d3;
+                        const faces = [d1, d2, d3].sort((a,b)=>a-b);
+                        const isTriple = (d1 === d2 && d2 === d3);
+                        const tripleVal = isTriple ? d1 : null;
+                        
+                        let outcomeWins = false;
+
+                        for (const bet of activeSelections) {
+                            let betWins = false;
+                            const val = bet.value;
+
+                            if (bet.category === 'main') {
+                                if (isTriple) {
+                                    betWins = false;
+                                } else {
+                                    if (val === 'small' && sum >= 4 && sum <= 10) betWins = true;
+                                    if (val === 'big' && sum >= 11 && sum <= 17) betWins = true;
+                                    if (val === 'odd' && sum % 2 !== 0) betWins = true;
+                                    if (val === 'even' && sum % 2 === 0) betWins = true;
+                                }
+                            }
+                            else if (bet.category === 'sum') {
+                                if (sum === parseInt(val)) betWins = true;
+                            }
+                            else if (bet.category === 'triple') {
+                                if (isTriple) betWins = true;
+                            }
+                            else if (bet.category === 'triple_specific') {
+                                if (isTriple && tripleVal === parseInt(val)) betWins = true;
+                            }
+
+                            if (betWins) {
+                                outcomeWins = true;
+                                break;
+                            }
+                        }
+
+                        if (outcomeWins) winningCombos++;
+                    }
+                }
+            }
+
+            const probability = (winningCombos / totalCombos) * 100;
+            
+            uiResult.style.opacity = 1;
+            sumText.innerText = "ODDS";
+            sumText.style.fontSize = "3rem";
+            resultText.className = 'win-anim';
+            resultText.innerText = `WIN CHANCE: ${probability.toFixed(1)}%`;
+            
+            setTimeout(() => {
+                if (!isRolling) {
+                    uiResult.style.opacity = 0;
+                    setTimeout(() => {
+                        sumText.style.fontSize = "5rem";
+                        sumText.innerText = "0";
+                        resultText.innerText = "Ready";
+                        resultText.className = "";
+                    }, 300);
+                }
+            }, 3000);
+        }
+
+        // --- Logic ---
+        function handleRollClick() {
+            if (isRolling) return;
+            const betPerSelection = parseInt(betInput.value) || 0;
+            const totalWager = activeSelections.length * betPerSelection;
+            
+            if (activeSelections.length > 0) {
+                if (betPerSelection <= 0) {
+                    alert("Bet amount must be positive.");
+                    return;
+                }
+                if (totalWager > balance) {
+                    alert(`Insufficient funds. Need €${totalWager}.`);
+                    return;
+                }
+                
+                balance -= totalWager;
+                lockedBets = activeSelections.map(sel => ({
+                    ...sel,
+                    amount: betPerSelection
+                }));
+                updateBalance();
+            } else {
+                lockedBets = [];
+            }
+
+            startRoll();
+        }
+
+        function updateBalance() {
+            balanceEl.innerText = balance;
+        }
+
+        function startRoll() {
+            isRolling = true;
+            rollBtn.disabled = true;
+            uiResult.style.opacity = 0;
+
+            // 1. Play sound immediately
+            rollSound.currentTime = 0;
+            rollSound.play().catch(e => console.warn("Sound blocked", e));
+
+            // 2. Wait 1000ms before applying physics
+            setTimeout(() => {
+                diceBodies.forEach((body, i) => {
+                    const offsetX = (i - 1) * 2.5; 
+                    body.position.set(offsetX + (Math.random()-0.5), 4, (Math.random()-0.5));
+                    body.velocity.set(0,0,0);
+                    body.angularVelocity.set(0,0,0);
+                    body.quaternion.setFromEuler(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
+                    body.wakeUp();
+
+                    const forceX = (Math.random() - 0.5) * 25; 
+                    const forceY = 15 + Math.random() * 10;
+                    const forceZ = (Math.random() - 0.5) * 25;
+                    
+                    body.applyImpulse(new CANNON.Vec3(forceX, forceY, forceZ), body.position);
+                    body.applyTorque(new CANNON.Vec3(Math.random()*30-15, Math.random()*30-15, Math.random()*30-15));
+                });
+                
+                // Start checking for stop ONLY after we've thrown them
+                checkForStop();
+            }, 1000);
+        }
+
+        function checkForStop() {
+            const failsafe = setTimeout(() => { if (isRolling) finishRoll(interval); }, 6000);
+            const interval = setInterval(() => {
+                let allStopped = true;
+                diceBodies.forEach(b => {
+                    if (b.sleepState !== CANNON.Body.SLEEPING && (b.velocity.length() > 0.1 || b.angularVelocity.length() > 0.1)) allStopped = false;
+                });
+                if (allStopped) {
+                    clearTimeout(failsafe);
+                    finishRoll(interval);
+                }
+            }, 200);
+        }
+
+        function finishRoll(interval) {
+            clearInterval(interval);
+            calculateResult();
+            isRolling = false;
+            rollBtn.disabled = false;
+        }
+
+        function calculateResult() {
+            const worldUp = new THREE.Vector3(0, 1, 0);
+            let sum = 0;
+            let faces = [];
+
+            diceBodies.forEach(body => {
+                const q = new THREE.Quaternion(body.quaternion.x, body.quaternion.y, body.quaternion.z, body.quaternion.w);
+                const dirs = [
+                    {val:1, v:new THREE.Vector3(1,0,0)}, {val:6, v:new THREE.Vector3(-1,0,0)},
+                    {val:2, v:new THREE.Vector3(0,1,0)}, {val:5, v:new THREE.Vector3(0,-1,0)},
+                    {val:3, v:new THREE.Vector3(0,0,1)}, {val:4, v:new THREE.Vector3(0,0,-1)}
+                ];
+                let maxDot = -Infinity, val = 1;
+                dirs.forEach(f => {
+                    const d = f.v.clone().applyQuaternion(q).dot(worldUp);
+                    if(d > maxDot) { maxDot = d; val = f.val; }
+                });
+                sum += val;
+                faces.push(val);
+            });
+
+            sumText.innerText = sum;
+            displayOutcome(sum, faces);
+            uiResult.style.opacity = 1;
+        }
+
+        function displayOutcome(sum, faces) {
+            faces.sort((a,b) => a-b);
+            const isTriple = faces[0] === faces[1] && faces[1] === faces[2];
+            const tripleVal = isTriple ? faces[0] : null;
+
+            let totalProfit = 0;
+            let wins = 0;
+            let losses = 0;
+
+            if (lockedBets.length > 0) {
+                lockedBets.forEach(bet => {
+                    let won = false;
+                    let multiplier = 0;
+                    const val = bet.value;
+
+                    if (bet.category === 'main') {
+                        if (isTriple && (val === 'big' || val === 'small' || val === 'odd' || val === 'even')) {
+                            won = false; 
+                        } else {
+                            if (val === 'small' && sum >= 4 && sum <= 10) won = true;
+                            if (val === 'big' && sum >= 11 && sum <= 17) won = true;
+                            if (val === 'odd' && sum % 2 !== 0) won = true;
+                            if (val === 'even' && sum % 2 === 0) won = true;
+                        }
+                        if (won) multiplier = 1;
+                    } 
+                    else if (bet.category === 'sum') {
+                        if (sum === parseInt(val)) {
+                            won = true;
+                            multiplier = PAYOUTS.sum[sum];
+                        }
+                    }
+                    else if (bet.category === 'triple') {
+                        if (isTriple) {
+                            won = true;
+                            multiplier = PAYOUTS.triple.any;
+                        }
+                    }
+                    else if (bet.category === 'triple_specific') {
+                        if (isTriple && tripleVal === parseInt(val)) {
+                            won = true;
+                            multiplier = PAYOUTS.triple_specific[tripleVal];
+                        }
+                    }
+
+                    if (won) {
+                        wins++;
+                        totalProfit += (bet.amount * multiplier) + bet.amount;
+                    } else {
+                        losses++;
+                    }
+                });
+
+                balance += totalProfit;
+                updateBalance();
+
+                if (wins > 0) {
+                    const netWin = totalProfit; 
+                    resultText.className = 'win-anim';
+                    resultText.innerText = `WON €${netWin} (${wins}/${lockedBets.length} HIT)`;
+                } else {
+                    resultText.className = 'lose-anim';
+                    if (isTriple && lockedBets.some(b => ['big','small','odd','even'].includes(b.value))) {
+                         resultText.className = 'house-anim';
+                         resultText.innerText = "HOUSE TAKES ALL";
+                    } else {
+                         resultText.innerText = `LOST €${lockedBets.reduce((a,b)=>a+b.amount,0)}`;
+                    }
+                }
+            
+            } else {
+                if (isTriple) {
+                    resultText.innerText = "TRIPLE!";
+                    resultText.className = 'house-anim';
+                } else {
+                    resultText.innerText = sum >= 11 ? "BIG" : "SMALL";
+                    resultText.className = '';
+                }
+            }
+        }
+
+        // --- Helpers ---
+        function createTray(floorMat, wallMat) {
+            const glassParams = {
+                color: 0xaaddff, metalness: 0.1, roughness: 0.1,
+                transparent: true, opacity: 0.3, side: THREE.DoubleSide
+            };
+
+            const fGeo = new THREE.PlaneGeometry(CONFIG.trayWidth, CONFIG.trayDepth);
+            const fMesh = new THREE.Mesh(fGeo, new THREE.MeshPhysicalMaterial({ ...glassParams, opacity:0.4, roughness:0.4, clearcoat:1.0 }));
+            fMesh.rotation.x = -Math.PI/2;
+            fMesh.receiveShadow = true;
+            scene.add(fMesh);
+            
+            const fBody = new CANNON.Body({ mass: 0, material: floorMat });
+            fBody.addShape(new CANNON.Plane());
+            fBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0), -Math.PI/2);
+            world.addBody(fBody);
+
+            const h = 8, t = 1;
+            const wMatVis = new THREE.MeshPhysicalMaterial({ ...glassParams, opacity:0.15, transmission:0.6, thickness:1.5 });
+            
+            const makeWall = (w,h,d,x,y,z) => {
+                const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), wMatVis);
+                m.position.set(x,y,z); m.castShadow = true; m.receiveShadow = true; scene.add(m);
+                const b = new CANNON.Body({ mass:0, material: wallMat });
+                b.addShape(new CANNON.Box(new CANNON.Vec3(w/2,h/2,d/2)));
+                b.position.set(x,y,z); world.addBody(b);
+            };
+
+            makeWall(t,h,CONFIG.trayDepth+2*t, CONFIG.trayWidth/2+t/2, h/2, 0);
+            makeWall(t,h,CONFIG.trayDepth+2*t, -CONFIG.trayWidth/2-t/2, h/2, 0);
+            makeWall(CONFIG.trayWidth,h,t, 0, h/2, -CONFIG.trayDepth/2-t/2);
+            makeWall(CONFIG.trayWidth,h,t, 0, h/2, CONFIG.trayDepth/2+t/2);
+            
+            const lMesh = new THREE.Mesh(new THREE.PlaneGeometry(CONFIG.trayWidth, CONFIG.trayDepth), wMatVis);
+            lMesh.position.set(0,h,0); lMesh.rotation.x = Math.PI/2; scene.add(lMesh);
+            const lBody = new CANNON.Body({ mass:0, material:wallMat });
+            lBody.addShape(new CANNON.Plane());
+            lBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0), Math.PI/2);
+            lBody.position.set(0,h,0); world.addBody(lBody);
+        }
+
+        function createDie(x,y,z, mat) {
+            const s = CONFIG.diceSize;
+            const texs = [1,6,2,5,3,4].map(n => new THREE.MeshStandardMaterial({ map: makeTex(n), roughness:0.2, metalness:0.1 }));
+            const m = new THREE.Mesh(new THREE.BoxGeometry(s,s,s), texs);
+            m.castShadow = true; m.receiveShadow = true; scene.add(m);
+            diceMeshes.push(m);
+            
+            const b = new CANNON.Body({ mass:1, material:mat, angularDamping:0.3, linearDamping:0.1 });
+            b.allowSleep = true; b.sleepSpeedLimit = 0.1; b.sleepTimeLimit = 0.5;
+            b.addShape(new CANNON.Box(new CANNON.Vec3(s/2,s/2,s/2)));
+            b.position.set(x,y,z); 
+            world.addBody(b);
+            diceBodies.push(b);
+        }
+
+        function makeTex(n) {
+            const c = document.createElement('canvas'); c.width=128; c.height=128;
+            const x = c.getContext('2d');
+            x.fillStyle='#f5f5f5'; x.fillRect(0,0,128,128);
+            x.strokeStyle='#d4d4d4'; x.lineWidth=5; x.strokeRect(0,0,128,128);
+            x.fillStyle='#111';
+            const dot=(u,v)=>{x.beginPath();x.arc(u,v,12,0,Math.PI*2);x.fill()};
+            if(n%2!==0) dot(64,64);
+            if(n>1){dot(34,34);dot(94,94)}
+            if(n>3){dot(94,34);dot(34,94)}
+            if(n===6){dot(34,64);dot(94,64)}
+            return new THREE.CanvasTexture(c);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth/window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            adjustCameraForMobile();
+        }
+
+        function adjustCameraForMobile() {
+            const aspect = window.innerWidth / window.innerHeight;
+            if (aspect < 1) camera.position.set(0, 30, 18);
+            else camera.position.set(0, 22, 12);
+            camera.lookAt(0, 0, 0);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            world.step(1/60);
+            for(let i=0; i<diceMeshes.length; i++){
+                diceMeshes[i].position.copy(diceBodies[i].position);
+                diceMeshes[i].quaternion.copy(diceBodies[i].quaternion);
+            }
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body>
+</html>
