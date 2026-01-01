@@ -1,0 +1,302 @@
+[
+  {
+    "q": "Which ingredient is strictly forbidden in an authentic Paella Valenciana?",
+    "o": ["Rabbit", "Green Beans", "Chorizo", "Saffron"],
+    "a": 2,
+    "c": 1
+  },
+  {
+    "q": "Sitges is famous for hosting which major annual festival?",
+    "o": ["Jazz Festival", "Horror Film Festival", "Wine Week", "Techno Parade"],
+    "a": 1,
+    "c": 7
+  },
+  {
+    "q": "In Python, what does `[::-1]` do to a list?",
+    "o": ["Deletes it", "Sorts it", "Reverses it", "Duplicates it"],
+    "a": 2,
+    "c": 0
+  },
+  {
+    "q": "Which 'Friend' famously shouted 'PIVOT!'?",
+    "o": ["Joey", "Chandler", "Monica", "Ross"],
+    "a": 3,
+    "c": 5
+  },
+  {
+    "q": "What is the main grape variety in Cava?",
+    "o": ["Macabeo", "Merlot", "Pinot Noir", "Cabernet"],
+    "a": 0,
+    "c": 1
+  },
+  {
+    "q": "Who is the 'Godmother' of Punk?",
+    "o": ["Debbie Harry", "Patti Smith", "Siouxsie Sioux", "Joan Jett"],
+    "a": 1,
+    "c": 5
+  },
+  {
+    "q": "In web development, what is 'padding'?",
+    "o": ["Space outside border", "Space inside border", "Text size", "Image opacity"],
+    "a": 1,
+    "c": 0
+  },
+  {
+    "q": "Which year did Spain win the FIFA World Cup?",
+    "o": ["2008", "2010", "2012", "2014"],
+    "a": 1,
+    "c": 4
+  },
+  {
+    "q": "What is the 'Smoke Point' of extra virgin olive oil approx?",
+    "o": ["160°C", "190°C", "240°C", "120°C"],
+    "a": 1,
+    "c": 1
+  },
+  {
+    "q": "Who released the album 'Midnights' in 2022?",
+    "o": ["Adele", "Taylor Swift", "Lana Del Rey", "Beyoncé"],
+    "a": 1,
+    "c": 5
+  },
+  {
+    "q": "Which Linux command lists files in a directory?",
+    "o": ["cd", "ls", "mv", "rm"],
+    "a": 1,
+    "c": 0
+  },
+  {
+    "q": "The 'Sagrada Família' is designed by?",
+    "o": ["Dali", "Picasso", "Gaudí", "Miró"],
+    "a": 2,
+    "c": 6
+  },
+  {
+    "q": "Which sauce is an emulsion of egg yolk and oil?",
+    "o": ["Hollandaise", "Béchamel", "Mayonnaise", "Velouté"],
+    "a": 2,
+    "c": 1
+  },
+  {
+    "q": "What does 'HTTP' 403 status mean?",
+    "o": ["Not Found", "Forbidden", "Server Error", "OK"],
+    "a": 1,
+    "c": 0
+  },
+  {
+    "q": "Which house was Harry Potter in?",
+    "o": ["Slytherin", "Ravenclaw", "Hufflepuff", "Gryffindor"],
+    "a": 3,
+    "c": 5
+  },
+  {
+    "q": "What is the chemical symbol for Tungsten?",
+    "o": ["T", "Tu", "W", "Tn"],
+    "a": 2,
+    "c": 3
+  },
+  {
+    "q": "Who painted 'The Persistence of Memory' (Melting Clocks)?",
+    "o": ["Picasso", "Dalí", "Magritte", "Goya"],
+    "a": 1,
+    "c": 6
+  },
+  {
+    "q": "What is the local language of Barcelona alongside Spanish?",
+    "o": ["Basque", "Galician", "Catalan", "Valencian"],
+    "a": 2,
+    "c": 2
+  },
+  {
+    "q": "Which spice is derived from the bark of a tree?",
+    "o": ["Nutmeg", "Cinnamon", "Clove", "Ginger"],
+    "a": 1,
+    "c": 1
+  },
+  {
+    "q": "In gaming, what is 'FPS'?",
+    "o": ["First Person Shooter", "Frames Per Second", "Both", "Neither"],
+    "a": 2,
+    "c": 0
+  },
+  {
+    "q": "Who wrote 'The Great Gatsby'?",
+    "o": ["Hemingway", "Fitzgerald", "Steinbeck", "Faulkner"],
+    "a": 1,
+    "c": 6
+  },
+  {
+    "q": "Which app has a ghost logo?",
+    "o": ["Tinder", "Snapchat", "Bumble", "Twitter"],
+    "a": 1,
+    "c": 5
+  },
+  {
+    "q": "What is the capital of Australia?",
+    "o": ["Sydney", "Melbourne", "Canberra", "Perth"],
+    "a": 2,
+    "c": 2
+  },
+  {
+    "q": "Which cut of beef is the most tender?",
+    "o": ["Ribeye", "Sirloin", "Tenderloin/Filet", "Flank"],
+    "a": 2,
+    "c": 1
+  },
+  {
+    "q": "Who is the founder of Microsoft?",
+    "o": ["Steve Jobs", "Bill Gates", "Elon Musk", "Jeff Bezos"],
+    "a": 1,
+    "c": 0
+  },
+  {
+    "q": "Which show is set in Westeros?",
+    "o": ["The Witcher", "Lord of the Rings", "Game of Thrones", "Wheel of Time"],
+    "a": 2,
+    "c": 5
+  },
+  {
+    "q": "What does the 'www' in a URL stand for?",
+    "o": ["World Wide Web", "World Web Wide", "Western Web World", "Web Wide World"],
+    "a": 0,
+    "c": 0
+  },
+  {
+    "q": "Which Spanish cheese is made from sheep's milk?",
+    "o": ["Manchego", "Cabrales", "Tetilla", "Mahón"],
+    "a": 0,
+    "c": 1
+  },
+  {
+    "q": "Who sang 'Material Girl'?",
+    "o": ["Cyndi Lauper", "Madonna", "Whitney Houston", "Cher"],
+    "a": 1,
+    "c": 5
+  },
+  {
+    "q": "What is the largest organ in the human body?",
+    "o": ["Liver", "Brain", "Skin", "Heart"],
+    "a": 2,
+    "c": 3
+  },
+  {
+    "q": "Sitges is located on which 'Coast'?",
+    "o": ["Costa Brava", "Costa Daurada", "Costa del Sol", "Costa Blanca"],
+    "a": 1,
+    "c": 2
+  },
+  {
+    "q": "In Git, what creates a copy of a repository?",
+    "o": ["Fork", "Clone", "Branch", "Pull"],
+    "a": 1,
+    "c": 0
+  },
+  {
+    "q": "Which vegetable is a 'Capsicum'?",
+    "o": ["Onion", "Pepper", "Carrot", "Potato"],
+    "a": 1,
+    "c": 1
+  },
+  {
+    "q": "Who is the lead singer of Coldplay?",
+    "o": ["Chris Martin", "Thom Yorke", "Bono", "Dave Grohl"],
+    "a": 0,
+    "c": 5
+  },
+  {
+    "q": "What is the value of Pi (2 decimals)?",
+    "o": ["3.14", "3.41", "3.12", "3.16"],
+    "a": 0,
+    "c": 3
+  },
+  {
+    "q": "Which coffee drink has the most milk?",
+    "o": ["Macchiato", "Cortado", "Latte", "Cappuccino"],
+    "a": 2,
+    "c": 1
+  },
+  {
+    "q": "What does 'JSON' stand for?",
+    "o": ["Java Source Object Net", "JavaScript Object Notation", "Just Simple Online Note", "JavaScript Open Network"],
+    "a": 1,
+    "c": 0
+  },
+  {
+    "q": "Who played 'Barbie' in the 2023 movie?",
+    "o": ["Emma Stone", "Margot Robbie", "Florence Pugh", "Jennifer Lawrence"],
+    "a": 1,
+    "c": 5
+  },
+  {
+    "q": "Which sea is to the east of Spain?",
+    "o": ["Atlantic", "Mediterranean", "Cantabrian", "Adriatic"],
+    "a": 1,
+    "c": 2
+  },
+  {
+    "q": "A 'Julienne' cut is shaped like a...?",
+    "o": ["Cube", "Matchstick", "Disc", "Ball"],
+    "a": 1,
+    "c": 1
+  },
+  {
+    "q": "Which artist famously cut off his own ear?",
+    "o": ["Monet", "Van Gogh", "Picasso", "Rembrandt"],
+    "a": 1,
+    "c": 6
+  },
+  {
+    "q": "What is the currency of Japan?",
+    "o": ["Yuan", "Won", "Yen", "Baht"],
+    "a": 2,
+    "c": 2
+  },
+  {
+    "q": "In networking, what does 'IP' stand for?",
+    "o": ["Internet Protocol", "Internal Process", "Intranet Port", "Instant Packet"],
+    "a": 0,
+    "c": 0
+  },
+  {
+    "q": "Who wrote 'Romeo and Juliet'?",
+    "o": ["Shakespeare", "Marlowe", "Chaucer", "Dickens"],
+    "a": 0,
+    "c": 6
+  },
+  {
+    "q": "Which nutrient is found in meat, eggs, and beans?",
+    "o": ["Carbohydrate", "Protein", "Fiber", "Sugar"],
+    "a": 1,
+    "c": 1
+  },
+  {
+    "q": "Which planet is the 'Red Planet'?",
+    "o": ["Venus", "Mars", "Jupiter", "Saturn"],
+    "a": 1,
+    "c": 3
+  },
+  {
+    "q": "What is the slang term 'Stan' derived from?",
+    "o": ["A Stanley Kubrick film", "An Eminem song", "Standard fan", "Stand-up comedy"],
+    "a": 1,
+    "c": 5
+  },
+  {
+    "q": "Which code indicates 'Page Not Found'?",
+    "o": ["200", "500", "404", "301"],
+    "a": 2,
+    "c": 0
+  },
+  {
+    "q": "What is the capital of Catalonia?",
+    "o": ["Girona", "Tarragona", "Barcelona", "Lleida"],
+    "a": 2,
+    "c": 2
+  },
+  {
+    "q": "Which culinary term means 'everything in its place'?",
+    "o": ["Al dente", "Mise en place", "Sous vide", "A la carte"],
+    "a": 1,
+    "c": 1
+  }
+]

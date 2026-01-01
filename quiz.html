@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>QuizRun: Skill Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f8fafc;
+            touch-action: manipulation;
+            overscroll-behavior: none;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Glassmorphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .player-token {
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+            z-index: 20;
+        }
+
+        .tile { position: relative; transition: all 0.3s ease; }
+        .tile::after { content: ''; position: absolute; inset: 0; border-radius: 12px; box-shadow: inset 0 0 12px rgba(0,0,0,0.2); pointer-events: none; }
+
+        /* Custom Gradients */
+        .token-p1 { background: radial-gradient(circle at 30% 30%, #60a5fa, #2563eb); }
+        .token-p2 { background: radial-gradient(circle at 30% 30%, #f472b6, #db2777); }
+
+        .safe-pb { padding-bottom: max(1.5rem, env(safe-area-inset-bottom)); }
+        .btn-press:active { transform: scale(0.96) translateY(1px); }
+        
+        .count-badge { font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; }
+
+        /* Streak Pips */
+        .pip {
+            width: 6px; height: 6px; border-radius: 999px; background: rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+        }
+        .pip.active { background: #eab308; box-shadow: 0 0 8px #eab308; transform: scale(1.2); }
+        
+        @keyframes bonus-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+        }
+        .bonus-ready { animation: bonus-pulse 2s infinite; border-color: #eab308 !important; }
+    </style>
+</head>
+<body class="selection:bg-indigo-500 selection:text-white">
+
+    <!-- Top Bar -->
+    <header class="glass p-4 z-20 shrink-0 flex justify-between items-center border-b-0 shadow-lg">
+        <div class="flex items-center gap-3">
+            <div>
+                <h1 class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-pink-400">QuizRun</h1>
+                <div class="text-[10px] text-slate-400 font-medium tracking-widest uppercase">Skill Edition</div>
+            </div>
+            
+            <div class="flex gap-2">
+                <!-- Import -->
+                <button id="open-import-btn" class="bg-slate-700/50 hover:bg-blue-600/50 p-2 rounded-lg border border-slate-600 text-slate-300 transition-colors" title="Import Questions">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                </button>
+                <!-- Export -->
+                <button id="export-btn" class="bg-slate-700/50 hover:bg-green-600/50 p-2 rounded-lg border border-slate-600 text-slate-300 transition-colors" title="Export Questions / Download Template">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Score & Streak Display -->
+        <div class="flex justify-center gap-4 mt-2">
+            <!-- Blues -->
+            <div id="p1-badge" class="flex flex-col p-2 rounded-xl bg-slate-800/50 border border-slate-700 transition-all w-24">
+                <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center gap-1">
+                        <div class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                        <span class="text-[10px] font-bold text-slate-300">BLUES</span>
+                    </div>
+                    <span id="p1-helps" class="text-[9px] font-mono text-blue-300">2⚡</span>
+                </div>
+                <!-- Streak Meter P1 -->
+                <div class="flex gap-1 justify-center" id="p1-streak-meter">
+                    <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+                </div>
+            </div>
+            
+            <!-- Question Counter (Center) -->
+            <div class="flex flex-col justify-center items-center">
+                 <span id="q-counter" class="text-[10px] font-mono font-bold text-slate-500 count-badge">0 DB</span>
+            </div>
+
+            <!-- Bianca -->
+            <div id="p2-badge" class="flex flex-col p-2 rounded-xl bg-slate-800/50 border border-slate-700 transition-all w-24 opacity-50">
+                <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center gap-1">
+                        <div class="w-2 h-2 rounded-full bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.5)]"></div>
+                        <span class="text-[10px] font-bold text-slate-300">BIANCA</span>
+                    </div>
+                    <span id="p2-helps" class="text-[9px] font-mono text-pink-300">5⚡</span>
+                </div>
+                <!-- Streak Meter P2 -->
+                <div class="flex gap-1 justify-center" id="p2-streak-meter">
+                    <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Game Board -->
+    <main class="flex-1 relative overflow-hidden flex flex-col justify-center bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+        <div class="absolute inset-0 bg-gradient-to-b from-slate-900/0 via-slate-900/50 to-slate-900/80 pointer-events-none"></div>
+        <div id="board-container" class="relative z-10 w-full max-w-md mx-auto px-4 h-full overflow-y-auto no-scrollbar py-8">
+            <div id="game-board" class="grid grid-cols-5 gap-3 pb-32"></div>
+        </div>
+    </main>
+
+    <!-- Control Deck -->
+    <footer class="glass border-t-0 p-4 shrink-0 z-30 safe-pb shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
+        <div class="max-w-md mx-auto">
+            <!-- Turn Indicator -->
+            <div id="status-bar" class="flex justify-between items-end mb-3 px-1">
+                <span id="turn-indicator" class="text-sm font-bold text-blue-400 uppercase tracking-wider">Blues' Turn</span>
+                <span id="bonus-indicator" class="hidden text-[10px] font-black bg-yellow-500 text-yellow-900 px-2 py-0.5 rounded-full animate-pulse">🔥 BONUS x2</span>
+            </div>
+            
+            <!-- Action Button -->
+            <button id="action-btn" class="w-full relative group btn-press overflow-hidden rounded-2xl p-[1px] disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                <div id="btn-bg" class="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 transition-all"></div>
+                <div class="relative bg-slate-900 rounded-2xl px-6 py-4 flex items-center justify-center group-hover:bg-slate-800/90 transition-all">
+                    <span id="btn-text" class="font-bold text-lg text-white tracking-wide">DRAW QUESTION</span>
+                </div>
+            </button>
+        </div>
+    </footer>
+
+    <!-- Import Modal -->
+    <div id="import-modal" class="fixed inset-0 bg-slate-950/90 z-[80] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="w-full max-w-lg glass-card rounded-2xl p-6 flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-white">Load Database</h3>
+                <button id="close-import-btn" class="text-slate-400 hover:text-white">✕</button>
+            </div>
+            <p class="text-[10px] text-slate-400 mb-2 font-mono bg-slate-900/50 p-2 rounded">
+                <strong>Format:</strong> "c" can be any string.<br>
+                Example: "c": "Sitges Trivia" or "c": "Code"
+            </p>
+            <textarea id="import-area" class="w-full h-40 bg-slate-800 border border-slate-600 rounded-lg p-3 text-xs font-mono text-white focus:border-blue-500 outline-none resize-none mb-4" placeholder='[{"q":"Who built Machu Picchu?","o":["Aztec","Maya","Inca","Olmec"],"a":2, "c":"History"}]'></textarea>
+            <button id="load-questions-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors">Load JSON</button>
+            <div id="import-status" class="text-center text-xs font-bold mt-3 h-4"></div>
+        </div>
+    </div>
+
+    <!-- Question Modal -->
+    <div id="modal-overlay" class="fixed inset-0 bg-slate-950/80 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm transition-all duration-300">
+        <div id="modal-card" class="w-full sm:max-w-md glass-card rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col max-h-[85vh] animate-[float_0.5s_ease-out]">
+            <div class="relative h-2 bg-gradient-to-r from-blue-500 to-pink-500 shrink-0"></div>
+            <div class="px-6 pt-6 pb-2 flex justify-between items-center">
+                <span id="q-category" class="text-[10px] font-black uppercase tracking-[0.2em] text-blue-300 bg-blue-500/10 px-3 py-1.5 rounded-full border border-blue-500/20">CATEGORY</span>
+                
+                <!-- LIFELINE BUTTON -->
+                <button id="lifeline-btn" class="text-[10px] font-bold text-purple-300 bg-purple-500/20 px-3 py-1.5 rounded-full border border-purple-500/30 hover:bg-purple-500/30 transition-colors btn-press flex items-center gap-1">
+                    ⚡ 50/50
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scrollbar">
+                <h3 id="q-text" class="text-xl font-bold text-white leading-relaxed mb-8 drop-shadow-md">Question text?</h3>
+                <div id="q-options" class="space-y-3"></div>
+            </div>
+            <div id="feedback-bar" class="hidden p-4 text-center font-bold text-sm tracking-wide shrink-0"></div>
+        </div>
+    </div>
+
+    <!-- Win Screen -->
+    <div id="win-screen" class="fixed inset-0 z-[70] hidden flex flex-col items-center justify-center bg-slate-950 p-8 text-center">
+        <div class="text-8xl mb-6 animate-bounce">👑</div>
+        <h2 id="winner-name" class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-4">Winner!</h2>
+        <button onclick="location.reload()" class="bg-white text-slate-900 px-10 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_20px_rgba(255,255,255,0.3)]">Play Again</button>
+    </div>
+
+    <script>
+        // --- Config ---
+        const BOARD_SIZE = 50; 
+        
+        const PLAYERS = [
+            { id: 0, name: "Blues", color: "token-p1", ring: "border-blue-500", pos: 0, streak: 0, helps: 2 },
+            { id: 1, name: "Bianca", color: "token-p2", ring: "border-pink-500", pos: 0, streak: 0, helps: 5 }
+        ];
+
+        let turnIdx = 0;
+        let activeQuestion = null;
+        let DB = []; // Starts Empty
+        
+        // --- Core Functions ---
+
+        function init() {
+            renderBoard();
+            updateUI();
+            checkDB();
+        }
+
+        // --- Data Management ---
+
+        function checkDB() {
+            const count = DB.length;
+            document.getElementById('q-counter').innerText = `${count} Qs`;
+            const btn = document.getElementById('action-btn');
+            const txt = document.getElementById('btn-text');
+            
+            if (count === 0) {
+                btn.disabled = true;
+                txt.innerText = "LOAD QUESTIONS FIRST";
+                btn.classList.add('opacity-50', 'grayscale');
+            } else {
+                btn.disabled = false;
+                txt.innerText = "DRAW QUESTION";
+                btn.classList.remove('opacity-50', 'grayscale');
+            }
+        }
+
+        const importBtn = document.getElementById('open-import-btn');
+        const exportBtn = document.getElementById('export-btn');
+        const importModal = document.getElementById('import-modal');
+        const closeImport = document.getElementById('close-import-btn');
+        const loadBtn = document.getElementById('load-questions-btn');
+        const importArea = document.getElementById('import-area');
+        const importStatus = document.getElementById('import-status');
+
+        importBtn.onclick = () => importModal.classList.remove('hidden');
+        closeImport.onclick = () => importModal.classList.add('hidden');
+
+        // EXPORT
+        exportBtn.onclick = () => {
+            let dataToExport = DB;
+            let filename = `QuizRun_Export_${new Date().toISOString().slice(0,10)}.json`;
+
+            // If empty, export a template
+            if (DB.length === 0) {
+                dataToExport = [{
+                    "q": "Example Question: What is the capital of Spain?",
+                    "o": ["Barcelona", "Madrid", "Seville", "Valencia"],
+                    "a": 1,
+                    "c": "Geography"
+                }];
+                filename = "QuizRun_Template.json";
+            }
+            
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport, null, 2));
+            const node = document.createElement('a');
+            node.setAttribute("href", dataStr);
+            node.setAttribute("download", filename);
+            document.body.appendChild(node);
+            node.click();
+            node.remove();
+        };
+
+        // IMPORT
+        loadBtn.onclick = () => {
+            const txt = importArea.value.trim();
+            if(!txt) return;
+
+            try {
+                const newQs = JSON.parse(txt);
+                if(!Array.isArray(newQs)) throw new Error("Must be an array []");
+                
+                // Add to DB
+                newQs.forEach(q => {
+                    if(q.q && Array.isArray(q.o) && typeof q.a === 'number') {
+                        // Allow 'c' to be string or default
+                        q.c = q.c || "General";
+                        DB.push(q);
+                    }
+                });
+
+                importStatus.innerText = `Loaded! Total: ${DB.length}`;
+                importStatus.className = "text-center text-xs font-bold mt-3 h-4 text-green-400";
+                importArea.value = "";
+                checkDB();
+                
+                setTimeout(() => {
+                    importModal.classList.add('hidden');
+                    importStatus.innerText = "";
+                }, 1000);
+
+            } catch(e) {
+                importStatus.innerText = "Invalid JSON.";
+                importStatus.className = "text-center text-xs font-bold mt-3 h-4 text-red-400";
+            }
+        };
+
+        // --- Gameplay Logic ---
+        
+        function renderBoard() {
+            const el = document.getElementById('game-board');
+            el.innerHTML = '';
+            
+            for (let i = 0; i <= BOARD_SIZE; i++) {
+                const tile = document.createElement('div');
+                const isStart = i === 0;
+                const isEnd = i === BOARD_SIZE;
+                
+                let baseClass = "tile aspect-square rounded-2xl flex items-center justify-center text-xs font-bold shadow-lg transition-colors ";
+                if (isStart) baseClass += "bg-gradient-to-br from-blue-600 to-indigo-700 text-white border border-blue-400";
+                else if (isEnd) baseClass += "bg-gradient-to-br from-yellow-400 to-orange-500 text-slate-900 border border-yellow-300";
+                else baseClass += "bg-slate-800/80 border border-slate-700 text-slate-500";
+                
+                tile.className = baseClass;
+                tile.innerHTML = isStart ? "S" : isEnd ? "🏁" : i;
+
+                PLAYERS.forEach((p, idx) => {
+                    if (p.pos === i) {
+                        const token = document.createElement('div');
+                        token.className = `absolute w-8 h-8 rounded-full ${p.color} border-2 border-white shadow-xl z-20 flex items-center justify-center text-[10px] font-black text-white player-token`;
+                        token.innerText = p.name.substring(0, 2).toUpperCase();
+                        if (PLAYERS[0].pos === PLAYERS[1].pos && i !== 0) {
+                            token.style.transform = idx === 0 ? "translate(-8px, -8px)" : "translate(8px, 8px)";
+                        }
+                        tile.appendChild(token);
+                    }
+                });
+                
+                el.appendChild(tile);
+            }
+        }
+
+        function updateUI() {
+            const turnTxt = document.getElementById('turn-indicator');
+            const rollBg = document.getElementById('btn-bg');
+            const bonusBadge = document.getElementById('bonus-indicator');
+            const actionBtn = document.getElementById('action-btn');
+
+            const p1Badge = document.getElementById('p1-badge');
+            const p2Badge = document.getElementById('p2-badge');
+
+            // Render Streak Pips & Helps
+            document.getElementById('p1-helps').innerText = PLAYERS[0].helps + "⚡";
+            document.getElementById('p2-helps').innerText = PLAYERS[1].helps + "⚡";
+            updateStreakMeter(0, 'p1-streak-meter');
+            updateStreakMeter(1, 'p2-streak-meter');
+
+            if (turnIdx === 0) { // Blues
+                turnTxt.innerText = "Blues' Turn";
+                turnTxt.className = "text-sm font-bold text-blue-400 uppercase tracking-wider animate-pulse";
+                rollBg.className = "absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 transition-all";
+                
+                // Highlight Active Badge
+                p1Badge.classList.remove('opacity-50'); p1Badge.classList.add('scale-110', 'border-blue-500');
+                p2Badge.classList.add('opacity-50'); p2Badge.classList.remove('scale-110', 'border-pink-500');
+
+                if(PLAYERS[0].streak >= 3) {
+                    bonusBadge.classList.remove('hidden');
+                    actionBtn.classList.add('bonus-ready');
+                } else {
+                    bonusBadge.classList.add('hidden');
+                    actionBtn.classList.remove('bonus-ready');
+                }
+
+            } else { // Bianca
+                turnTxt.innerText = "Bianca's Turn";
+                turnTxt.className = "text-sm font-bold text-pink-400 uppercase tracking-wider animate-pulse";
+                rollBg.className = "absolute inset-0 bg-gradient-to-r from-pink-600 to-rose-600 transition-all";
+                
+                p2Badge.classList.remove('opacity-50'); p2Badge.classList.add('scale-110', 'border-pink-500');
+                p1Badge.classList.add('opacity-50'); p1Badge.classList.remove('scale-110', 'border-blue-500');
+
+                if(PLAYERS[1].streak >= 3) {
+                    bonusBadge.classList.remove('hidden');
+                    actionBtn.classList.add('bonus-ready');
+                } else {
+                    bonusBadge.classList.add('hidden');
+                    actionBtn.classList.remove('bonus-ready');
+                }
+            }
+        }
+
+        function updateStreakMeter(pIdx, elId) {
+            const container = document.getElementById(elId);
+            const streak = PLAYERS[pIdx].streak;
+            const pips = container.children;
+            
+            // 0, 1, 2 streaks fill pips. 3 is full bonus mode.
+            for(let i=0; i<3; i++) {
+                if (i < streak) pips[i].classList.add('active');
+                else pips[i].classList.remove('active');
+            }
+        }
+
+        const actionBtn = document.getElementById('action-btn');
+
+        actionBtn.onclick = () => {
+            if (DB.length === 0) return;
+            triggerQuestion();
+        };
+
+        function triggerQuestion() {
+            const randIndex = Math.floor(Math.random() * DB.length);
+            activeQuestion = DB[randIndex];
+            DB.splice(randIndex, 1);
+            checkDB();
+            showModal(activeQuestion);
+        }
+
+        function showModal(q) {
+            const modal = document.getElementById('modal-overlay');
+            const p = PLAYERS[turnIdx];
+            
+            const catName = q.c || "General";
+            const isBonus = p.streak >= 3;
+            
+            // UI Update for Bonus Question
+            if (isBonus) {
+                document.getElementById('q-category').innerText = "🔥 BONUS STREAK QUESTION 🔥";
+                document.getElementById('q-category').className = "text-[10px] font-black uppercase tracking-[0.2em] text-yellow-900 bg-yellow-500 px-3 py-1.5 rounded-full border border-yellow-400";
+            } else {
+                document.getElementById('q-category').innerText = catName.toUpperCase();
+                document.getElementById('q-category').className = "text-[10px] font-black uppercase tracking-[0.2em] text-blue-300 bg-blue-500/10 px-3 py-1.5 rounded-full border border-blue-500/20";
+            }
+
+            document.getElementById('q-text').innerText = q.q;
+            document.getElementById('feedback-bar').className = "hidden";
+            
+            const opts = document.getElementById('q-options');
+            opts.innerHTML = '';
+            
+            q.o.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-xl bg-slate-800/50 border border-slate-700 hover:bg-slate-700/80 text-slate-200 font-medium transition-all duration-200";
+                btn.innerHTML = `<span class="relative z-10">${opt}</span>`;
+                btn.onclick = () => handleAnswer(idx, btn);
+                opts.appendChild(btn);
+            });
+
+            // Handle Lifeline Button
+            const lifeBtn = document.getElementById('lifeline-btn');
+            
+            // Reset logic
+            lifeBtn.onclick = null;
+            lifeBtn.disabled = false;
+
+            if (p.helps > 0) {
+                lifeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                lifeBtn.onclick = () => {
+                    // Burn help
+                    p.helps--;
+                    updateUI();
+                    
+                    // Disable button
+                    lifeBtn.disabled = true;
+                    lifeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    lifeBtn.onclick = null;
+
+                    // 50/50 Logic
+                    const btns = Array.from(opts.children);
+                    // Filter wrong answers
+                    const wrongIndices = btns.map((_, i) => i).filter(i => i !== q.a);
+                    // Shuffle wrong answers
+                    wrongIndices.sort(() => Math.random() - 0.5);
+                    
+                    // Hide 2 wrong
+                    if(wrongIndices[0] !== undefined) {
+                        btns[wrongIndices[0]].style.opacity = '0.2';
+                        btns[wrongIndices[0]].disabled = true;
+                    }
+                    if(wrongIndices[1] !== undefined) {
+                        btns[wrongIndices[1]].style.opacity = '0.2';
+                        btns[wrongIndices[1]].disabled = true;
+                    }
+                };
+            } else {
+                lifeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                lifeBtn.disabled = true;
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function handleAnswer(idx, btn) {
+            const all = document.getElementById('q-options').children;
+            for(let b of all) b.disabled = true;
+            // Disable lifeline if unused
+            document.getElementById('lifeline-btn').disabled = true;
+
+            const fb = document.getElementById('feedback-bar');
+            fb.classList.remove('hidden');
+            const p = PLAYERS[turnIdx];
+            const isBonus = p.streak >= 3;
+
+            if (idx === activeQuestion.a) {
+                // CORRECT
+                btn.classList.add('bg-green-600', 'border-green-400', 'text-white');
+                
+                let moves = 1;
+                if (isBonus) {
+                    moves = 2;
+                    p.streak = 0; // Reset streak after using bonus
+                    fb.innerText = "BONUS! MOVING 2 STEPS!";
+                } else {
+                    p.streak++; // Increment streak
+                    fb.innerText = "CORRECT! KEEP TURN";
+                }
+                
+                fb.classList.add('text-green-400', 'bg-green-900/30');
+                
+                setTimeout(() => {
+                    document.getElementById('modal-overlay').classList.add('hidden');
+                    movePlayer(p, moves); 
+                }, 1000);
+            } else {
+                // WRONG
+                btn.classList.add('bg-red-600', 'border-red-400', 'text-white');
+                all[activeQuestion.a].classList.add('bg-green-600/20', 'border-green-500/50');
+                
+                p.streak = 0; // Reset streak on fail
+                fb.innerText = "INCORRECT! STREAK LOST";
+                fb.classList.add('text-red-400', 'bg-red-900/30');
+                
+                setTimeout(() => {
+                    document.getElementById('modal-overlay').classList.add('hidden');
+                    endTurn(); 
+                }, 1800);
+            }
+        }
+
+        function movePlayer(p, steps) {
+            if (p.pos < BOARD_SIZE) {
+                p.pos += steps;
+                renderBoard();
+                updateUI(); // Reflect streak reset if bonus used
+                
+                const currentTile = document.getElementById('game-board').children[p.pos];
+                if(currentTile) currentTile.scrollIntoView({behavior:'smooth', block:'center'});
+
+                if (p.pos >= BOARD_SIZE) {
+                    document.getElementById('winner-name').innerText = p.name + " Wins!";
+                    document.getElementById('win-screen').classList.remove('hidden');
+                }
+            }
+        }
+
+        function endTurn() {
+            turnIdx = turnIdx === 0 ? 1 : 0;
+            updateUI();
+        }
+
+        init();
+    </script>
+</body>
+</html>
