@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Projects Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            background-color: #0f0f11;
+            color: #e2e2e2;
+            font-family: 'Inter', sans-serif;
+        }
+        .card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+            border-color: #6366f1;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-8">
+
+    <!-- Header -->
+    <header class="max-w-4xl mx-auto mb-12 text-center pt-10">
+        <h1 class="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">
+            Project Showcase
+        </h1>
+        <p class="text-gray-400">A collection of my interactive web experiments and tools.</p>
+    </header>
+
+    <!-- Grid Container -->
+    <main class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- PROJECT 1: Void Fan -->
+        <!-- COPY FROM HERE TO ADD NEW PROJECT -->
+        <a href="FAN_SIM.html" class="card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-indigo-500 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-zinc-800 rounded-lg text-indigo-400 group-hover:text-white transition-colors">
+                    <i data-lucide="wind"></i>
+                </div>
+                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
+            </div>
+            <h2 class="text-xl font-semibold mb-2 group-hover:text-indigo-400 transition-colors">Void Fan 2.0</h2>
+            <p class="text-zinc-400 text-sm">
+                An interactive fan simulation with realistic physics and sound. Experience the void.
+            </p>
+        </a>
+        <!-- STOP COPYING HERE -->
+
+        <!-- PROJECT 2: CS2 Map Selector -->
+        <!-- Note: This links to an external URL -->
+        <a href="https://1verysimple-lab.github.io/cs2mapselector/" target="_blank" class="card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-orange-500 group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-zinc-800 rounded-lg text-orange-400 group-hover:text-white transition-colors">
+                    <i data-lucide="map"></i>
+                </div>
+                <span class="text-xs font-mono text-zinc-500">External</span>
+            </div>
+            <h2 class="text-xl font-semibold mb-2 group-hover:text-orange-400 transition-colors">CS2 Map Selector</h2>
+            <p class="text-zinc-400 text-sm">
+                A tool for selecting maps in Counter-Strike 2.
+            </p>
+        </a>
+
+    </main>
+
+    <footer class="max-w-4xl mx-auto mt-16 text-center text-zinc-600 text-sm">
+        <p>Hosted on GitHub Pages</p>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

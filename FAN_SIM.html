@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Void Fan 2.0</title>
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* THE VOID */
+        body, html {
+            background-color: #000000;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            overscroll-behavior: none;
+            -webkit-user-select: none;
+            user-select: none;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            touch-action: manipulation;
+        }
+
+        /* Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus { outline: none; }
+        
+        /* Thumb */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #404040;
+            border: 2px solid #737373;
+            margin-top: -10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.8);
+        }
+        /* Track */
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: #262626;
+            border-radius: 2px;
+        }
+
+        /* Animations */
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .spin-slow { animation: spin 4s linear infinite; }
+        .spin-med { animation: spin 2s linear infinite; }
+        .spin-fast { animation: spin 0.8s linear infinite; }
+
+        /* UI Elements */
+        .btn-preset {
+            background: #171717;
+            border: 1px solid #262626;
+            color: #737373;
+            transition: all 0.2s ease;
+        }
+        .btn-preset.active {
+            background: #262626;
+            border-color: #525252;
+            color: #e5e5e5;
+            box-shadow: 0 0 15px rgba(255,255,255,0.05);
+        }
+
+        /* Glow effect for power button */
+        .power-on {
+            box-shadow: 0 0 40px rgba(255,255,255,0.1);
+            border-color: #e5e5e5 !important;
+            color: #e5e5e5 !important;
+        }
+
+        .label-text {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #525252;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-between py-8 px-6 h-full">
+
+    <div class="flex-1 flex flex-col items-center justify-center w-full min-h-0">
+        <div id="fan-visual" class="opacity-20 transition-opacity duration-1000">
+            <i data-lucide="fan" class="w-40 h-40 text-neutral-400"></i>
+        </div>
+        <div id="status-indicator" class="mt-8 text-xs font-mono text-neutral-800 tracking-[0.2em] uppercase transition-colors duration-500">
+            Void Standby
+        </div>
+    </div>
+
+    <div class="flex items-center justify-center mb-8 shrink-0">
+        <button id="power-btn" class="w-20 h-20 rounded-full bg-black border border-neutral-800 text-neutral-600 flex items-center justify-center transition-all duration-300 active:scale-95 touch-manipulation">
+            <i data-lucide="power" class="w-8 h-8"></i>
+        </button>
+    </div>
+
+    <div class="w-full max-w-sm space-y-6 mb-4 shrink-0">
+        
+        <div class="space-y-4 p-4 rounded-xl bg-neutral-900/30 border border-neutral-800/50">
+            <div>
+                <span class="label-text">Volume</span>
+                <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.7">
+            </div>
+
+            <div>
+                <span class="label-text">Tone (Dark / Bright)</span>
+                <input type="range" id="tone-slider" min="100" max="12000" step="10" value="8000">
+            </div>
+
+            <div>
+                <span class="label-text">Motor Hum</span>
+                <input type="range" id="motor-slider" min="0" max="0.3" step="0.01" value="0.05">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-2">
+            <button class="btn-preset active py-3 rounded-lg text-xs font-medium tracking-wider" data-type="box">BOX</button>
+            <button class="btn-preset py-3 rounded-lg text-xs font-medium tracking-wider" data-type="oscillating">OSC</button>
+            <button class="btn-preset py-3 rounded-lg text-xs font-medium tracking-wider" data-type="brown">BRN</button>
+            <button class="btn-preset py-3 rounded-lg text-xs font-medium tracking-wider" data-type="white">WHT</button>
+        </div>
+
+        <button id="timer-toggle" class="w-full py-3 text-xs font-mono text-neutral-700 tracking-widest uppercase text-center active:text-neutral-400 transition-colors border-t border-neutral-900">
+            Timer: <span id="timer-val" class="text-neutral-500">∞</span>
+        </button>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // --- CORE AUDIO ENGINE ---
+        let audioCtx = null;
+        let masterGain = null;
+        
+        // Dynamic nodes (accessible for real-time tweaking)
+        let activeFilterNode = null; 
+        let activeMotorGainNode = null;
+        let activeNodes = [];
+        
+        let isRunning = false;
+        let currentType = 'box';
+
+        // --- UI REFS ---
+        const powerBtn = document.getElementById('power-btn');
+        const fanVisual = document.getElementById('fan-visual');
+        const fanIcon = fanVisual.querySelector('i');
+        const statusInd = document.getElementById('status-indicator');
+        const presets = document.querySelectorAll('.btn-preset');
+        const timerToggle = document.getElementById('timer-toggle');
+        const timerVal = document.getElementById('timer-val');
+        
+        // Sliders
+        const volSlider = document.getElementById('volume-slider');
+        const toneSlider = document.getElementById('tone-slider');
+        const motorSlider = document.getElementById('motor-slider');
+
+        // --- TIMER LOGIC ---
+        let timerState = 0; 
+        let timerInterval = null;
+        let timeLeft = 0;
+
+        function cycleTimer() {
+            timerState = (timerState + 1) % 3;
+            clearInterval(timerInterval);
+            
+            if (timerState === 0) {
+                timerVal.innerText = "∞";
+                timerVal.style.color = "#737373";
+            } else if (timerState === 1) {
+                startCountdown(30);
+            } else {
+                startCountdown(60);
+            }
+        }
+
+        function startCountdown(minutes) {
+            timeLeft = minutes * 60;
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) {
+                    toggleSystem(false);
+                    clearInterval(timerInterval);
+                    timerState = 0;
+                    timerVal.innerText = "END";
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(timeLeft / 60);
+            const s = timeLeft % 60;
+            timerVal.innerText = `${m}:${s.toString().padStart(2, '0')}`;
+            timerVal.style.color = "#d4d4d4";
+        }
+        timerToggle.addEventListener('click', cycleTimer);
+
+        // --- AUDIO GENERATION ---
+        
+        function initContext() {
+            if (!audioCtx) {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AC();
+                masterGain = audioCtx.createGain();
+                masterGain.connect(audioCtx.destination);
+                masterGain.gain.value = volSlider.value;
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        // Noise Generators
+        function makeWhiteNoise() {
+            const size = audioCtx.sampleRate * 2;
+            const buffer = audioCtx.createBuffer(1, size, audioCtx.sampleRate);
+            const d = buffer.getChannelData(0);
+            for (let i = 0; i < size; i++) d[i] = Math.random() * 2 - 1;
+            return buffer;
+        }
+
+        function makePinkNoise() {
+            const size = audioCtx.sampleRate * 2;
+            const buffer = audioCtx.createBuffer(1, size, audioCtx.sampleRate);
+            const d = buffer.getChannelData(0);
+            let b0=0, b1=0, b2=0, b3=0, b4=0, b5=0, b6=0;
+            for (let i=0; i<size; i++) {
+                const w = Math.random() * 2 - 1;
+                b0 = 0.99886 * b0 + w * 0.0555179;
+                b1 = 0.99332 * b1 + w * 0.0750759;
+                b2 = 0.96900 * b2 + w * 0.1538520;
+                b3 = 0.86650 * b3 + w * 0.3104856;
+                b4 = 0.55000 * b4 + w * 0.5329522;
+                b5 = -0.7616 * b5 - w * 0.0168980;
+                d[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11;
+                b6 = w * 0.115926;
+            }
+            return buffer;
+        }
+
+        function makeBrownNoise() {
+            const size = audioCtx.sampleRate * 2;
+            const buffer = audioCtx.createBuffer(1, size, audioCtx.sampleRate);
+            const d = buffer.getChannelData(0);
+            let lastOut = 0;
+            for (let i = 0; i < size; i++) {
+                const w = Math.random() * 2 - 1;
+                d[i] = (lastOut + (0.02 * w)) / 1.02;
+                lastOut = d[i];
+                d[i] *= 3.5;
+            }
+            return buffer;
+        }
+
+        function buildSound(type) {
+            // Cleanup
+            activeNodes.forEach(n => { try{n.stop()}catch(e){}; try{n.disconnect()}catch(e){} });
+            activeNodes = [];
+            activeFilterNode = null;
+            activeMotorGainNode = null;
+
+            let source, filter, gain;
+
+            // 1. Create Source Buffer
+            source = audioCtx.createBufferSource();
+            if (type === 'white') source.buffer = makeWhiteNoise();
+            else if (type === 'brown') source.buffer = makeBrownNoise();
+            else source.buffer = makePinkNoise(); // Box & Osc use Pink
+            source.loop = true;
+
+            // 2. Create Main Tone Filter (Controlled by Tone Slider)
+            filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            // Default frequency comes from slider now
+            filter.frequency.value = toneSlider.value;
+            activeFilterNode = filter; // Save ref for slider control
+
+            // 3. Create Motor Hum (Controlled by Motor Slider)
+            // A 60Hz Sine wave to simulate electrical hum
+            const hum = audioCtx.createOscillator();
+            hum.type = 'sine';
+            hum.frequency.value = 60; 
+            const humGain = audioCtx.createGain();
+            humGain.gain.value = motorSlider.value;
+            activeMotorGainNode = humGain; // Save ref
+
+            // Connect Hum
+            hum.connect(humGain);
+            humGain.connect(masterGain);
+            hum.start();
+            activeNodes.push(hum);
+
+
+            // 4. Routing based on Type
+            if (type === 'oscillating') {
+                // LFO logic
+                const lfo = audioCtx.createOscillator();
+                lfo.type = 'sine';
+                lfo.frequency.value = 0.2; 
+                const lfoGain = audioCtx.createGain();
+                lfoGain.gain.value = 0.3; 
+                const mainVol = audioCtx.createGain();
+                mainVol.gain.value = 0.7;
+
+                lfo.connect(lfoGain);
+                lfoGain.connect(mainVol.gain);
+                
+                source.connect(filter);
+                filter.connect(mainVol);
+                mainVol.connect(masterGain);
+                
+                lfo.start();
+                activeNodes.push(lfo);
+            } 
+            else {
+                // Standard routing
+                source.connect(filter);
+                filter.connect(masterGain);
+            }
+
+            source.start();
+            activeNodes.push(source);
+        }
+
+        // --- SYSTEM CONTROL ---
+
+        function toggleSystem(forceState) {
+            initContext(); 
+            const nextState = forceState !== undefined ? forceState : !isRunning;
+
+            if (nextState) {
+                // ON
+                isRunning = true;
+                buildSound(currentType);
+                
+                powerBtn.classList.add('power-on');
+                statusInd.innerText = "ACTIVE • " + currentType.toUpperCase();
+                statusInd.classList.add('text-neutral-500');
+                statusInd.classList.remove('text-neutral-800');
+                fanVisual.classList.remove('opacity-20');
+                fanVisual.classList.add('opacity-80');
+                
+                fanIcon.classList.remove('spin-slow', 'spin-med', 'spin-fast');
+                if(currentType==='brown') fanIcon.classList.add('spin-slow');
+                else if(currentType==='white') fanIcon.classList.add('spin-fast');
+                else fanIcon.classList.add('spin-med');
+
+            } else {
+                // OFF
+                isRunning = false;
+                activeNodes.forEach(n => { try{n.stop()}catch(e){}; try{n.disconnect()}catch(e){} });
+                activeNodes = [];
+                activeFilterNode = null;
+                activeMotorGainNode = null;
+                
+                powerBtn.classList.remove('power-on');
+                statusInd.innerText = "STANDBY";
+                statusInd.classList.remove('text-neutral-500');
+                statusInd.classList.add('text-neutral-800');
+                fanVisual.classList.add('opacity-20');
+                fanVisual.classList.remove('opacity-80');
+                fanIcon.classList.remove('spin-slow', 'spin-med', 'spin-fast');
+            }
+        }
+
+        // --- EVENTS ---
+
+        // Controls
+        const updateAudio = () => {
+            const now = audioCtx ? audioCtx.currentTime : 0;
+            
+            // Volume
+            if (masterGain) masterGain.gain.setValueAtTime(parseFloat(volSlider.value), now);
+            
+            // Tone (Filter Freq)
+            if (activeFilterNode) {
+                // Exponential ramp sounds smoother for frequency
+                activeFilterNode.frequency.setTargetAtTime(parseFloat(toneSlider.value), now, 0.1);
+            }
+
+            // Motor (Hum Volume)
+            if (activeMotorGainNode) {
+                activeMotorGainNode.gain.setTargetAtTime(parseFloat(motorSlider.value), now, 0.1);
+            }
+        };
+
+        [volSlider, toneSlider, motorSlider].forEach(input => {
+            input.addEventListener('input', updateAudio);
+        });
+
+        // Power
+        powerBtn.addEventListener('click', (e) => { e.preventDefault(); toggleSystem(); });
+        powerBtn.addEventListener('touchend', (e) => { e.preventDefault(); toggleSystem(); });
+
+        // Presets
+        presets.forEach(btn => {
+            btn.addEventListener('click', () => {
+                presets.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentType = btn.dataset.type;
+                if (isRunning) buildSound(currentType);
+            });
+        });
+
+    </script>
+</body>
+</html>
