@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WOOT..?</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #050000; font-family: 'Courier New', Courier, monospace; }
+        
+        /* INTRO LAYER - Bottom Aligned */
+        #intro-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 60%);
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end; 
+            align-items: center;
+            text-align: center;
+            pointer-events: auto;
+            transition: opacity 1s;
+            padding-bottom: 50px;
+        }
+        
+        .intro-content {
+            max-width: 800px;
+            padding: 20px;
+        }
+
+        #game-title {
+            font-size: 5rem;
+            color: #ff0000;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            text-shadow: 0 0 20px #ff0000, 0 0 10px #000;
+            margin-bottom: 20px;
+            font-family: 'Times New Roman', serif;
+            font-weight: bold;
+        }
+
+        .char-select-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .select-btn {
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            min-width: 200px;
+        }
+        
+        .select-btn.bibee:hover {
+            background: #990000;
+            border-color: #ff0000;
+            box-shadow: 0 0 20px #ff0000;
+        }
+
+        .select-btn.blues:hover {
+            background: #000099;
+            border-color: #0000ff;
+            box-shadow: 0 0 20px #0000ff;
+        }
+
+        .continue-btn {
+            background: rgba(0, 50, 0, 0.8);
+            border-color: #00ff00;
+            color: #ccffcc;
+            display: none; /* Hidden by default */
+        }
+        .continue-btn:hover {
+            background: #004400;
+            box-shadow: 0 0 20px #00ff00;
+        }
+        
+        .loading-text {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        /* MUTE BUTTON */
+        #mute-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 30; 
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #ff0000;
+            color: #ff0000;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s;
+            padding: 10px; 
+        }
+        #mute-btn:hover {
+            background: #ff0000;
+            color: #000;
+            box-shadow: 0 0 15px #ff0000;
+        }
+        #mute-btn svg {
+            width: 100%;
+            height: 100%;
+            fill: currentColor;
+        }
+
+        /* GAME UI */
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #dcdcdc;
+            pointer-events: none;
+            user-select: none;
+            z-index: 10;
+            background: rgba(20, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 3px solid #ff0000;
+            min-width: 280px;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.1);
+            display: none; 
+        }
+        h1.hud-title { margin: 0 0 10px 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 2px; color: #ff0000; text-shadow: 0 0 5px #ff0000; }
+        .stat { font-size: 0.9rem; margin-bottom: 5px; color: #aaa; }
+        .highlight { color: #fff; font-weight: bold; }
+        .rank-text { color: #ffaa00; font-weight: bold; font-size: 1.1rem; text-transform: uppercase;}
+        
+        #timer-bar {
+            width: 100%;
+            height: 4px;
+            background: #330000;
+            margin-top: 10px;
+            position: relative;
+        }
+        #timer-fill {
+            height: 100%;
+            background: #ff0000;
+            width: 100%;
+            transition: width 0.1s linear;
+            box-shadow: 0 0 10px #ff0000;
+        }
+
+        /* CANDLE TIMER TEXT */
+        #candle-timer {
+            position: absolute;
+            right: 65px; 
+            bottom: 20px;
+            color: #ff0000;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-shadow: 0 0 10px #ff0000;
+            z-index: 15;
+            display: none; 
+        }
+
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 0, 0, 0.95);
+            color: #ffcccc;
+            padding: 40px;
+            border-radius: 2px;
+            text-align: center;
+            display: none;
+            z-index: 20;
+            border: 1px solid #550000;
+            box-shadow: 0 0 50px rgba(255, 0, 0, 0.3);
+            min-width: 320px;
+        }
+        #message h2 { margin-top: 0; font-size: 2rem; color: #ff0000; font-family: 'Times New Roman', serif; letter-spacing: 2px; }
+        button.game-btn {
+            background: #330000;
+            color: #ffcccc;
+            border: 1px solid #ff0000;
+            padding: 12px 24px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 25px;
+            font-weight: bold;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        button.game-btn:hover { background: #ff0000; color: #000; box-shadow: 0 0 15px #ff0000; }
+        
+        @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <!-- Mute Button -->
+    <button id="mute-btn" onclick="toggleMute()">
+        <!-- Default: Sound On SVG -->
+        <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+    </button>
+
+    <!-- Intro Screen -->
+    <div id="intro-layer" onclick="tryPlayIntroMusic()">
+        <div class="intro-content">
+            <div id="game-title">WOOT..?</div>
+            
+            <div id="save-found-msg" style="display:none; color:#00ff00; margin-bottom:10px;">Save Data Found</div>
+            
+            <div class="char-select-container">
+                <button id="continue-btn" class="select-btn continue-btn" onclick="continueGame()">Continue Journey</button>
+            </div>
+            
+            <div style="margin-top: 15px; color: #aaa;">Start New Game:</div>
+            <div class="char-select-container">
+                <button class="select-btn bibee" onclick="startGameflow('BIBEE', true)">Play as Bibee</button>
+                <button class="select-btn blues" onclick="startGameflow('BLUES', true)">Play as Blues</button>
+            </div>
+            <div id="auth-status" class="loading-text">Connecting to net...</div>
+        </div>
+    </div>
+
+    <!-- HUD -->
+    <div id="ui-layer">
+        <h1 class="hud-title">WOOT..?</h1>
+        <div class="stat">Rank: <span id="rank-name" class="rank-text">RECRUIT</span></div>
+        <div class="stat">Stage: <span id="level-count" class="highlight">1/4</span> (Grid: <span id="grid-size">4x4</span>)</div>
+        <div class="stat">Moves: <span id="move-count" class="highlight">0</span></div>
+        <div class="stat" id="status-text">Memorize the path...</div>
+        <div id="timer-bar"><div id="timer-fill"></div></div>
+        <div class="controls-hint">Arrows: Move | Space/Shift: Jump | Enter: Continue</div>
+    </div>
+
+    <!-- Candle Timer Display -->
+    <div id="candle-timer">60</div>
+
+    <div id="message">
+        <h2 id="msg-title">Mission Complete</h2>
+        <p id="msg-body">Ready for next assignment.</p>
+        <button class="game-btn" id="action-btn" onclick="nextLevel()">Proceed</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'knights-stroll';
+
+        let currentUser = null;
+        let savedGameData = null;
+
+        // Init Auth & Check Save
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('auth-status').innerText = "Connected ID: " + user.uid.substring(0,4);
+                // Check for save
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'game_saves', 'slot_1');
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        savedGameData = docSnap.data();
+                        document.getElementById('continue-btn').style.display = 'block';
+                        document.getElementById('continue-btn').innerText = `Continue as ${savedGameData.character} (${savedGameData.rankName})`;
+                        document.getElementById('save-found-msg').style.display = 'block';
+                    }
+                } catch (e) {
+                    console.error("Save check failed", e);
+                }
+            } else {
+                signInAnonymously(auth).catch(console.error);
+            }
+        });
+
+        window.saveGameProgress = async function(rankIdx, subLvl, charName) {
+            if (!currentUser) return;
+            const rankName = window.getRankName(rankIdx);
+            const data = {
+                rankIndex: rankIdx,
+                subLevel: subLvl,
+                character: charName,
+                rankName: rankName,
+                timestamp: Date.now()
+            };
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'game_saves', 'slot_1');
+                await setDoc(docRef, data);
+                console.log("Game Saved");
+            } catch (e) { console.error("Save failed", e); }
+        };
+
+        window.loadGameProgress = function() {
+            return savedGameData;
+        };
+    </script>
+
+    <script>
+        // --- Game Config ---
+        const TILE_SIZE = 10;
+        const MEMORIZE_TIME = 3000; 
+        const STAGE_TIME_LIMIT = 60000; 
+        
+        const RANKS = [
+            "Recruit", "Private", "Corporal", "Sergeant", 
+            "Lieutenant", "Captain", "Major", "Colonel", "General"
+        ];
+
+        // Expose helper for Module
+        window.getRankName = (idx) => RANKS[Math.min(idx, RANKS.length-1)];
+
+        // Dynamic Game State
+        let currentRankIndex = 0; 
+        let currentSubLevel = 1;  
+        let boardSize = 4; 
+        let boardOffset = 0;
+        
+        let moveCount = 0;
+        let playerPos = { x: 0, z: 0 };
+        let lastFacing = { dx: 0, dz: 1 }; 
+        let exitPos = { x: 3, z: 3 }; 
+        const startPos = { x: 0, z: 0 };
+        
+        let pathGrid = []; 
+        let validPathCoords = []; 
+        let orderedPath = []; 
+        let jokerPos = null; 
+        
+        // States
+        let gameState = 'INTRO';
+        let startTime = 0;
+        let playStartTime = 0;
+        let remainingTime = STAGE_TIME_LIMIT;
+        let stageTimeLeft = STAGE_TIME_LIMIT;
+        
+        let isMoving = false;
+        let isFalling = false;
+        let pendingLevelChange = 0; 
+        let hasDoubleJumped = false;
+        
+        let moveType = 'WALK'; 
+        let selectedCharacter = 'BIBEE'; 
+        
+        // --- Audio ---
+        const stepSound = new Audio('foot_step.wav');
+        const screamSound = new Audio('scream_short.wav');
+        
+        const introMusic = new Audio('intro_drum.wav');
+        const gameMusicDefault = new Audio('drum_loop_hiphop.wav');
+        const stage1Music = new Audio('stage1.wav');
+        const stage2Music = new Audio('stage2.wav');
+        
+        stepSound.volume = 0.4;
+        screamSound.volume = 0.6;
+        introMusic.loop = true; introMusic.volume = 0.7;
+        gameMusicDefault.loop = true; gameMusicDefault.volume = 0.6;
+        stage1Music.loop = true; stage1Music.volume = 0.6;
+        stage2Music.loop = true; stage2Music.volume = 0.6;
+        
+        let currentBGM = null;
+        let introMusicStarted = false;
+        let isMuted = false;
+
+        const svgSoundOn = '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>';
+        const svgSoundOff = '<svg viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>';
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            const btn = document.getElementById('mute-btn');
+            btn.innerHTML = isMuted ? svgSoundOff : svgSoundOn;
+            
+            introMusic.muted = isMuted;
+            gameMusicDefault.muted = isMuted;
+            stage1Music.muted = isMuted;
+            stage2Music.muted = isMuted;
+        }
+        
+        function playMusic(track) {
+            if (currentBGM && currentBGM !== track) {
+                currentBGM.pause();
+                currentBGM.currentTime = 0;
+            }
+            if (track && (currentBGM !== track || track.paused)) {
+                track.muted = isMuted;
+                track.volume = 0.6; 
+                track.play().catch(e => console.log("Music play error", e));
+                currentBGM = track;
+            }
+        }
+
+        function fadeOutAndStop(track, duration) {
+            if (!track || track.paused) return;
+            const fadeStep = 50; 
+            const volumeStep = track.volume / (duration / fadeStep);
+            
+            const fadeInterval = setInterval(() => {
+                if (track.volume > volumeStep) {
+                    track.volume -= volumeStep;
+                } else {
+                    track.volume = 0;
+                    track.pause();
+                    track.currentTime = 0;
+                    clearInterval(fadeInterval);
+                }
+            }, fadeStep);
+        }
+
+        function updateStageMusic() {
+            if (gameState.startsWith('INTRO')) {
+                playMusic(introMusic);
+            } else {
+                if (currentRankIndex === 0) {
+                    playMusic(stage1Music);
+                } else if (currentRankIndex === 1) {
+                    playMusic(stage2Music);
+                } else {
+                    playMusic(gameMusicDefault);
+                }
+            }
+        }
+
+        // --- Three.js Globals ---
+        let scene, camera, renderer;
+        let uiScene, uiCamera;
+        let candleGroup, candleWax, candleTop, candleWick, candleFlame, candleLight;
+        const candleMaxHeight = 150;
+
+        let raycaster, mouse;
+        let tiles = []; 
+        let playerGroup; 
+        let bluesGroup, bibeeGroup;
+        let playerSpotLight, playerLantern;
+        let dirLight;
+        
+        let introMessageCenter = new THREE.Vector3(); 
+        let introDancePos = new THREE.Vector3();
+
+        // --- Initialization ---
+        function init() {
+            // 1. Main Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x020000); 
+            scene.fog = new THREE.Fog(0x110000, 40, 300); 
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 20, 40); 
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.autoClear = false; 
+            document.body.appendChild(renderer.domElement);
+
+            // 2. UI Scene (For 3D Candle)
+            initUIScene();
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.15); 
+            scene.add(ambientLight);
+
+            dirLight = new THREE.DirectionalLight(0xaaccff, 0.3); 
+            dirLight.position.set(30, 100, 20);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            scene.add(dirLight);
+
+            playerSpotLight = new THREE.SpotLight(0xffaa88, 1.5); 
+            playerSpotLight.angle = 0.9;
+            playerSpotLight.penumbra = 0.5;
+            playerSpotLight.distance = 200;
+            playerSpotLight.castShadow = true;
+            playerSpotLight.position.set(0, 60, 0);
+            scene.add(playerSpotLight);
+            scene.add(playerSpotLight.target);
+
+            playerLantern = new THREE.PointLight(0xffaa00, 1.0, 40);
+
+            const pointLight = new THREE.PointLight(0xff0000, 0.1, 200);
+            pointLight.position.set(0, -30, 0);
+            scene.add(pointLight);
+
+            createCharacters();
+            setupIntro();
+
+            window.addEventListener('resize', onWindowResize, false);
+            document.addEventListener('keydown', onKeyDown, false); 
+            
+            mouse = new THREE.Vector2();
+            document.addEventListener('contextmenu', e => e.preventDefault());
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', onMouseUp);
+            window.addEventListener('mousedown', (e) => {
+                if(e.button === 2) {
+                    isDragging = true;
+                    prevMouse = { x: e.offsetX, y: e.offsetY };
+                }
+            });
+
+            animate();
+        }
+
+        function tryPlayIntroMusic() {
+            if(!introMusicStarted && (gameState === 'INTRO' || gameState === 'INTRO_BLUES' || gameState === 'INTRO_BIBEE')) {
+                introMusic.play().then(() => {
+                    introMusicStarted = true;
+                    currentBGM = introMusic;
+                }).catch(e => console.log("Audio autoplay blocked"));
+            }
+        }
+
+        function initUIScene() {
+            uiScene = new THREE.Scene();
+            const aspect = window.innerWidth / window.innerHeight;
+            const frustumSize = 600;
+            uiCamera = new THREE.OrthographicCamera(
+                frustumSize * aspect / -2, frustumSize * aspect / 2,
+                frustumSize / 2, frustumSize / -2,
+                1, 1000
+            );
+            uiCamera.position.z = 50;
+
+            const uiAmbient = new THREE.AmbientLight(0xffffff, 0.5);
+            uiScene.add(uiAmbient);
+            const uiDir = new THREE.DirectionalLight(0xffaa00, 0.5);
+            uiDir.position.set(10, 20, 10);
+            uiScene.add(uiDir);
+
+            candleGroup = new THREE.Group();
+            candleGroup.visible = false; 
+
+            // Candle Construction...
+            const holderGeo = new THREE.CylinderGeometry(25, 30, 10, 32);
+            const holderMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.7, metalness: 0.8 });
+            const holder = new THREE.Mesh(holderGeo, holderMat);
+            holder.position.y = 5;
+            candleGroup.add(holder);
+
+            const waxGeo = new THREE.CylinderGeometry(15, 18, candleMaxHeight, 32);
+            waxGeo.translate(0, candleMaxHeight/2, 0); 
+            const waxMat = new THREE.MeshStandardMaterial({ color: 0x880000, roughness: 0.3, transparent: true, opacity: 0.9 });
+            candleWax = new THREE.Mesh(waxGeo, waxMat);
+            candleWax.position.y = 10;
+            candleGroup.add(candleWax);
+
+            candleTop = new THREE.Group();
+            const topGeo = new THREE.CylinderGeometry(14, 15, 5, 32);
+            const top = new THREE.Mesh(topGeo, waxMat);
+            candleTop.add(top);
+            
+            const wickGeo = new THREE.CylinderGeometry(0.5, 0.5, 8, 8);
+            const wickMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+            candleWick = new THREE.Mesh(wickGeo, wickMat);
+            candleWick.position.y = 4;
+            candleTop.add(candleWick);
+
+            const flameGroup = new THREE.Group();
+            flameGroup.position.y = 8;
+            const outerGeo = new THREE.ConeGeometry(6, 15, 8);
+            outerGeo.translate(0, 5, 0); 
+            const outerMat = new THREE.MeshBasicMaterial({ color: 0xff5500, transparent: true, opacity: 0.8 });
+            const fOut = new THREE.Mesh(outerGeo, outerMat);
+            flameGroup.add(fOut);
+            
+            const innerGeo = new THREE.ConeGeometry(3, 8, 8);
+            innerGeo.translate(0, 3, 0);
+            const innerMat = new THREE.MeshBasicMaterial({ color: 0xffffaa });
+            const fIn = new THREE.Mesh(innerGeo, innerMat);
+            flameGroup.add(fIn);
+
+            candleLight = new THREE.PointLight(0xffaa00, 1.5, 150);
+            candleLight.position.y = 5;
+            flameGroup.add(candleLight);
+
+            candleTop.add(flameGroup);
+            candleFlame = flameGroup; 
+            candleTop.position.y = candleMaxHeight + 10;
+            candleGroup.add(candleTop);
+
+            const w = frustumSize * aspect;
+            const h = frustumSize;
+            candleGroup.position.set(w/2 - 80, -h/2 + 20, 0);
+            candleGroup.rotation.x = 0.2; 
+            
+            uiScene.add(candleGroup);
+        }
+
+        const scrabbleScores = {
+            'A':1, 'B':3, 'C':3, 'D':2, 'E':1, 'F':4, 'G':2, 'H':4, 'I':1, 'J':8, 'K':5, 'L':1, 'M':3, 
+            'N':1, 'O':1, 'P':3, 'Q':10, 'R':1, 'S':1, 'T':1, 'U':1, 'V':4, 'W':4, 'X':8, 'Y':4, 'Z':10
+        };
+        const letters = Object.keys(scrabbleScores);
+
+        function createScrabbleTexture(letter, score, isJoker = false) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = isJoker ? '#442255' : '#8b5a2b'; 
+            ctx.fillRect(0, 0, 128, 128);
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            for(let i=0; i<10; i++) ctx.fillRect(Math.random()*128, 0, Math.random()*2 + 1, 128);
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = isJoker ? '#aa55ff' : '#5c3a1e';
+            ctx.strokeRect(0, 0, 128, 128);
+            ctx.fillStyle = isJoker ? '#00ff00' : '#221100'; 
+            ctx.font = 'bold 80px Courier New';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(letter, 64, 60);
+            ctx.font = 'bold 24px Courier New';
+            ctx.fillText(score, 105, 105);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        // --- Intro Logic ---
+        let introPathPlan = []; 
+        let introStepIndex = 0;
+        
+        function setupIntro() {
+            gameState = 'INTRO_BLUES';
+            introPhase = 'BLUES';
+            setupIntroPathBlues();
+        }
+
+        function setupIntroPathBlues() {
+            cleanupBoard();
+            updateStageMusic(); 
+            tryPlayIntroMusic();
+            
+            playerGroup = bluesGroup;
+            bluesGroup.visible = true;
+            bibeeGroup.visible = false;
+            
+            playerLantern.parent = bluesGroup;
+            playerLantern.position.set(0, 10, 0);
+
+            introPathPlan = [];
+            const storyText = "FIRST CAME BLUES HE RAN FAST BUT DID NOT KNOW THE WAY AND FELL";
+            const cleanStory = storyText.replace(/[^a-zA-Z ]/g, '').toUpperCase();
+            
+            let curX = 0;
+            let curZ = 0;
+            let dirX = 0;
+            let dirZ = 1;
+            
+            let nextMoveType = 'RUN';
+
+            for (let i = 0; i < cleanStory.length; i++) {
+                const char = cleanStory[i];
+                if (char === ' ') {
+                    nextMoveType = 'JUMP';
+                    continue;
+                }
+                const dist = nextMoveType === 'JUMP' ? 2 : 1;
+                curX += dirX * dist;
+                curZ += dirZ * dist;
+                introPathPlan.push({ type: nextMoveType, char: char, x: curX, z: curZ });
+                nextMoveType = 'RUN'; 
+            }
+            
+            curZ += 2;
+            introPathPlan.push({ type: 'JUMP', char: null, x: curX, z: curZ, isFall: true });
+
+            playerPos = { x: 0, z: 0 };
+            introStepIndex = 0;
+            
+            updateIntroTiles();
+            snapPlayerToGrid();
+            
+            camera.position.set(15, 8, 15);
+            camera.lookAt(playerPos.x * TILE_SIZE, 5, playerPos.z * TILE_SIZE + 20);
+            
+            introMoveLoop();
+        }
+
+        function setupIntroPathBibee() {
+            gameState = 'INTRO_BIBEE';
+            introPhase = 'BIBEE';
+            cleanupBoard();
+            
+            playerGroup = bibeeGroup;
+            bluesGroup.visible = false;
+            bibeeGroup.visible = true;
+            
+            playerLantern.parent = bibeeGroup;
+            playerLantern.position.set(0, 10, 0);
+
+            introPathPlan = [];
+            const storyText = "THEN CAME BIBEE AND SHE KNEW THE WAY";
+            const cleanStory = storyText.replace(/[^a-zA-Z ]/g, '').toUpperCase();
+            
+            let curX = 0;
+            let curZ = 0;
+            let dirX = 0;
+            let dirZ = 1;
+            
+            let nextMoveType = 'RUN';
+
+            for (let i = 0; i < cleanStory.length; i++) {
+                const char = cleanStory[i];
+                if (char === ' ') {
+                    nextMoveType = 'JUMP';
+                    continue;
+                }
+                const dist = nextMoveType === 'JUMP' ? 2 : 1;
+                curX += dirX * dist;
+                curZ += dirZ * dist;
+                introPathPlan.push({ type: nextMoveType, char: char, x: curX, z: curZ });
+                nextMoveType = 'RUN'; 
+            }
+            
+            dirX = 1; 
+            dirZ = 0;
+            
+            nextMoveType = 'JUMP';
+            const endingPhrase = "TO LOVE";
+            for(let c of endingPhrase) {
+                if(c === ' ') {
+                    nextMoveType = 'JUMP';
+                    continue; 
+                }
+                const dist = nextMoveType === 'JUMP' ? 2 : 1;
+                curX += dirX * dist;
+                curZ += dirZ * dist;
+                introPathPlan.push({ type: nextMoveType, char: c, x: curX, z: curZ });
+                nextMoveType = 'RUN';
+            }
+            
+            playerPos = { x: 0, z: 0 };
+            introStepIndex = 0;
+            
+            updateIntroTiles();
+            snapPlayerToGrid();
+            
+            camera.position.set(15, 8, 15);
+            camera.lookAt(playerPos.x * TILE_SIZE, 5, playerPos.z * TILE_SIZE + 20);
+            
+            introMoveLoop();
+        }
+        
+        function updateIntroTiles() {
+            const buffer = 30;
+            const keepThreshold = introStepIndex - 10;
+            
+            for (let i = tiles.length - 1; i >= 0; i--) {
+                if (tiles[i].userData.stepIndex < keepThreshold) {
+                    scene.remove(tiles[i]);
+                    tiles[i].geometry.dispose();
+                    tiles.splice(i, 1);
+                }
+            }
+            
+            let nextGenIdx = 0;
+            if (tiles.length > 0) {
+                let maxIdx = -1;
+                tiles.forEach(t => maxIdx = Math.max(maxIdx, t.userData.stepIndex));
+                nextGenIdx = maxIdx + 1;
+            } else {
+                nextGenIdx = introStepIndex; 
+            }
+            
+            const geometry = new THREE.BoxGeometry(TILE_SIZE - 1, 2, TILE_SIZE - 1);
+            
+            while (nextGenIdx < introStepIndex + buffer && nextGenIdx < introPathPlan.length) {
+                const stepData = introPathPlan[nextGenIdx];
+                if (stepData.isFall) { nextGenIdx++; continue; } 
+
+                const char = stepData.char;
+                let score = 0;
+                if(scrabbleScores[char]) score = scrabbleScores[char];
+                
+                const tex = createScrabbleTexture(char, score, false);
+                const mat = new THREE.MeshStandardMaterial({ map: tex, color: 0x999999, roughness: 0.8 });
+                const tile = new THREE.Mesh(geometry, mat);
+                
+                tile.position.set(stepData.x * TILE_SIZE, -1, stepData.z * TILE_SIZE);
+                tile.receiveShadow = true;
+                tile.userData = { stepIndex: nextGenIdx, isIntro: true };
+                scene.add(tile);
+                tiles.push(tile);
+                
+                nextGenIdx++;
+            }
+        }
+
+        function introMoveLoop() {
+            if (gameState !== 'INTRO_BLUES' && gameState !== 'INTRO_BIBEE') return;
+            
+            // Check End
+            if (introStepIndex >= introPathPlan.length) {
+                if (gameState === 'INTRO_BLUES') {
+                    setTimeout(() => {
+                        setupIntroPathBibee();
+                    }, 1500);
+                } else {
+                    // End of Bibee - Spawn Blues for Dance
+                    const finalStep = introPathPlan[introPathPlan.length - 1];
+                    introDancePos.set(finalStep.x * TILE_SIZE, 0, finalStep.z * TILE_SIZE);
+                    
+                    bluesGroup.position.copy(introDancePos);
+                    bluesGroup.position.x += TILE_SIZE; 
+                    bluesGroup.position.y = 0; 
+                    bluesGroup.rotation.set(0, 0, 0); 
+                    bluesGroup.visible = true;
+                    
+                    // Reset Blues Limbs
+                    if (bluesGroup.userData.limbs) {
+                        const l = bluesGroup.userData.limbs;
+                        l.LL.rotation.x = 0; l.RL.rotation.x = 0;
+                        l.LA.rotation.x = 0; l.RA.rotation.x = 0;
+                    }
+
+                    gameState = 'INTRO_DANCE';
+                }
+                return;
+            }
+            
+            const stepData = introPathPlan[introStepIndex];
+            const moveType = stepData.type;
+            
+            if (stepData.isFall) {
+                startMove(stepData.x, stepData.z, 'JUMP');
+                isFalling = true; 
+            } else {
+                startMove(stepData.x, stepData.z, moveType);
+            }
+            
+            introStepIndex++;
+            updateIntroTiles();
+            
+            const delay = moveType === 'JUMP' ? 900 : 400; 
+            setTimeout(introMoveLoop, delay);
+        }
+
+        function continueGame() {
+            const saved = window.loadGameProgress();
+            if (saved) {
+                currentRankIndex = saved.rankIndex;
+                currentSubLevel = saved.subLevel;
+                selectedCharacter = saved.character;
+                startGameflow(selectedCharacter, false);
+            }
+        }
+
+        function startGameflow(character, isNew = true) {
+            if (character) {
+                selectedCharacter = character;
+            }
+            
+            if (isNew) {
+                currentRankIndex = 0;
+                currentSubLevel = 1;
+            }
+            
+            // Fade out intro music faster (200ms)
+            fadeOutAndStop(introMusic, 200);
+            
+            // Start Game Music handled in setupLevel
+
+            document.getElementById('intro-layer').style.display = 'none';
+            document.getElementById('ui-layer').style.display = 'block';
+            document.getElementById('candle-timer').style.display = 'block';
+            candleGroup.visible = true;
+            
+            // Set Player
+            if (selectedCharacter === 'BLUES') {
+                playerGroup = bluesGroup;
+                bluesGroup.visible = true;
+                bibeeGroup.visible = false;
+                playerLantern.parent = bluesGroup;
+            } else {
+                playerGroup = bibeeGroup;
+                bluesGroup.visible = false;
+                bibeeGroup.visible = true;
+                playerLantern.parent = bibeeGroup;
+            }
+            playerLantern.position.set(0, 10, 0);
+
+            setupLevel();
+        }
+
+        // --- Level Management ---
+
+        function cleanupBoard() {
+            tiles.forEach(t => {
+                scene.remove(t);
+                t.geometry.dispose();
+                t.material.dispose();
+                if(t.material.map) t.material.map.dispose();
+            });
+            tiles = [];
+        }
+
+        function calculateBoardSize() {
+            return 4 + currentRankIndex + (currentSubLevel - 1);
+        }
+
+        function updateCandleVisuals() {
+            if(candleWax) {
+                const pct = Math.max(0, stageTimeLeft / STAGE_TIME_LIMIT);
+                candleWax.scale.y = pct;
+                const newHeight = candleMaxHeight * pct;
+                if(candleTop) candleTop.position.y = 10 + newHeight;
+                if(candleFlame) {
+                    if(pct < 0.01) candleFlame.visible = false;
+                    else candleFlame.visible = true;
+                }
+            }
+        }
+
+        function setupLevel() {
+            document.getElementById('message').style.display = 'none';
+            cleanupBoard();
+            
+            updateStageMusic();
+            
+            boardSize = calculateBoardSize();
+            boardOffset = (boardSize * TILE_SIZE) / 2 - (TILE_SIZE / 2);
+            exitPos = { x: boardSize - 1, z: boardSize - 1 };
+            
+            const rankName = RANKS[Math.min(currentRankIndex, RANKS.length-1)];
+            document.getElementById('rank-name').innerText = rankName;
+            document.getElementById('level-count').innerText = `${currentSubLevel}/4`;
+            document.getElementById('grid-size').innerText = `${boardSize}x${boardSize}`;
+            document.getElementById('move-count').innerText = "0";
+            document.getElementById('status-text').innerText = "Memorize the path...";
+            document.getElementById('timer-fill').style.width = "100%";
+            
+            if (currentSubLevel === 1) {
+                stageTimeLeft = STAGE_TIME_LIMIT;
+            }
+            
+            updateCandleVisuals();
+            document.getElementById('candle-timer').innerText = Math.ceil(stageTimeLeft / 1000);
+            
+            moveCount = 0;
+            playerPos = { ...startPos };
+            lastFacing = { dx: 0, dz: 1 }; 
+            
+            // Ensure visibility is forced
+            playerGroup.visible = true;
+            
+            if (selectedCharacter === 'BIBEE') {
+               if(dressMesh) dressMesh.color.setHex(0x990000); 
+               if(torsoMesh) torsoMesh.color.setHex(0x990000);
+            }
+
+            adjustCamera();
+            generatePath(); 
+            createBoard();
+            
+            gameState = 'MEMORIZE';
+            startTime = performance.now();
+            
+            updateBoardVisuals();
+            snapPlayerToGrid();
+            
+            isMoving = false;
+            isFalling = false;
+            pendingLevelChange = 0;
+            hasDoubleJumped = false;
+        }
+
+        function adjustCamera() {
+            const scalar = Math.max(1, boardSize / 5); 
+            const y = 80 * scalar;
+            const z = 100 * scalar;
+            camera.position.set(0, y, z);
+            camera.lookAt(0, 0, 0);
+            scene.fog.near = y * 0.5;
+            scene.fog.far = z * 2.5;
+            camDist = Math.sqrt(y*y + z*z);
+        }
+
+        function nextLevel() {
+            // Save Progress
+            if (window.saveGameProgress) {
+                window.saveGameProgress(currentRankIndex, currentSubLevel, selectedCharacter);
+            }
+
+            if (pendingLevelChange === 1) {
+                currentSubLevel++;
+                if (currentSubLevel > 4) {
+                    currentSubLevel = 1;
+                    currentRankIndex++;
+                }
+            } else if (pendingLevelChange === -1) {
+                // Standard Failure (Falling): Step back one level within rank
+                currentSubLevel--;
+                if (currentSubLevel < 1) {
+                    if (currentRankIndex > 0) {
+                        currentRankIndex--;
+                        currentSubLevel = 4; 
+                    } else {
+                        currentSubLevel = 1; 
+                    }
+                }
+            } else if (pendingLevelChange === -2) {
+                // Time Out (Rank > 0): Demote to start of PREVIOUS Rank
+                currentRankIndex--;
+                currentSubLevel = 1; 
+            } else if (pendingLevelChange === -3) {
+                // Time Out (Rank 0): Full Reset
+                currentRankIndex = 0;
+                currentSubLevel = 1;
+            }
+            setupLevel();
+        }
+
+        // --- Path Generation ---
+
+        function generatePath() {
+            const minComplexity = (exitPos.x + exitPos.z) + (currentRankIndex * 2);
+            let attempts = 0;
+            const maxAttempts = 50;
+            let bestGrid = null;
+            let bestLength = 0;
+            let bestOrderedPath = [];
+
+            while (attempts < maxAttempts) {
+                const tempGrid = Array(boardSize).fill(null).map(() => Array(boardSize).fill(false));
+                const visited = new Set();
+                visited.add(`${startPos.x},${startPos.z}`);
+                const pathList = []; 
+                pathList.push({x: startPos.x, z: startPos.z});
+                
+                const length = solve(startPos.x, startPos.z, visited, tempGrid, pathList);
+                
+                if (length > 0) {
+                    if (length >= minComplexity) {
+                        pathGrid = tempGrid;
+                        orderedPath = pathList;
+                        placeJoker();
+                        return;
+                    } else {
+                        if (length > bestLength) {
+                            bestLength = length;
+                            bestGrid = tempGrid;
+                            bestOrderedPath = [...pathList];
+                        }
+                    }
+                }
+                attempts++;
+            }
+            
+            if (bestGrid) {
+                pathGrid = bestGrid;
+                orderedPath = bestOrderedPath;
+            } else {
+                pathGrid = Array(boardSize).fill(null).map(() => Array(boardSize).fill(false));
+                orderedPath = [];
+                for(let i=0; i<boardSize; i++) {
+                    pathGrid[i][i] = true;
+                    orderedPath.push({x:i, z:i});
+                }
+            }
+            placeJoker();
+        }
+
+        function solve(x, z, visited, grid, pathList) {
+            if (x === exitPos.x && z === exitPos.z) {
+                grid[z][x] = true;
+                return visited.size;
+            }
+
+            const dirs = [{dx:1, dz:0}, {dx:-1, dz:0}, {dx:0, dz:1}, {dx:0, dz:-1}].sort(() => Math.random() - 0.5);
+            
+            for (let dir of dirs) {
+                const nx = x + dir.dx;
+                const nz = z + dir.dz;
+
+                if (nx >= 0 && nx < boardSize && nz >= 0 && nz < boardSize) {
+                    const key = `${nx},${nz}`;
+                    if (!visited.has(key)) {
+                        let touchesOldPath = false;
+                        const neighbors = [{dx:1, dz:0}, {dx:-1, dz:0}, {dx:0, dz:1}, {dx:0, dz:-1}];
+                        for (let n of neighbors) {
+                            const checkX = nx + n.dx;
+                            const checkZ = nz + n.dz;
+                            const checkKey = `${checkX},${checkZ}`;
+                            if (checkX >= 0 && checkX < boardSize && checkZ >= 0 && checkZ < boardSize) {
+                                if (visited.has(checkKey) && (checkX !== x || checkZ !== z)) {
+                                    touchesOldPath = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!touchesOldPath) {
+                            visited.add(key);
+                            pathList.push({x: nx, z: nz});
+                            const pathLen = solve(nx, nz, visited, grid, pathList);
+                            if (pathLen > 0) {
+                                grid[z][x] = true;
+                                return pathLen;
+                            }
+                            visited.delete(key);
+                            pathList.pop();
+                        }
+                    }
+                }
+            }
+            return 0; 
+        }
+
+        function placeJoker() {
+            jokerPos = null;
+            if (currentSubLevel !== 4) return;
+
+            const indices = Array.from({length: orderedPath.length}, (_, i) => i);
+            indices.sort(() => Math.random() - 0.5);
+
+            for (let i of indices) {
+                let dirsToCheck = [];
+                if (i > 0) {
+                    const curr = orderedPath[i];
+                    const prev = orderedPath[i-1];
+                    dirsToCheck.push({ dx: curr.x - prev.x, dz: curr.z - prev.z });
+                } else {
+                    dirsToCheck = [{dx:1, dz:0}, {dx:-1, dz:0}, {dx:0, dz:1}, {dx:0, dz:-1}];
+                }
+
+                for (let d of dirsToCheck) {
+                    const startNode = orderedPath[i];
+                    const gapX = startNode.x + d.dx;
+                    const gapZ = startNode.z + d.dz;
+                    const targetX = startNode.x + (d.dx * 2);
+                    const targetZ = startNode.z + (d.dz * 2);
+
+                    if (targetX < 0 || targetX >= boardSize || targetZ < 0 || targetZ >= boardSize) continue;
+                    if (pathGrid[targetZ][targetX]) continue; // Target must NOT be path
+                    if (pathGrid[gapZ][gapX]) continue; // Gap must be Hole
+
+                    jokerPos = { x: targetX, z: targetZ };
+                    return;
+                }
+            }
+        }
+
+        function createBoard() {
+            const geometry = new THREE.BoxGeometry(TILE_SIZE - 1, 2, TILE_SIZE - 1);
+            
+            for (let z = 0; z < boardSize; z++) {
+                for (let x = 0; x < boardSize; x++) {
+                    const isJoker = jokerPos && (x === jokerPos.x && z === jokerPos.z);
+                    let char, score, texture;
+                    
+                    if (isJoker) {
+                        char = "J"; score = "0";
+                        texture = createScrabbleTexture(char, score, true);
+                    } else {
+                        char = letters[Math.floor(Math.random() * letters.length)];
+                        score = scrabbleScores[char];
+                        texture = createScrabbleTexture(char, score, false);
+                    }
+
+                    const isWhite = (x + z) % 2 === 0;
+                    const baseColor = isWhite ? 0x999999 : 0x777777; 
+
+                    const material = new THREE.MeshStandardMaterial({ map: texture, color: baseColor, roughness: 0.8 });
+                    const tile = new THREE.Mesh(geometry, material);
+                    tile.position.set(x * TILE_SIZE - boardOffset, -1, z * TILE_SIZE - boardOffset);
+                    tile.receiveShadow = true;
+                    tile.userData = { gridX: x, gridZ: z, baseColor: baseColor, isJoker: isJoker };
+                    scene.add(tile);
+                    tiles.push(tile);
+                }
+            }
+        }
+
+        function updateBoardVisuals(elapsed = 0) {
+            const isMemorizing = gameState === 'MEMORIZE';
+            
+            let stageColor = null;
+            let fadeVal = 1.0;
+
+            if (isMemorizing) {
+                if (elapsed < 1000) {
+                    stageColor = 0xff0000;
+                    fadeVal = 1.0 - (elapsed / 1000);
+                } else if (elapsed < 2000) {
+                    stageColor = 0xffff00;
+                    fadeVal = 1.0 - ((elapsed - 1000) / 1000);
+                } else if (elapsed < 3000) {
+                    stageColor = 0x00ff00;
+                    fadeVal = 1.0 - ((elapsed - 2000) / 1000);
+                } else {
+                    stageColor = 0x000000;
+                    fadeVal = 0;
+                }
+            }
+
+            tiles.forEach(tile => {
+                if (tile.userData.isIntro) return;
+
+                const x = tile.userData.gridX;
+                const z = tile.userData.gridZ;
+                const isPath = pathGrid[z][x];
+                const isJoker = tile.userData.isJoker;
+                
+                if (isMemorizing) {
+                    if (isPath) {
+                        const col = new THREE.Color(stageColor);
+                        tile.material.color = col; 
+                        const em = new THREE.Color(stageColor);
+                        em.multiplyScalar(fadeVal * 0.5);
+                        tile.material.emissive = em;
+                    } else if (isJoker) {
+                        tile.material.color.setHex(tile.userData.baseColor);
+                        tile.material.emissive.setHex(0x4400aa); 
+                    } else {
+                        tile.material.color.setHex(tile.userData.baseColor);
+                        tile.material.emissive.setHex(0x000000);
+                    }
+                } else {
+                    if (x === exitPos.x && z === exitPos.z) {
+                        tile.material.color.setHex(0x4ade80);
+                        tile.material.emissive.setHex(0x003300);
+                    } else if (x === startPos.x && z === startPos.z) {
+                        tile.material.color.setHex(0x555555);
+                        tile.material.emissive.setHex(0x000000);
+                    } else if (isJoker) {
+                        tile.material.color.setHex(tile.userData.baseColor);
+                        tile.material.emissive.setHex(0x220044); 
+                    } else {
+                        tile.material.color.setHex(tile.userData.baseColor);
+                        tile.material.emissive.setHex(0x000000);
+                    }
+                }
+            });
+        }
+
+        // --- Create Characters ---
+        function createCharacters() {
+            bluesGroup = new THREE.Group();
+            createMale(bluesGroup, 0x0000ff);
+            scene.add(bluesGroup);
+            
+            bibeeGroup = new THREE.Group();
+            createFemale(bibeeGroup);
+            scene.add(bibeeGroup);
+            
+            // Hide both initially
+            bluesGroup.visible = false;
+            bibeeGroup.visible = false;
+        }
+
+        function createMale(group, color) {
+            const skinMat = new THREE.MeshLambertMaterial({ color: 0xffdbac });
+            const clothesMat = new THREE.MeshLambertMaterial({ color: color });
+            const hairMat = new THREE.MeshLambertMaterial({ color: 0x5C4033 }); // Brown Hair
+            const eyeMat = new THREE.MeshLambertMaterial({ color: 0x3e2723 }); // Dark Brown Eyes
+            
+            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.35, 3.5, 16), clothesMat);
+            torso.position.y = 7.0; torso.castShadow = true;
+            group.add(torso);
+            
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.8, 32, 32), skinMat);
+            head.position.y = 9.2; head.castShadow = true;
+            group.add(head);
+            
+            // Beard
+            const beard = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 0.6, 16, 1, false, 0, Math.PI), hairMat);
+            beard.rotation.x = Math.PI / 8;
+            beard.position.set(0, 8.9, 0.35);
+            group.add(beard);
+            
+            // Hair
+            const hair = new THREE.Mesh(new THREE.SphereGeometry(0.82, 32, 32, 0, Math.PI * 2, 0, Math.PI/2.5), hairMat);
+            hair.position.y = 9.25;
+            hair.rotation.x = -Math.PI / 12;
+            group.add(hair);
+
+            // Eyes
+            const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), eyeMat);
+            leftEye.position.set(-0.25, 9.3, 0.7);
+            group.add(leftEye);
+
+            const rightEye = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), eyeMat);
+            rightEye.position.set(0.25, 9.3, 0.7);
+            group.add(rightEye);
+
+            function makeLimb(rTop, rBot, len) {
+                const g = new THREE.Group();
+                const l = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, len, 16), clothesMat);
+                l.position.y = -len / 2; l.castShadow = true;
+                g.add(l);
+                return g;
+            }
+            const leftLeg = makeLimb(0.18, 0.15, 3.8); leftLeg.position.set(-0.3, 5.2, 0); group.add(leftLeg);
+            const rightLeg = makeLimb(0.18, 0.15, 3.8); rightLeg.position.set(0.3, 5.2, 0); group.add(rightLeg);
+            const leftArm = makeLimb(0.15, 0.12, 3.2); leftArm.position.set(-0.7, 8.5, 0); group.add(leftArm);
+            const rightArm = makeLimb(0.15, 0.12, 3.2); rightArm.position.set(0.7, 8.5, 0); group.add(rightArm);
+            
+            group.userData.limbs = { LL: leftLeg, RL: rightLeg, LA: leftArm, RA: rightArm };
+        }
+
+        function createFemale(group) {
+            const skinMat = new THREE.MeshLambertMaterial({ color: 0xffdbac });
+            const dressMat = new THREE.MeshLambertMaterial({ color: 0x990000 });
+            dressMesh = dressMat; 
+            const hairMat = new THREE.MeshLambertMaterial({ color: 0x111111 });
+            const eyeMat = new THREE.MeshLambertMaterial({ color: 0x3e2723 });
+
+            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.3, 2.0, 16), dressMat);
+            torso.position.y = 7.0; torso.castShadow = true;
+            torsoMesh = torso.material;
+            group.add(torso);
+
+            const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 1.4, 3.2, 32), dressMat);
+            skirt.position.y = 4.4; skirt.castShadow = true;
+            group.add(skirt);
+
+            const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.5, 8), skinMat);
+            neck.position.y = 8.2; group.add(neck);
+
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.75, 32, 32), skinMat);
+            head.position.y = 8.8; head.castShadow = true;
+            group.add(head);
+
+            const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), eyeMat);
+            leftEye.position.set(-0.25, 8.9, 0.65); group.add(leftEye);
+            const rightEye = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), eyeMat);
+            rightEye.position.set(0.25, 8.9, 0.65); group.add(rightEye);
+            
+            const hairGroup = new THREE.Group();
+            hairGroup.position.y = 8.8;
+            const hairMain = new THREE.Mesh(new THREE.SphereGeometry(0.8, 32, 32, 0, Math.PI * 2, 0, Math.PI/1.8), hairMat);
+            hairMain.rotation.x = Math.PI / 1.1; hairMain.position.z = -0.1;
+            hairGroup.add(hairMain);
+            const bun = new THREE.Mesh(new THREE.SphereGeometry(0.6, 32, 32), hairMat);
+            bun.position.set(0, 0.3, -0.6); hairGroup.add(bun);
+            group.add(hairGroup);
+
+            function makeLimb(radiusTop, radiusBottom, length) {
+                const g = new THREE.Group();
+                const l = new THREE.Mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, length, 16), skinMat); 
+                l.position.y = -length / 2; l.castShadow = true;
+                g.add(l);
+                return g;
+            }
+
+            leftArm = makeLimb(0.12, 0.1, 2.8); leftArm.position.set(-0.5, 7.8, 0); leftArm.rotation.z = 0.2; group.add(leftArm);
+            rightArm = makeLimb(0.12, 0.1, 2.8); rightArm.position.set(0.5, 7.8, 0); rightArm.rotation.z = -0.2; group.add(rightArm);
+            leftLeg = makeLimb(0.18, 0.12, 3.0); leftLeg.position.set(-0.4, 3.5, 0); group.add(leftLeg);
+            rightLeg = makeLimb(0.18, 0.12, 3.0); rightLeg.position.set(0.4, 3.5, 0); group.add(rightLeg);
+            
+            group.userData.limbs = { LL: leftLeg, RL: rightLeg, LA: leftArm, RA: rightArm };
+        }
+
+        // --- Game Logic ---
+
+        function snapPlayerToGrid() {
+            if (gameState.startsWith('INTRO')) {
+                playerGroup.position.set(playerPos.x * TILE_SIZE, 0, playerPos.z * TILE_SIZE);
+                playerGroup.rotation.set(0, 0, 0); 
+                lastFacing = { dx: 0, dz: 1 };
+                updatePlayerFacing(); 
+            } else {
+                playerGroup.position.set(
+                    playerPos.x * TILE_SIZE - boardOffset,
+                    0,
+                    playerPos.z * TILE_SIZE - boardOffset
+                );
+                playerGroup.rotation.set(0, 0, 0); 
+                lastFacing = { dx: 0, dz: 1 };
+                updatePlayerFacing();
+            }
+            resetLimbs();
+        }
+        
+        function resetLimbs() {
+            if(!playerGroup || !playerGroup.userData.limbs) return;
+            const l = playerGroup.userData.limbs;
+            l.LL.rotation.x = 0; l.RL.rotation.x = 0;
+            l.LA.rotation.x = 0; l.RA.rotation.x = 0;
+        }
+
+        function updatePlayerFacing() {
+             const targetX = playerGroup.position.x + (lastFacing.dx * TILE_SIZE);
+             const targetZ = playerGroup.position.z + (lastFacing.dz * TILE_SIZE);
+             playerGroup.lookAt(targetX, playerGroup.position.y, targetZ);
+        }
+
+        function onKeyDown(event) {
+            if (event.code === 'Enter') {
+                if (gameState.startsWith('INTRO')) {
+                    startGameflow();
+                    return;
+                }
+                if (document.getElementById('message').style.display !== 'none') {
+                    nextLevel();
+                }
+                event.preventDefault();
+                return;
+            }
+
+            if (gameState !== 'PLAY') return;
+            if (isFalling) return;
+            
+            // Only input during move if double jumping
+            if (isMoving) {
+                if ((event.code === 'Space' || event.code === 'ShiftLeft' || event.code === 'ShiftRight') && canDoubleJump()) {
+                    performDoubleJump();
+                }
+                return;
+            }
+            
+            let dx = 0;
+            let dz = 0;
+            let jump = false;
+
+            switch(event.code) {
+                case 'ArrowUp': dz = -1; break;
+                case 'ArrowDown': dz = 1; break;
+                case 'ArrowLeft': dx = -1; break;
+                case 'ArrowRight': dx = 1; break;
+                case 'Space': case 'ShiftLeft': case 'ShiftRight': jump = true; break;
+                default: return;
+            }
+            
+            event.preventDefault();
+
+            if (jump) {
+                attemptMove(lastFacing.dx, lastFacing.dz, 2, 'JUMP');
+            } else if (dx !== 0 || dz !== 0) {
+                if (dx === -lastFacing.dx && dz === -lastFacing.dz) {
+                    lastFacing = { dx, dz };
+                    updatePlayerFacing();
+                } else {
+                    lastFacing = { dx, dz };
+                    attemptMove(dx, dz, 1, 'WALK');
+                }
+            }
+        }
+        
+        function canDoubleJump() {
+            return moveType === 'JUMP' && !hasDoubleJumped;
+        }
+
+        function performDoubleJump() {
+            hasDoubleJumped = true;
+            stepSound.currentTime = 0;
+            stepSound.play().catch(e => console.warn(e));
+            
+            const dx = lastFacing.dx;
+            const dz = lastFacing.dz;
+            
+            const nextTx = playerPos.x + (dx * 2);
+            const nextTz = playerPos.z + (dz * 2);
+            
+            if (nextTx < 0 || nextTx >= boardSize || nextTz < 0 || nextTz >= boardSize) return; 
+            
+            playerPos = { x: nextTx, z: nextTz };
+            
+            startVec.copy(playerGroup.position);
+            targetPos.set(nextTx * TILE_SIZE - boardOffset, 0, nextTz * TILE_SIZE - boardOffset);
+            
+            animStartTime = performance.now() / 1000;
+            moveDuration = 0.6; 
+        }
+        
+        function attemptMove(dx, dz, dist, type) {
+            const tx = playerPos.x + (dx * dist);
+            const tz = playerPos.z + (dz * dist);
+            
+            if (tx < 0 || tx >= boardSize || tz < 0 || tz >= boardSize) return;
+            
+            startMove(tx, tz, type);
+        }
+
+        let targetPos = new THREE.Vector3();
+        let startVec = new THREE.Vector3();
+        let animStartTime = 0;
+        let moveDuration = 0.4;
+
+        function startMove(tx, tz, type) {
+            isMoving = true;
+            moveType = type;
+            hasDoubleJumped = false; 
+            
+            if (!gameState.startsWith('INTRO')) {
+                moveCount++;
+                document.getElementById('move-count').innerText = moveCount;
+                stepSound.currentTime = 0;
+                stepSound.play().catch(e => console.warn(e));
+            }
+
+            startVec.copy(playerGroup.position);
+            
+            if (gameState.startsWith('INTRO')) {
+                targetPos.set(tx * TILE_SIZE, 0, tz * TILE_SIZE);
+                const dx = tx - playerPos.x;
+                const dz = tz - playerPos.z;
+                if(Math.abs(dx) > 0 || Math.abs(dz) > 0) {
+                    const dNormX = Math.sign(dx);
+                    const dNormZ = Math.sign(dz);
+                    lastFacing = {dx: dNormX, dz: dNormZ};
+                    updatePlayerFacing();
+                }
+            } else {
+                targetPos.set(tx * TILE_SIZE - boardOffset, 0, tz * TILE_SIZE - boardOffset);
+                updatePlayerFacing();
+            }
+            
+            playerPos = { x: tx, z: tz }; 
+            
+            if (type === 'JUMP') moveDuration = 0.8; 
+            else moveDuration = 0.4; 
+            
+            animStartTime = performance.now() / 1000;
+        }
+
+        function triggerJokerEffect() {
+            if (dressMesh) {
+                const randomColor = new THREE.Color(Math.random(), Math.random(), Math.random());
+                dressMesh.color = randomColor;
+                if (torsoMesh) torsoMesh.color = randomColor;
+            } else if (selectedCharacter === 'BLUES') {
+                playerGroup.traverse((child) => {
+                    if (child.isMesh && child.material && child.material.color.getHex() === 0x0000ff) {
+                         child.material.color.setHex(Math.random() * 0xffffff);
+                    }
+                });
+            }
+        }
+
+        function showEndMessage(title, body, color, actionText, actionVal) {
+            const msg = document.getElementById('message');
+            document.getElementById('msg-title').innerText = title;
+            document.getElementById('msg-title').style.color = color;
+            document.getElementById('msg-body').innerText = body;
+            document.getElementById('action-btn').innerText = actionText;
+            msg.style.display = 'block';
+            pendingLevelChange = actionVal;
+        }
+
+        function triggerFall() {
+            if(isFalling) return;
+            isMoving = false;
+            isFalling = true;
+            
+            screamSound.currentTime = 0;
+            screamSound.play().catch(e => console.warn(e));
+
+            animStartTime = performance.now() / 1000;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const now = performance.now();
+            
+            if(playerLantern) {
+                playerLantern.intensity = 0.8 + Math.sin(now * 0.02) * 0.1 + Math.random() * 0.1;
+            }
+
+            if (gameState.startsWith('INTRO')) {
+                if (gameState === 'INTRO_DANCE') {
+                    // Dance Animation
+                    // Bobbing
+                    const bob = Math.sin(now * 0.01) * 0.5;
+                    bibeeGroup.position.y = bob;
+                    bluesGroup.position.y = bob;
+                    
+                    // Spinning
+                    bibeeGroup.rotation.y += 0.05;
+                    bluesGroup.rotation.y -= 0.05;
+                    
+                    // Zoom In
+                    const danceCenter = introDancePos.clone().add(new THREE.Vector3(TILE_SIZE/2, 5, 0));
+                    const targetCamPos = introDancePos.clone().add(new THREE.Vector3(TILE_SIZE/2, 8, 15));
+                    camera.position.lerp(targetCamPos, 0.02);
+                    camera.lookAt(danceCenter);
+                } else {
+                    // Normal Intro Follow
+                    if(playerGroup) {
+                        const camTarget = playerGroup.position.clone();
+                        camTarget.y = 5; 
+                        const offsetX = 10;
+                        const offsetZ = 20; 
+                        camera.position.lerp(new THREE.Vector3(playerGroup.position.x + offsetX, 10, playerGroup.position.z + offsetZ), 0.05);
+                        camera.lookAt(camTarget);
+                    }
+                }
+            }
+            else if (gameState === 'INTRO_ZOOM_OUT') {
+                 const targetPos = new THREE.Vector3(introMessageCenter.x, 100, introMessageCenter.z + 10); 
+                 camera.position.lerp(targetPos, 0.02);
+                 camera.lookAt(introMessageCenter);
+            }
+            else if (gameState === 'MEMORIZE') {
+                const elapsed = now - startTime;
+                
+                updateBoardVisuals(elapsed);
+
+                const remaining = Math.max(0, MEMORIZE_TIME - elapsed);
+                const pct = (remaining / MEMORIZE_TIME) * 100;
+                document.getElementById('timer-fill').style.width = pct + "%";
+                
+                if (elapsed > MEMORIZE_TIME) {
+                    gameState = 'PLAY';
+                    document.getElementById('status-text').innerText = "Find your way.";
+                    updateBoardVisuals(); 
+                    playStartTime = now;
+                }
+            } else if (gameState === 'PLAY') {
+                if (!isFalling && !isMoving) {
+                    const timeElapsed = now - playStartTime;
+                    const currentRemaining = stageTimeLeft - timeElapsed;
+                    remainingTime = currentRemaining; // Update global tracking
+                    
+                    // Update Candle
+                    if(candleWax) {
+                        const pct = Math.max(0, currentRemaining / STAGE_TIME_LIMIT);
+                        candleWax.scale.y = pct;
+                        const newHeight = candleMaxHeight * pct;
+                        if(candleTop) candleTop.position.y = 10 + newHeight;
+                        if(candleFlame) {
+                            const s = 1.0 + Math.sin(now * 0.02)*0.1 + Math.random()*0.1;
+                            candleFlame.scale.set(s, s*2, s);
+                            if(pct < 0.1) candleFlame.visible = Math.random() > 0.5;
+                            else candleFlame.visible = true;
+                        }
+                    }
+                    
+                    // Update Text
+                    const secs = Math.ceil(Math.max(0, currentRemaining) / 1000);
+                    document.getElementById('candle-timer').innerText = secs;
+
+                    if (currentRemaining <= 0) {
+                        stageTimeLeft = 0;
+                        // Time Out Logic
+                        let failTitle = "TIME OUT";
+                        let failBody = "";
+                        let actionCode = 0;
+
+                        if (currentRankIndex > 0) {
+                            // Demote to previous rank
+                            failBody = `Too slow! Demoted to ${RANKS[currentRankIndex - 1]}.`;
+                            actionCode = -2;
+                        } else {
+                            // Restart game
+                            failBody = "Candle extinguished. Back to the start.";
+                            actionCode = -3;
+                        }
+
+                        showEndMessage(failTitle, failBody, "#ff5555", "Accept Fate", actionCode);
+                        gameState = 'GAME_OVER';
+                    }
+                    
+                    const pct = Math.max(0, (currentRemaining / STAGE_TIME_LIMIT) * 100);
+                    document.getElementById('timer-fill').style.width = pct + "%";
+                }
+            }
+
+            if (isMoving) {
+                const t = now / 1000;
+                const elapsed = t - animStartTime;
+                let prog = elapsed / moveDuration;
+
+                if (prog >= 1) {
+                    prog = 1; 
+                    playerGroup.position.copy(targetPos);
+                    isMoving = false;
+                    resetLimbs();
+                    
+                    if (!gameState.startsWith('INTRO')) {
+                        if (jokerPos && playerPos.x === jokerPos.x && playerPos.z === jokerPos.z) {
+                            triggerJokerEffect();
+                        }
+
+                        const isSafe = pathGrid[playerPos.z][playerPos.x] || 
+                                       (jokerPos && playerPos.x === jokerPos.x && playerPos.z === jokerPos.z);
+
+                        if (!isSafe) {
+                            triggerFall();
+                        }
+                        else if (playerPos.x === exitPos.x && playerPos.z === exitPos.z) {
+                            // Apply time usage
+                            stageTimeLeft = stageTimeLeft - (now - playStartTime);
+                            
+                            if (currentSubLevel === 4) {
+                                showEndMessage("PROMOTION", `Rank up: ${RANKS[Math.min(currentRankIndex+1, RANKS.length-1)]}`, "#ffd700", "Accept Rank", 1);
+                            } else {
+                                showEndMessage("Stage Clear", "Advancing...", "#4ade80", "Next Level", 1);
+                            }
+                            gameState = 'WIN';
+                        }
+                    }
+                } else {
+                    playerGroup.position.lerpVectors(startVec, targetPos, prog);
+                    let yHeight = 0;
+                    // Jump Arc Logic
+                    if (moveType === 'JUMP') {
+                        // Use parabola: 4 * h * x * (1-x)
+                        yHeight = 10 * (4 * prog * (1 - prog)); 
+                        // Add base height if double jumping to smooth it?
+                        // Simple sine is easier for standard jump:
+                         yHeight = Math.sin(prog * Math.PI) * 8;
+                    } else {
+                        yHeight = Math.abs(Math.sin(prog * Math.PI * 2)) * 1.5;
+                    }
+                    
+                    // Apply Double Jump Offset
+                    if (hasDoubleJumped) {
+                        // If we are double jumping, we want to start high
+                         yHeight += 5 * (1-prog); // decay
+                    }
+                    
+                    playerGroup.position.y = yHeight;
+
+                    // Animate Limbs
+                    if(playerGroup.userData.limbs) {
+                        const l = playerGroup.userData.limbs;
+                        const f = moveType === 'JUMP' ? 10 : 20;
+                        l.LL.rotation.x = Math.sin(elapsed * f);
+                        l.RL.rotation.x = -Math.sin(elapsed * f);
+                        l.LA.rotation.x = -Math.sin(elapsed * f);
+                        l.RA.rotation.x = Math.sin(elapsed * f);
+                    }
+                }
+            }
+
+            if (isFalling) {
+                const t = now / 1000;
+                const elapsed = t - animStartTime;
+                playerGroup.position.y -= elapsed * 2.5; 
+                playerGroup.rotation.x += 0.2;
+                
+                if (playerGroup.position.y < -50) {
+                    isFalling = false;
+                    playerGroup.visible = false;
+                    
+                    if (!gameState.startsWith('INTRO')) {
+                        if (currentSubLevel === 1 && currentRankIndex > 0) {
+                            showEndMessage("DISCHARGED", "Demoted to previous rank.", "#ff5555", "Accept Demotion", -1);
+                        } else if (currentSubLevel > 1) {
+                            showEndMessage("FAILURE", "Step back, soldier.", "#ff5555", "Retry", -1);
+                        } else {
+                            showEndMessage("FAILURE", "Try again, Recruit.", "#ff5555", "Retry", -1);
+                        }
+                        gameState = 'GAME_OVER';
+                    }
+                }
+            }
+
+            if (playerSpotLight && playerGroup) {
+                playerSpotLight.position.set(playerGroup.position.x, playerGroup.position.y + 60, playerGroup.position.z);
+                playerSpotLight.target.position.copy(playerGroup.position);
+            }
+
+            // Render both scenes
+            renderer.clear();
+            renderer.render(scene, camera);
+            renderer.clearDepth(); 
+            renderer.render(uiScene, uiCamera);
+        }
+
+        let isDragging = false;
+        let prevMouse = { x: 0, y: 0 };
+        let camAngle = 0;
+        let camDist = 100; 
+
+        function onMouseMove(e) {
+            if(gameState.startsWith('INTRO')) return; 
+            
+            if(isDragging) {
+                camAngle -= (e.offsetX - prevMouse.x) * 0.005;
+                const yHeight = camera.position.y; 
+                const r = Math.sqrt(camDist*camDist - yHeight*yHeight); 
+                camera.position.x = Math.sin(camAngle) * r;
+                camera.position.z = Math.cos(camAngle) * r;
+                camera.lookAt(0, 0, 0);
+                prevMouse = { x: e.offsetX, y: e.offsetY };
+            }
+        }
+        function onMouseUp() { isDragging = false; }
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            // Update UI Camera
+            const aspect = window.innerWidth / window.innerHeight;
+            const frustumSize = 600;
+            uiCamera.left = -frustumSize * aspect / 2;
+            uiCamera.right = frustumSize * aspect / 2;
+            uiCamera.top = frustumSize / 2;
+            uiCamera.bottom = -frustumSize / 2;
+            uiCamera.updateProjectionMatrix();
+        }
+
+        init();
+    </script>
+</body>
+</html>
