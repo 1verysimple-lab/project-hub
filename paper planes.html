@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paper Pilot Academy ✈️</title>
+    <style>
+        :root {
+            --sky-blue: #00a8ff;
+            --deep-space: #2f3640;
+            --cloud-white: #f5f6fa;
+            --caution-yellow: #fbc531;
+            --blueprint-blue: #192a56;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--cloud-white);
+            color: var(--deep-space);
+        }
+
+        /* HEADER */
+        header {
+            background-color: var(--sky-blue);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+        }
+
+        .tagline {
+            color: white;
+            font-size: 1.2rem;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+
+        /* MAIN CONTAINER */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* LEVEL SELECTOR */
+        .level-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .level-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 3px solid transparent;
+        }
+
+        .level-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .level-card.rookie { border-bottom: 5px solid #4cd137; }
+        .level-card.captain { border-bottom: 5px solid #00a8ff; }
+        .level-card.ace { border-bottom: 5px solid #e84118; }
+
+        .badge {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .level-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        /* WORKBENCH (INSTRUCTIONS) */
+        #workbench {
+            background-color: var(--blueprint-blue);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            display: none; /* Hidden by default */
+            border: 4px solid white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .blueprint-header {
+            border-bottom: 2px dashed var(--caution-yellow);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .step-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .step-list li {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-left: 4px solid var(--caution-yellow);
+            border-radius: 0 5px 5px 0;
+        }
+
+        .difficulty-meter {
+            display: inline-block;
+            padding: 5px 10px;
+            background: var(--caution-yellow);
+            color: var(--deep-space);
+            font-weight: bold;
+            border-radius: 5px;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        /* FLIGHT SIMULATION */
+        .flight-deck {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .launch-btn {
+            background-color: var(--caution-yellow);
+            color: var(--deep-space);
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #c2971d;
+            transition: all 0.1s;
+        }
+
+        .launch-btn:active {
+            transform: translateY(5px);
+            box-shadow: none;
+        }
+
+        /* ANIMATION */
+        #plane-icon {
+            position: fixed;
+            bottom: 20px;
+            left: -100px;
+            font-size: 3rem;
+            transition: none;
+            z-index: 100;
+        }
+
+        .fly-animation {
+            animation: flyAcross 2s ease-in-out forwards;
+        }
+
+        @keyframes flyAcross {
+            0% { left: -100px; bottom: 20px; transform: rotate(15deg); }
+            50% { left: 50%; bottom: 60%; transform: rotate(10deg); }
+            100% { left: 110%; bottom: 80%; transform: rotate(-5deg); }
+        }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>The Paper Pilot Academy</h1>
+    <div class="tagline">Fold. Launch. Soar.</div>
+</header>
+
+<div class="container">
+
+    <h2 style="text-align: center;">Choose Your Flight Class</h2>
+    
+    <div class="level-grid">
+        <div class="level-card rookie" onclick="loadPlane('rookie')">
+            <span class="badge">🥚</span>
+            <div class="level-title">The Rookie</div>
+            <p>First time? Start here.<br><strong>The Dart</strong></p>
+        </div>
+
+        <div class="level-card captain" onclick="loadPlane('captain')">
+            <span class="badge">🦅</span>
+            <div class="level-title">The Captain</div>
+            <p>Ready for tricks?<br><strong>The Nakamura Lock</strong></p>
+        </div>
+
+        <div class="level-card ace" onclick="loadPlane('ace')">
+            <span class="badge">🚀</span>
+            <div class="level-title">The Ace</div>
+            <p>World Record Designs.<br><strong>The Sky King</strong></p>
+        </div>
+    </div>
+
+    <div id="workbench">
+        <div class="blueprint-header">
+            <h2 id="plane-name">Select a Level</h2>
+            <div id="plane-difficulty" class="difficulty-meter">WAITING...</div>
+        </div>
+
+        <div id="instructions">
+            </div>
+
+        <div class="flight-deck">
+            <p>Finished folding? Test your virtual aerodynamics!</p>
+            <button class="launch-btn" onclick="launchPlane()">LAUNCH PLANE ✈️</button>
+        </div>
+    </div>
+
+</div>
+
+<div id="plane-icon">✈️</div>
+
+<script>
+    // DATA: The content for the planes
+    const planes = {
+        rookie: {
+            name: "The Dart",
+            difficulty: "Level: Easy",
+            steps: [
+                "<strong>Step 1:</strong> Fold your paper in half the long way (hotdog style). Open it back up.",
+                "<strong>Step 2:</strong> Fold the top two corners into the middle line.",
+                "<strong>Step 3:</strong> Don't stop! Fold those same top edges into the middle AGAIN. It should look very pointy.",
+                "<strong>Step 4:</strong> Fold the whole plane in half along that center line.",
+                "<strong>Step 5:</strong> Fold the wings down so they line up with the bottom of the plane.",
+                "<strong>Pro Tip:</strong> Throw this one hard and fast!"
+            ]
+        },
+        captain: {
+            name: "The Nakamura Lock",
+            difficulty: "Level: Medium",
+            steps: [
+                "<strong>Step 1:</strong> Fold paper in half (hotdog). Open it.",
+                "<strong>Step 2:</strong> Fold top corners to the center.",
+                "<strong>Step 3:</strong> Fold the big top triangle DOWN. It looks like an envelope now.",
+                "<strong>Step 4:</strong> Fold top corners in again... but leave 1 inch of the triangle poking out at the bottom!",
+                "<strong>Step 5 (THE LOCK):</strong> Fold that little bottom triangle UP to lock the flaps in place. Click!",
+                "<strong>Step 6:</strong> Fold the plane in half backwards.",
+                "<strong>Step 7:</strong> Create wings. Throw gently. It loves to float."
+            ]
+        },
+        ace: {
+            name: "The Sky King",
+            difficulty: "Level: Expert",
+            steps: [
+                "<strong>Step 1:</strong> Fold paper in half (hotdog). Open it.",
+                "<strong>Step 2:</strong> Fold corners to center. Then fold the peak down.",
+                "<strong>Step 3:</strong> Fold the top corners to the center again.",
+                "<strong>Step 4:</strong> This is tricky: Squish fold the nose to make it flat.",
+                "<strong>Step 5:</strong> Fold the plane in half.",
+                "<strong>Step 6:</strong> Wing angles are critical. Make them wide.",
+                "<strong>Pro Tip:</strong> This plane holds the world record for time in the air (29 seconds!). Throw it high up."
+            ]
+        }
+    };
+
+    // FUNCTION: Load the plane content
+    function loadPlane(level) {
+        const workbench = document.getElementById('workbench');
+        const title = document.getElementById('plane-name');
+        const meter = document.getElementById('plane-difficulty');
+        const list = document.getElementById('instructions');
+
+        // Show the workbench
+        workbench.style.display = 'block';
+        
+        // Scroll down to workbench slightly
+        workbench.scrollIntoView({behavior: "smooth"});
+
+        // Inject Content
+        title.innerText = planes[level].name;
+        meter.innerText = planes[level].difficulty;
+        
+        // clear old steps
+        list.innerHTML = '';
+
+        // add new steps
+        planes[level].steps.forEach(step => {
+            let li = document.createElement('li');
+            li.innerHTML = step;
+            list.appendChild(li);
+        });
+    }
+
+    // FUNCTION: Animation
+    function launchPlane() {
+        const plane = document.getElementById('plane-icon');
+        
+        // Reset animation
+        plane.classList.remove('fly-animation');
+        void plane.offsetWidth; // trigger reflow
+        
+        // Start animation
+        plane.classList.add('fly-animation');
+    }
+</script>
+
+</body>
+</html>
