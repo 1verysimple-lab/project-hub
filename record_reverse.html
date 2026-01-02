@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoiceMemo Pro</title>
+    
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111;
+            color: #eee;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #444; 
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555; 
+        }
+
+        .pulse-ring {
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback } = React;
+
+        // --- WAV Encoding Logic ---
+        const writeString = (view, offset, string) => {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        };
+
+        const floatTo16BitPCM = (output, offset, input) => {
+            for (let i = 0; i < input.length; i++, offset += 2) {
+                let s = Math.max(-1, Math.min(1, input[i]));
+                s = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                output.setInt16(offset, s, true);
+            }
+        };
+
+        const encodeWAV = (samples, sampleRate) => {
+            const buffer = new ArrayBuffer(44 + samples.length * 2);
+            const view = new DataView(buffer);
+
+            // RIFF identifier
+            writeString(view, 0, 'RIFF');
+            // file length
+            view.setUint32(4, 36 + samples.length * 2, true);
+            // RIFF type
+            writeString(view, 8, 'WAVE');
+            // format chunk identifier
+            writeString(view, 12, 'fmt ');
+            // format chunk length
+            view.setUint32(16, 16, true);
+            // sample format (raw)
+            view.setUint16(20, 1, true);
+            // channel count (mono)
+            view.setUint16(22, 1, true);
+            // sample rate
+            view.setUint32(24, sampleRate, true);
+            // byte rate (sample rate * block align)
+            view.setUint32(28, sampleRate * 2, true);
+            // block align (channel count * bytes per sample)
+            view.setUint16(32, 2, true);
+            // bits per sample
+            view.setUint16(34, 16, true);
+            // data chunk identifier
+            writeString(view, 36, 'data');
+            // data chunk length
+            view.setUint32(40, samples.length * 2, true);
+
+            floatTo16BitPCM(view, 44, samples);
+
+            return view;
+        };
+
+        const App = () => {
+            const [isRecording, setIsRecording] = useState(false);
+            const [isProcessing, setIsProcessing] = useState(false); // For loading state during reversal
+            const [duration, setDuration] = useState(0);
+            const [recordings, setRecordings] = useState([]);
+            const [audioLevel, setAudioLevel] = useState(0);
+            
+            // Refs for audio processing
+            const audioContextRef = useRef(null);
+            const processorRef = useRef(null);
+            const mediaStreamRef = useRef(null);
+            const audioInputRef = useRef(null);
+            const leftChannelDataRef = useRef([]);
+            const startTimeRef = useRef(null);
+            const timerIntervalRef = useRef(null);
+            const analyserRef = useRef(null);
+            const animationFrameRef = useRef(null);
+            
+            // IMPORTANT: Ref to store the actual sample rate when recording starts
+            const activeSampleRateRef = useRef(44100);
+
+            useEffect(() => {
+                lucide.createIcons();
+            }, [recordings, isRecording, isProcessing]);
+
+            const formatTime = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            };
+
+            const startRecording = async () => {
+                try {
+                    // Ensure previous context is closed if it exists (safety check)
+                    if (audioContextRef.current) {
+                        await audioContextRef.current.close();
+                    }
+
+                    leftChannelDataRef.current = [];
+                    
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaStreamRef.current = stream;
+
+                    // Initialize Audio Context
+                    audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+                    const context = audioContextRef.current;
+                    
+                    // Capture the ACTUAL sample rate of the device
+                    activeSampleRateRef.current = context.sampleRate;
+
+                    // Create Analyser for visualizer
+                    analyserRef.current = context.createAnalyser();
+                    analyserRef.current.fftSize = 256;
+
+                    // Create input source
+                    audioInputRef.current = context.createMediaStreamSource(stream);
+                    
+                    // Create ScriptProcessor (bufferSize, inputChannels, outputChannels)
+                    processorRef.current = context.createScriptProcessor(4096, 1, 1);
+
+                    // Connect graph
+                    audioInputRef.current.connect(analyserRef.current);
+                    analyserRef.current.connect(processorRef.current);
+                    processorRef.current.connect(context.destination);
+
+                    // Handle audio processing
+                    processorRef.current.onaudioprocess = (e) => {
+                        const left = e.inputBuffer.getChannelData(0);
+                        // Clone data because Chrome reuses buffers
+                        leftChannelDataRef.current.push(new Float32Array(left));
+                    };
+
+                    // Start Visualizer Loop
+                    const updateVisualizer = () => {
+                        if (!analyserRef.current) return;
+                        const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+                        analyserRef.current.getByteFrequencyData(dataArray);
+                        
+                        const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+                        setAudioLevel(average);
+                        
+                        if (isRecording) {
+                            animationFrameRef.current = requestAnimationFrame(updateVisualizer);
+                        }
+                    };
+                    updateVisualizer();
+
+                    // Start Timer
+                    startTimeRef.current = Date.now();
+                    timerIntervalRef.current = setInterval(() => {
+                        setDuration(Math.floor((Date.now() - startTimeRef.current) / 1000));
+                    }, 1000);
+
+                    setIsRecording(true);
+
+                } catch (err) {
+                    console.error("Error accessing microphone:", err);
+                    alert("Could not access microphone. Please check permissions.");
+                }
+            };
+
+            const stopRecording = () => {
+                if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+                if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+                setAudioLevel(0);
+
+                // Stop inputs
+                if (mediaStreamRef.current) {
+                    mediaStreamRef.current.getTracks().forEach(track => track.stop());
+                }
+                if (processorRef.current) {
+                    processorRef.current.disconnect();
+                    processorRef.current.onaudioprocess = null;
+                }
+                if (audioInputRef.current) audioInputRef.current.disconnect();
+                
+                // Close context explicitly when stopping to free resources
+                if (audioContextRef.current) {
+                    audioContextRef.current.close();
+                    audioContextRef.current = null;
+                }
+
+                // Process Audio Data
+                const leftBuffer = leftChannelDataRef.current;
+                let length = 0;
+                for (let i = 0; i < leftBuffer.length; i++) {
+                    length += leftBuffer[i].length;
+                }
+                const result = new Float32Array(length);
+                let offset = 0;
+                for (let i = 0; i < leftBuffer.length; i++) {
+                    result.set(leftBuffer[i], offset);
+                    offset += leftBuffer[i].length;
+                }
+
+                // Encode to WAV using the captured sample rate
+                const sampleRate = activeSampleRateRef.current || 44100;
+                const wavData = encodeWAV(result, sampleRate);
+                const blob = new Blob([wavData], { type: 'audio/wav' });
+                const url = URL.createObjectURL(blob);
+
+                // Save to state
+                const newRecording = {
+                    id: Date.now(),
+                    url: url,
+                    duration: duration,
+                    name: `Recording ${recordings.length + 1}`,
+                    date: new Date().toLocaleString(),
+                    sampleRate: sampleRate
+                };
+
+                setRecordings(prev => [newRecording, ...prev]);
+                setIsRecording(false);
+                setDuration(0);
+            };
+
+            // --- REVERSE LOGIC ---
+            const createReversedCopy = async (originalRec) => {
+                setIsProcessing(true);
+                let tempCtx = null;
+                try {
+                    // 1. Fetch the audio data from the blob URL
+                    const response = await fetch(originalRec.url);
+                    const arrayBuffer = await response.arrayBuffer();
+
+                    // 2. Decode the audio data
+                    // We create a temporary context just for decoding
+                    tempCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const audioBuffer = await tempCtx.decodeAudioData(arrayBuffer);
+
+                    // 3. Get channel data and reverse it
+                    const channelData = audioBuffer.getChannelData(0); // Mono
+                    channelData.reverse();
+
+                    // 4. Re-encode to WAV
+                    const wavData = encodeWAV(channelData, tempCtx.sampleRate);
+                    const blob = new Blob([wavData], { type: 'audio/wav' });
+                    const url = URL.createObjectURL(blob);
+
+                    // 5. Add to list
+                    const newRecording = {
+                        id: Date.now(),
+                        url: url,
+                        duration: originalRec.duration,
+                        name: `${originalRec.name} (Rev)`,
+                        date: new Date().toLocaleString()
+                    };
+                    
+                    setRecordings(prev => [newRecording, ...prev]);
+                    
+                } catch (e) {
+                    console.error("Reversal failed", e);
+                    alert("Failed to reverse audio. The file might be corrupted or too large.");
+                } finally {
+                    // CRITICAL: Close the context to prevent "max AudioContext" errors
+                    if (tempCtx) {
+                        tempCtx.close();
+                    }
+                    setIsProcessing(false);
+                }
+            };
+
+            const deleteRecording = (id) => {
+                setRecordings(prev => prev.filter(rec => rec.id !== id));
+            };
+
+            return (
+                <div className="min-h-screen bg-neutral-950 text-neutral-200 flex flex-col max-w-md mx-auto shadow-2xl overflow-hidden border-x border-neutral-800">
+                    
+                    {/* Header */}
+                    <div className="p-6 pt-8 bg-neutral-900 border-b border-neutral-800">
+                        <h1 className="text-xl font-semibold tracking-wide text-white">VoiceMemo Pro</h1>
+                        <p className="text-xs text-neutral-500 mt-1 uppercase tracking-wider">WAV Recorder & Reverser</p>
+                    </div>
+
+                    {/* Main Control Area */}
+                    <div className="flex-1 flex flex-col items-center justify-center p-8 bg-neutral-950 relative">
+                        
+                        {/* Timer */}
+                        <div className="text-6xl font-mono font-light tracking-tighter text-white mb-12 tabular-nums">
+                            {formatTime(duration)}
+                        </div>
+
+                        {/* Visualizer Circle */}
+                        <div className="relative mb-12">
+                            {/* Outer glow ring based on volume */}
+                            <div 
+                                className={`absolute inset-0 rounded-full transition-all duration-75 ease-out ${isRecording ? 'bg-red-900/30' : ''}`}
+                                style={{ 
+                                    transform: `scale(${1 + (audioLevel / 50)})`,
+                                    opacity: isRecording ? 0.6 : 0 
+                                }}
+                            />
+                            
+                            <button 
+                                onClick={isRecording ? stopRecording : startRecording}
+                                disabled={isProcessing}
+                                className={`relative z-10 w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-neutral-800 ${
+                                    isRecording 
+                                    ? 'bg-neutral-800 text-red-500 scale-95' 
+                                    : 'bg-red-600 text-white hover:bg-red-500 active:scale-95 shadow-lg shadow-red-900/20'
+                                } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                {isRecording ? (
+                                    <div className="w-8 h-8 bg-current rounded-sm" />
+                                ) : (
+                                    <div className="w-8 h-8 bg-current rounded-full" />
+                                )}
+                            </button>
+                        </div>
+                        
+                        <div className="h-8">
+                            {isRecording && (
+                                <span className="text-red-500 text-sm font-medium animate-pulse flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                                    RECORDING
+                                </span>
+                            )}
+                            {isProcessing && (
+                                <span className="text-blue-500 text-sm font-medium animate-pulse flex items-center gap-2">
+                                    <i data-lucide="loader" className="w-4 h-4 animate-spin"></i>
+                                    PROCESSING
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Recordings List */}
+                    <div className="bg-neutral-900 flex-1 border-t border-neutral-800 flex flex-col h-1/2">
+                        <div className="p-4 border-b border-neutral-800 bg-neutral-900 z-10 sticky top-0">
+                            <h2 className="text-sm font-medium text-neutral-400 uppercase tracking-wider">Saved Recordings</h2>
+                        </div>
+                        
+                        <div className="overflow-y-auto flex-1 p-2 space-y-2">
+                            {recordings.length === 0 ? (
+                                <div className="p-8 text-center text-neutral-600 text-sm italic">
+                                    No recordings yet.
+                                </div>
+                            ) : (
+                                recordings.map(rec => (
+                                    <div key={rec.id} className="bg-neutral-800/50 rounded-lg p-3 flex flex-col gap-3 group hover:bg-neutral-800 transition-colors border border-transparent hover:border-neutral-700">
+                                        
+                                        {/* Top Row: Info */}
+                                        <div className="flex items-center justify-between">
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <h3 className="font-medium text-neutral-200 truncate max-w-[150px]">{rec.name}</h3>
+                                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-700 text-neutral-400">WAV</span>
+                                                </div>
+                                                <p className="text-xs text-neutral-500 mt-1">
+                                                    {rec.date} • {formatTime(rec.duration)}
+                                                </p>
+                                            </div>
+                                            
+                                            {/* Delete Button (moved to top right) */}
+                                            <button 
+                                                onClick={() => deleteRecording(rec.id)}
+                                                className="p-1.5 text-neutral-600 hover:text-red-400 transition-colors"
+                                                title="Delete"
+                                            >
+                                                <i data-lucide="x" className="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+
+                                        {/* Bottom Row: Controls */}
+                                        <div className="flex items-center justify-between gap-3 bg-neutral-900/50 p-2 rounded">
+                                            <audio src={rec.url} controls className="h-8 w-full opacity-90" />
+                                            
+                                            <div className="flex gap-1 shrink-0">
+                                                <button 
+                                                    onClick={() => createReversedCopy(rec)}
+                                                    className="p-2 text-neutral-400 hover:text-blue-400 hover:bg-neutral-700 rounded transition-colors"
+                                                    title="Create Reversed Copy"
+                                                >
+                                                    <i data-lucide="rewind" className="w-4 h-4"></i>
+                                                </button>
+                                                
+                                                <a 
+                                                    href={rec.url} 
+                                                    download={`${rec.name}.wav`}
+                                                    className="p-2 text-neutral-400 hover:text-green-400 hover:bg-neutral-700 rounded transition-colors"
+                                                    title="Download"
+                                                >
+                                                    <i data-lucide="download" className="w-4 h-4"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
