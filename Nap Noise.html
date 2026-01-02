@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nap Architect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Range Slider Styling for that 'Brutalist' feel */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            background: #e5e7eb; /* gray-200 */
+            margin-top: -8px;
+            border: 2px solid #111827; /* gray-900 */
+            border-radius: 0;
+            cursor: pointer;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #4b5563; /* gray-600 */
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        /* Active state for presets */
+        .preset-active {
+            border-color: #10b981; /* emerald-500 */
+            color: #10b981;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-300 font-mono min-h-screen flex flex-col items-center justify-center p-4 selection:bg-emerald-900 selection:text-white">
+
+    <div class="w-full max-w-md bg-gray-900 border-2 border-gray-800 p-6 shadow-2xl relative">
+        <!-- Header -->
+        <div class="flex justify-between items-end mb-8 border-b border-gray-800 pb-4">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tighter text-white">NAP ARCHITECT</h1>
+                <p class="text-xs text-gray-500">BINAURAL NOISE SYNTHESIS</p>
+            </div>
+            <div id="status-indicator" class="w-3 h-3 rounded-full bg-red-900 transition-colors duration-500"></div>
+        </div>
+
+        <!-- Master Control -->
+        <div class="mb-8">
+            <button id="toggle-btn" class="w-full py-4 bg-emerald-900 hover:bg-emerald-800 text-emerald-100 font-bold tracking-widest transition-all border border-emerald-700 uppercase">
+                Initialize Engine
+            </button>
+        </div>
+
+        <!-- Channel A: The Floor -->
+        <div class="mb-6 p-4 border border-gray-800 bg-gray-900/50">
+            <div class="flex justify-between mb-2">
+                <span class="text-sm font-bold text-gray-400">CH.A [FLOOR]</span>
+                <span class="text-xs text-emerald-500/50">RUMBLE</span>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <label>GAIN</label>
+                        <span id="val-vol-a">50%</span>
+                    </div>
+                    <input type="range" id="vol-a" min="0" max="1" step="0.01" value="0.5">
+                </div>
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <label>COLOR (LPF)</label>
+                        <span id="val-filter-a">200 Hz</span>
+                    </div>
+                    <input type="range" id="filter-a" min="50" max="1000" step="10" value="200">
+                </div>
+            </div>
+        </div>
+
+        <!-- Channel B: The Ceiling -->
+        <div class="mb-6 p-4 border border-gray-800 bg-gray-900/50">
+            <div class="flex justify-between mb-2">
+                <span class="text-sm font-bold text-gray-400">CH.B [CEILING]</span>
+                <span class="text-xs text-blue-500/50">AIR</span>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <label>GAIN</label>
+                        <span id="val-vol-b">30%</span>
+                    </div>
+                    <input type="range" id="vol-b" min="0" max="1" step="0.01" value="0.3">
+                </div>
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <label>COLOR (HPF)</label>
+                        <span id="val-filter-b">1500 Hz</span>
+                    </div>
+                    <input type="range" id="filter-b" min="500" max="5000" step="50" value="1500">
+                </div>
+            </div>
+        </div>
+
+        <!-- The Pattern (LFO) -->
+        <div class="mb-6 p-4 border border-gray-800 bg-gray-900/50">
+            <div class="flex justify-between mb-2">
+                <span class="text-sm font-bold text-gray-400">DRIFT (LFO)</span>
+                <span class="text-xs text-purple-500/50">MODULATION</span>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <label>DEPTH</label>
+                        <span id="val-lfo-depth">0%</span>
+                    </div>
+                    <input type="range" id="lfo-depth" min="0" max="0.5" step="0.01" value="0">
+                </div>
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <label>SPEED</label>
+                        <span id="val-lfo-speed">0.1 Hz</span>
+                    </div>
+                    <input type="range" id="lfo-speed" min="0.05" max="1" step="0.01" value="0.1">
+                </div>
+            </div>
+        </div>
+
+        <!-- Utilities: Timer & Presets -->
+        <div class="grid grid-cols-2 gap-4">
+            <!-- Timer -->
+            <div class="p-4 border border-gray-800">
+                <span class="text-xs font-bold text-gray-500 block mb-2">SLEEP TIMER</span>
+                <div class="flex gap-2">
+                    <button onclick="setTimer(15)" class="flex-1 py-1 bg-gray-800 hover:bg-gray-700 text-xs border border-gray-700">15m</button>
+                    <button onclick="setTimer(30)" class="flex-1 py-1 bg-gray-800 hover:bg-gray-700 text-xs border border-gray-700">30m</button>
+                    <button onclick="setTimer(60)" class="flex-1 py-1 bg-gray-800 hover:bg-gray-700 text-xs border border-gray-700">1h</button>
+                </div>
+                <div id="timer-display" class="mt-2 text-center text-emerald-500 font-mono text-sm h-5">--:--</div>
+            </div>
+
+            <!-- Preset Save -->
+            <div class="p-4 border border-gray-800">
+                <span class="text-xs font-bold text-gray-500 block mb-2">PRESETS</span>
+                <div class="flex gap-2 mb-2">
+                    <input type="text" id="preset-name" placeholder="Name" class="w-full bg-gray-800 border border-gray-700 text-xs p-1 px-2 text-white focus:outline-none focus:border-emerald-600">
+                    <button onclick="savePreset()" class="bg-gray-700 px-2 text-xs hover:bg-gray-600">+</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Preset List -->
+        <div id="preset-list" class="mt-4 flex flex-wrap gap-2 justify-center">
+            <!-- Presets injected here -->
+        </div>
+
+        <div class="mt-8 text-center">
+             <p class="text-[10px] text-gray-600 uppercase tracking-widest">Built by Blues &middot; Sitges</p>
+        </div>
+    </div>
+
+    <script>
+        // --- Audio Context & Nodes ---
+        let audioCtx;
+        let isPlaying = false;
+        
+        // Nodes
+        let noiseBuffer;
+        let srcA, gainA, filterA;
+        let srcB, gainB, filterB;
+        let lfoOsc, lfoGain;
+        let masterGain;
+
+        // Timer
+        let timerInterval;
+        let fadeInterval;
+
+        // --- Core Audio Logic ---
+
+        function initAudio() {
+            if (audioCtx) return;
+            
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+
+            // 1. Create White Noise Buffer (5 seconds)
+            const bufferSize = audioCtx.sampleRate * 5;
+            noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1; // White noise: -1 to 1
+            }
+
+            // 2. Setup Master Stage
+            masterGain = audioCtx.createGain();
+            masterGain.connect(audioCtx.destination);
+            masterGain.gain.value = 1;
+
+            console.log("Audio Engine Initialized");
+        }
+
+        function createGraph() {
+            // -- Channel A (Floor) --
+            // Source -> Filter (Lowpass) -> Gain -> Master
+            srcA = audioCtx.createBufferSource();
+            srcA.buffer = noiseBuffer;
+            srcA.loop = true;
+
+            filterA = audioCtx.createBiquadFilter();
+            filterA.type = 'lowpass';
+            filterA.frequency.value = parseFloat(document.getElementById('filter-a').value);
+
+            gainA = audioCtx.createGain();
+            gainA.gain.value = parseFloat(document.getElementById('vol-a').value);
+
+            srcA.connect(filterA).connect(gainA).connect(masterGain);
+
+            // -- Channel B (Ceiling) --
+            // Source -> Filter (Highpass) -> Gain -> Master
+            srcB = audioCtx.createBufferSource();
+            srcB.buffer = noiseBuffer;
+            srcB.loop = true;
+
+            filterB = audioCtx.createBiquadFilter();
+            filterB.type = 'highpass'; // Or bandpass for more texture
+            filterB.frequency.value = parseFloat(document.getElementById('filter-b').value);
+
+            gainB = audioCtx.createGain();
+            gainB.gain.value = parseFloat(document.getElementById('vol-b').value);
+
+            srcB.connect(filterB).connect(gainB).connect(masterGain);
+
+            // -- LFO (Modulation) --
+            // Oscillator -> Gain (Depth) -> Channel B Gain.gain
+            lfoOsc = audioCtx.createOscillator();
+            lfoOsc.type = 'sine';
+            lfoOsc.frequency.value = parseFloat(document.getElementById('lfo-speed').value);
+
+            lfoGain = audioCtx.createGain();
+            lfoGain.gain.value = parseFloat(document.getElementById('lfo-depth').value);
+
+            // Connect LFO to Channel B volume for "Drifting" effect
+            lfoOsc.connect(lfoGain).connect(gainB.gain);
+
+            srcA.start();
+            srcB.start();
+            lfoOsc.start();
+        }
+
+        function destroyGraph() {
+            if (srcA) { srcA.stop(); srcA.disconnect(); }
+            if (srcB) { srcB.stop(); srcB.disconnect(); }
+            if (lfoOsc) { lfoOsc.stop(); lfoOsc.disconnect(); }
+            // Keep context alive, just kill nodes
+        }
+
+        // --- UI Interactions ---
+
+        const toggleBtn = document.getElementById('toggle-btn');
+        const statusInd = document.getElementById('status-indicator');
+
+        toggleBtn.addEventListener('click', async () => {
+            if (!audioCtx) {
+                initAudio();
+            }
+
+            if (audioCtx.state === 'suspended') {
+                await audioCtx.resume();
+            }
+
+            if (!isPlaying) {
+                // START
+                createGraph();
+                toggleBtn.textContent = "STOP ENGINE";
+                toggleBtn.classList.replace('bg-emerald-900', 'bg-red-900');
+                toggleBtn.classList.replace('text-emerald-100', 'text-red-100');
+                toggleBtn.classList.replace('border-emerald-700', 'border-red-700');
+                statusInd.classList.replace('bg-red-900', 'bg-emerald-500');
+                statusInd.classList.add('shadow-[0_0_10px_#10b981]');
+                isPlaying = true;
+            } else {
+                // STOP
+                destroyGraph();
+                clearInterval(timerInterval);
+                clearInterval(fadeInterval);
+                document.getElementById('timer-display').innerText = "--:--";
+                toggleBtn.textContent = "START ENGINE";
+                toggleBtn.classList.replace('bg-red-900', 'bg-emerald-900');
+                toggleBtn.classList.replace('text-red-100', 'text-emerald-100');
+                toggleBtn.classList.replace('border-red-700', 'border-emerald-700');
+                statusInd.classList.replace('bg-emerald-500', 'bg-red-900');
+                statusInd.classList.remove('shadow-[0_0_10px_#10b981]');
+                masterGain.gain.value = 1; // Reset master gain in case fade out happened
+                isPlaying = false;
+            }
+        });
+
+        // --- Real-time Parameter Updates ---
+
+        // Helper to bind slider to AudioParam and Label
+        function bindControl(id, labelId, paramObj, paramName, suffix = '') {
+            const el = document.getElementById(id);
+            const label = document.getElementById(labelId);
+            el.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                label.textContent = suffix === '%' ? Math.round(val * 100) + '%' : val + suffix;
+                
+                // Audio Param update
+                if (isPlaying && paramObj) {
+                    // Handle nested params (like filter.frequency) or direct params
+                    if (paramObj[paramName] instanceof AudioParam) {
+                        paramObj[paramName].cancelScheduledValues(audioCtx.currentTime);
+                        paramObj[paramName].setValueAtTime(val, audioCtx.currentTime);
+                    }
+                }
+            });
+        }
+
+        // Since nodes are created/destroyed, we look them up dynamically in the event listener
+        // Or we just update global variables.
+        
+        document.getElementById('vol-a').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            document.getElementById('val-vol-a').textContent = Math.round(val * 100) + '%';
+            if (gainA) gainA.gain.setTargetAtTime(val, audioCtx.currentTime, 0.1);
+        });
+
+        document.getElementById('filter-a').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            document.getElementById('val-filter-a').textContent = val + ' Hz';
+            if (filterA) filterA.frequency.setTargetAtTime(val, audioCtx.currentTime, 0.1);
+        });
+
+        document.getElementById('vol-b').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            document.getElementById('val-vol-b').textContent = Math.round(val * 100) + '%';
+            if (gainB) gainB.gain.setTargetAtTime(val, audioCtx.currentTime, 0.1);
+        });
+
+        document.getElementById('filter-b').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            document.getElementById('val-filter-b').textContent = val + ' Hz';
+            if (filterB) filterB.frequency.setTargetAtTime(val, audioCtx.currentTime, 0.1);
+        });
+
+        document.getElementById('lfo-depth').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            document.getElementById('val-lfo-depth').textContent = Math.round(val * 100) + '%';
+            if (lfoGain) lfoGain.gain.setTargetAtTime(val, audioCtx.currentTime, 0.1);
+        });
+
+        document.getElementById('lfo-speed').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            document.getElementById('val-lfo-speed').textContent = val + ' Hz';
+            if (lfoOsc) lfoOsc.frequency.setTargetAtTime(val, audioCtx.currentTime, 0.1);
+        });
+
+
+        // --- Timer Logic ---
+        
+        function setTimer(minutes) {
+            if (!isPlaying) return; // Only if running
+            
+            clearInterval(timerInterval);
+            clearInterval(fadeInterval);
+            
+            // Reset master gain
+            masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+            masterGain.gain.setValueAtTime(1, audioCtx.currentTime);
+
+            let secondsLeft = minutes * 60;
+            const display = document.getElementById('timer-display');
+            
+            updateTimerDisplay(secondsLeft, display);
+
+            timerInterval = setInterval(() => {
+                secondsLeft--;
+                updateTimerDisplay(secondsLeft, display);
+
+                // Start fade out in last 30 seconds
+                if (secondsLeft === 30) {
+                   masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 30);
+                }
+
+                if (secondsLeft <= 0) {
+                    clearInterval(timerInterval);
+                    toggleBtn.click(); // Stop engine
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay(seconds, element) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            element.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        // --- Preset Management (LocalStorage) ---
+
+        const PRESET_KEY = 'nap_architect_presets';
+
+        function getSettings() {
+            return {
+                volA: document.getElementById('vol-a').value,
+                filterA: document.getElementById('filter-a').value,
+                volB: document.getElementById('vol-b').value,
+                filterB: document.getElementById('filter-b').value,
+                lfoDepth: document.getElementById('lfo-depth').value,
+                lfoSpeed: document.getElementById('lfo-speed').value
+            };
+        }
+
+        function applySettings(settings) {
+            document.getElementById('vol-a').value = settings.volA;
+            document.getElementById('filter-a').value = settings.filterA;
+            document.getElementById('vol-b').value = settings.volB;
+            document.getElementById('filter-b').value = settings.filterB;
+            document.getElementById('lfo-depth').value = settings.lfoDepth;
+            document.getElementById('lfo-speed').value = settings.lfoSpeed;
+
+            // Trigger input events to update UI text and Audio Params
+            ['vol-a', 'filter-a', 'vol-b', 'filter-b', 'lfo-depth', 'lfo-speed'].forEach(id => {
+                document.getElementById(id).dispatchEvent(new Event('input'));
+            });
+        }
+
+        function savePreset() {
+            const name = document.getElementById('preset-name').value.trim();
+            if (!name) return;
+
+            const presets = JSON.parse(localStorage.getItem(PRESET_KEY) || '{}');
+            presets[name] = getSettings();
+            localStorage.setItem(PRESET_KEY, JSON.stringify(presets));
+            
+            document.getElementById('preset-name').value = '';
+            renderPresets();
+        }
+
+        function loadPreset(name) {
+            const presets = JSON.parse(localStorage.getItem(PRESET_KEY) || '{}');
+            if (presets[name]) {
+                applySettings(presets[name]);
+            }
+        }
+        
+        function deletePreset(name, event) {
+            event.stopPropagation(); // prevent loading
+            const presets = JSON.parse(localStorage.getItem(PRESET_KEY) || '{}');
+            delete presets[name];
+            localStorage.setItem(PRESET_KEY, JSON.stringify(presets));
+            renderPresets();
+        }
+
+        function renderPresets() {
+            const container = document.getElementById('preset-list');
+            const presets = JSON.parse(localStorage.getItem(PRESET_KEY) || '{}');
+            container.innerHTML = '';
+
+            // Add default preset
+            const defaults = { volA: 0.5, filterA: 200, volB: 0.3, filterB: 1500, lfoDepth: 0, lfoSpeed: 0.1 };
+            // We don't save default, just offer a reset button essentially? No, let's just list saved ones.
+
+            if (Object.keys(presets).length === 0) {
+                container.innerHTML = '<span class="text-xs text-gray-600 italic">No user presets.</span>';
+                return;
+            }
+
+            for (const name in presets) {
+                const tag = document.createElement('div');
+                tag.className = 'group flex items-center bg-gray-800 border border-gray-700 text-xs px-2 py-1 cursor-pointer hover:border-emerald-500 transition-colors';
+                tag.onclick = () => loadPreset(name);
+                
+                tag.innerHTML = `
+                    <span class="mr-2 text-gray-300 group-hover:text-white">${name}</span>
+                    <span class="text-gray-600 hover:text-red-400 font-bold px-1" onclick="deletePreset('${name}', event)">&times;</span>
+                `;
+                container.appendChild(tag);
+            }
+        }
+
+        // Init
+        renderPresets();
+
+    </script>
+</body>
+</html>
