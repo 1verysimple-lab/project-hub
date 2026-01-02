@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Polarity V8: Organic Chaos</title>
+    <style>
+        body {
+            margin: 0; padding: 0;
+            background-color: #cfd8dc;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden; touch-action: none; user-select: none;
+        }
+
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 10;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+
+        .score-board {
+            display: flex; justify-content: center; gap: 40px;
+            padding-top: 20px;
+            font-weight: bold; font-size: 1.5rem;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.5);
+        }
+        
+        .p1-box { color: #00695c; opacity: 0.4; transition: all 0.3s; }
+        .p2-box { color: #d84315; opacity: 0.4; transition: all 0.3s; }
+        .active-turn { opacity: 1 !important; transform: scale(1.15); text-decoration: underline; }
+
+        #turn-bar {
+            width: 100%; height: 60px;
+            background: #333; color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; font-weight: bold;
+            transition: background-color 0.3s;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.2);
+        }
+
+        #controls {
+            position: absolute; bottom: 80px; width: 100%;
+            text-align: center; pointer-events: auto; z-index: 20;
+        }
+        button {
+            background: #fff; color: #333; border: 2px solid #333;
+            padding: 10px 20px; font-weight: bold; cursor: pointer;
+            border-radius: 25px; font-size: 1rem;
+            box-shadow: 0 4px 0 #333;
+        }
+        button:active { transform: translateY(4px); box-shadow: none; }
+
+        .penalty-text {
+            position: absolute; color: #d32f2f; font-weight: 900; font-size: 3rem;
+            animation: floatUp 0.8s ease-out forwards; pointer-events: none; z-index: 30;
+            text-shadow: 2px 2px 0px white;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.5); opacity: 0; }
+            50% { transform: translateY(-30px) scale(1.2); opacity: 1; }
+            100% { transform: translateY(-80px) scale(1); opacity: 0; }
+        }
+
+        .ripple {
+            position: absolute; border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.8);
+            width: 20px; height: 20px;
+            pointer-events: none; z-index: 5;
+            animation: rippleAnim 0.5s ease-out forwards;
+        }
+        @keyframes rippleAnim {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(4); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="ui-layer">
+    <div class="score-board">
+        <div id="p1-score" class="p1-box active-turn">Blues: 10</div>
+        <div id="p2-score" class="p2-box">Bianca: 10</div>
+    </div>
+    <div id="turn-bar" style="background-color: #00695c;">
+        Blues' Turn
+    </div>
+</div>
+
+<div id="controls">
+    <button onclick="resetGame()">NEW ROUND</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+
+<script>
+    const Engine = Matter.Engine,
+          Render = Matter.Render,
+          Runner = Matter.Runner,
+          Bodies = Matter.Bodies,
+          Composite = Matter.Composite,
+          Events = Matter.Events,
+          Vector = Matter.Vector,
+          Body = Matter.Body;
+
+    // --- SETUP ---
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    const minDim = Math.min(window.innerWidth, window.innerHeight);
+
+    // Base radius size (approx 36% of screen)
+    const BASE_RADIUS = minDim * 0.36;
+
+    const CONFIG = {
+        magnetLength: minDim * 0.12, 
+        magnetWidth: minDim * 0.045,
+        poleOffset: minDim * 0.018,
+        strength: 0.9,       
+        rangeCutoff: 60000, 
+        frictionAir: 0.25,   
+        density: 0.3
+    };
+
+    // --- ENGINE ---
+    const engine = Engine.create();
+    engine.world.gravity.y = 0;
+    engine.positionIterations = 10; 
+    engine.velocityIterations = 10;
+
+    const render = Render.create({
+        element: document.body,
+        engine: engine,
+        options: {
+            width: window.innerWidth,
+            height: window.innerHeight,
+            wireframes: false,
+            background: 'transparent',
+            pixelRatio: window.devicePixelRatio
+        }
+    });
+
+    // --- GAME STATE ---
+    let magnets = [];
+    let turn = 1; 
+    let p1Count = 10;
+    let p2Count = 10;
+    let inputLocked = false;
+    let turnTimer = null;
+    let ropeParts = [];
+    
+    // Shape Randomizers
+    let shapeSeedA = Math.random();
+    let shapeSeedB = Math.random();
+    let shapePhase = Math.random() * Math.PI;
+
+    // --- ORGANIC ROPE GENERATION ---
+    // Returns the radius of the boundary at a specific angle theta
+    function getBoundaryRadius(theta) {
+        // We compose a shape using the base radius plus two sine waves of different frequencies
+        // This creates a blob that always connects back to itself perfectly.
+        const variation = BASE_RADIUS * 0.15; // How much it can bulge in/out
+        
+        // Use integers for frequency to ensure closed loop (3 and 5 are good irregular numbers)
+        const wave1 = Math.sin(theta * 3 + shapePhase) * variation * shapeSeedA;
+        const wave2 = Math.sin(theta * 5 - shapePhase) * variation * shapeSeedB;
+        
+        return BASE_RADIUS + wave1 + wave2;
+    }
+
+    function createRope() {
+        Composite.remove(engine.world, ropeParts);
+        ropeParts = [];
+        
+        // Randomize the shape parameters for this round
+        shapeSeedA = 0.5 + Math.random() * 0.5; // Magnitude 0.5 to 1.0
+        shapeSeedB = 0.5 + Math.random() * 0.5;
+        shapePhase = Math.random() * Math.PI * 2;
+
+        const segments = 90; // Higher count for smoother curves
+        for (let i = 0; i < segments; i++) {
+            const theta = (i / segments) * Math.PI * 2;
+            const r = getBoundaryRadius(theta);
+            
+            const x = cx + Math.cos(theta) * r;
+            const y = cy + Math.sin(theta) * r;
+            
+            const part = Bodies.circle(x, y, 4, { 
+                isStatic: true, 
+                label: 'rope',
+                render: { fillStyle: '#37474f' } 
+            });
+            ropeParts.push(part);
+        }
+        Composite.add(engine.world, ropeParts);
+    }
+    
+    // Initial Create
+    createRope();
+
+    // --- PHYSICS LOOP ---
+    function getPoles(body) {
+        const px = Math.cos(body.angle + Math.PI/2) * CONFIG.poleOffset;
+        const py = Math.sin(body.angle + Math.PI/2) * CONFIG.poleOffset;
+        return {
+            north: { x: body.position.x + px, y: body.position.y + py },
+            south: { x: body.position.x - px, y: body.position.y - py }
+        };
+    }
+
+    Events.on(engine, 'beforeUpdate', function() {
+        for (let i = 0; i < magnets.length; i++) {
+            // Stabilization
+            const speed = magnets[i].speed;
+            const angularSpeed = Math.abs(magnets[i].angularVelocity);
+            if (speed < 0.1 && speed > 0) Body.setVelocity(magnets[i], {x:0, y:0});
+            if (angularSpeed < 0.02 && angularSpeed > 0) Body.setAngularVelocity(magnets[i], 0);
+
+            for (let j = i + 1; j < magnets.length; j++) {
+                const A = magnets[i];
+                const B = magnets[j];
+                const polesA = getPoles(A);
+                const polesB = getPoles(B);
+
+                // Forces
+                applyForce(A, polesA.north, B, polesB.north, -1);
+                applyForce(A, polesA.south, B, polesB.south, -1);
+                applyForce(A, polesA.north, B, polesB.south, 1);
+                applyForce(A, polesA.south, B, polesB.north, 1);
+            }
+        }
+    });
+
+    function applyForce(bodyA, posA, bodyB, posB, polarity) {
+        const dx = posB.x - posA.x;
+        const dy = posB.y - posA.y;
+        const distSq = dx*dx + dy*dy;
+        
+        if (distSq > CONFIG.rangeCutoff || distSq < 80) return;
+
+        const dist = Math.sqrt(distSq);
+        const forceMag = (CONFIG.strength * 100) / distSq;
+        const clampedForce = Math.min(forceMag, 0.4); 
+
+        const fx = (dx/dist) * clampedForce * polarity;
+        const fy = (dy/dist) * clampedForce * polarity;
+
+        Body.applyForce(bodyA, posA, { x: fx, y: fy });
+        Body.applyForce(bodyB, posB, { x: -fx, y: -fy });
+    }
+
+    // --- COLLISION ---
+    Events.on(engine, 'collisionStart', function(event) {
+        let magnetsToRemove = new Set();
+        let collision = false;
+        event.pairs.forEach(pair => {
+            if(pair.bodyA.label === 'magnet' && pair.bodyB.label === 'magnet') {
+                magnetsToRemove.add(pair.bodyA);
+                magnetsToRemove.add(pair.bodyB);
+                collision = true;
+            }
+        });
+        if (collision) handleSnap(Array.from(magnetsToRemove));
+    });
+
+    function handleSnap(bodies) {
+        const valid = bodies.filter(b => Composite.get(engine.world, b.id, 'body'));
+        if (valid.length === 0) return;
+        if (turnTimer) clearTimeout(turnTimer);
+
+        document.body.style.backgroundColor = '#e57373';
+        setTimeout(() => document.body.style.backgroundColor = '#cfd8dc', 200);
+
+        showFloatingText(`KLUSTER! +${valid.length}`, cx, cy - 100);
+
+        valid.forEach(b => {
+            Composite.remove(engine.world, b);
+            const idx = magnets.indexOf(b);
+            if (idx > -1) magnets.splice(idx, 1);
+        });
+
+        if (turn === 1) p1Count += valid.length; else p2Count += valid.length;
+        updateScoreUI();
+        setTimeout(passTurn, 800);
+    }
+
+    // --- INPUT ---
+    window.addEventListener('mousedown', handleInput);
+    window.addEventListener('touchstart', handleInput, {passive: false});
+
+    function handleInput(e) {
+        if(e.target.tagName === 'BUTTON') return;
+        if(e.type === 'touchstart') e.preventDefault();
+        
+        let x = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+        let y = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
+
+        createRipple(x, y);
+
+        if(inputLocked) return; 
+
+        // CALCULATE ORGANIC BOUNDARY
+        const dx = x - cx;
+        const dy = y - cy;
+        // Calculate angle of click relative to center
+        const theta = Math.atan2(dy, dx); 
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        
+        // Get the specific rope radius at this angle
+        const limit = getBoundaryRadius(theta);
+        
+        // Allow a small margin (minus magnet half-width)
+        if (dist < limit - 15) {
+            spawnMagnet(x, y);
+        } else {
+            flashRope();
+        }
+    }
+
+    function createRipple(x, y) {
+        const ripple = document.createElement('div');
+        ripple.className = 'ripple';
+        ripple.style.left = (x - 10) + 'px';
+        ripple.style.top = (y - 10) + 'px';
+        document.body.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 500);
+    }
+
+    function flashRope() {
+        ropeParts.forEach(p => p.render.fillStyle = '#d32f2f');
+        setTimeout(() => {
+            ropeParts.forEach(p => p.render.fillStyle = '#37474f');
+        }, 200);
+    }
+
+    function spawnMagnet(x, y) {
+        inputLocked = true;
+        
+        if (turn === 1) p1Count--; else p2Count--;
+        updateScoreUI();
+
+        if (p1Count === 0 || p2Count === 0) { checkWin(); return; }
+
+        const angle = Math.random() * Math.PI * 2;
+        const magnet = Bodies.rectangle(x, y, CONFIG.magnetLength, CONFIG.magnetWidth, {
+            angle: angle,
+            frictionAir: CONFIG.frictionAir,
+            density: CONFIG.density,
+            restitution: 0,
+            label: 'magnet',
+            chamfer: { radius: CONFIG.magnetWidth/2 },
+            render: { fillStyle: '#263238', strokeStyle: '#fff', lineWidth: 1 }
+        });
+        
+        magnets.push(magnet);
+        Composite.add(engine.world, magnet);
+
+        updateTurnBar("Steady...", "#555");
+        if (turnTimer) clearTimeout(turnTimer);
+        turnTimer = setTimeout(passTurn, 1500);
+    }
+
+    function passTurn() {
+        if (turnTimer) clearTimeout(turnTimer);
+        turn = turn === 1 ? 2 : 1;
+        inputLocked = false;
+        updateScoreUI();
+        if (turn === 1) updateTurnBar("Blues' Turn", "#00695c");
+        else updateTurnBar("Bianca's Turn", "#d84315");
+    }
+
+    function updateTurnBar(text, color) {
+        const bar = document.getElementById('turn-bar');
+        bar.innerText = text;
+        bar.style.backgroundColor = color;
+    }
+
+    function updateScoreUI() {
+        document.getElementById('p1-score').innerText = `Blues: ${p1Count}`;
+        document.getElementById('p2-score').innerText = `Bianca: ${p2Count}`;
+        const p1 = document.getElementById('p1-score');
+        const p2 = document.getElementById('p2-score');
+
+        if (turn === 1) {
+            p1.classList.add('active-turn'); p2.classList.remove('active-turn');
+        } else {
+            p1.classList.remove('active-turn'); p2.classList.add('active-turn');
+        }
+    }
+
+    function checkWin() {
+        setTimeout(() => {
+            let winner = p1Count <= 0 ? "Blues" : "Bianca";
+            alert(`${winner} Wins!`);
+            resetGame();
+        }, 200);
+    }
+
+    function resetGame() {
+        Composite.clear(engine.world, false);
+        createRope(); // THIS NOW GENERATES A NEW SHAPE
+        magnets = [];
+        p1Count = 10; p2Count = 10;
+        turn = 1; inputLocked = false;
+        updateScoreUI();
+        updateTurnBar("Blues' Turn", "#00695c");
+    }
+
+    function showFloatingText(text, x, y) {
+        const el = document.createElement('div');
+        el.className = 'penalty-text';
+        el.innerText = text;
+        el.style.left = x + 'px'; el.style.top = y + 'px';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 800);
+    }
+
+    // Run
+    Render.run(render);
+    const runner = Runner.create();
+    Runner.run(runner, engine);
+
+</script>
+</body>
+</html>
