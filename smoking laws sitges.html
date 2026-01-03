@@ -26,11 +26,12 @@
         .flag-btn:active {
             transform: scale(0.95);
         }
-        .logo-link {
-            transition: opacity 0.3s ease;
+        .logo-hover {
+            transition: transform 0.3s ease, opacity 0.3s ease;
         }
-        .logo-link:hover {
-            opacity: 1 !important;
+        .logo-hover:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
         }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #020617; }
@@ -42,9 +43,6 @@
 
     <script type="text/babel">
         // Standard Icons mapping
-        const AlertTriangle = (props) => <i data-lucide="alert-triangle" {...props} style={{width: props.size, height: props.size}} />;
-        const CheckCircle2 = (props) => <i data-lucide="check-circle-2" {...props} style={{width: props.size, height: props.size}} />;
-        const Info = (props) => <i data-lucide="info" {...props} style={{width: props.size, height: props.size}} />;
         const Wind = (props) => <i data-lucide="wind" {...props} style={{width: props.size, height: props.size}} />;
         const ChevronDown = (props) => <i data-lucide="chevron-down" {...props} style={{width: props.size, height: props.size}} />;
         const ChevronUp = (props) => <i data-lucide="chevron-up" {...props} style={{width: props.size, height: props.size}} />;
@@ -56,7 +54,7 @@
         const Smartphone = (props) => <i data-lucide="smartphone" {...props} style={{width: props.size, height: props.size}} />;
         const X = (props) => <i data-lucide="x" {...props} style={{width: props.size, height: props.size}} />;
 
-        // Custom SVG Flags for consistency
+        // Custom Flags
         const FlagUK = () => <span>🇬🇧</span>;
         const FlagES = () => <span>🇪🇸</span>;
         const FlagFR = () => <span>🇫🇷</span>;
@@ -135,7 +133,7 @@
                 beachWarning: "Police locale active. Amendes de 30 € à 300 € en cas de récidive.",
                 terraceDetail: "La réforme nationale 2026 interdit de fumer sur toutes les terrasses.",
                 terraceItems: ['Toits', 'Trottoirs', 'Chiringuitos', 'Terrasses'],
-                streetDetail: "Vous pouvez fumer en marchant, mas restez à 15m des écoles et des parcs.",
+                streetDetail: "Vous pouvez fumer en marchant, mais restez à 15m des écoles et des parcs.",
                 shareTitle: "Partager & Enregistrer", qrDesc: "Laissez quelqu'un scanner ceci pour partager le guide.",
                 saveHomeTitle: "Ajouter à l'accueil", close: "Fermer"
             }
@@ -146,19 +144,18 @@
                 href="https://blueshub.netlify.app/" 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className={`logo-link block cursor-pointer outline-none focus:ring-2 focus:ring-sky-500/50 rounded-lg ${className}`}
+                className={`logo-hover inline-block cursor-pointer outline-none ${className}`}
             >
-                <svg viewBox="0 0 200 60" className="w-28 h-auto" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#38bdf8" />
-                            <stop offset="100%" stopColor="#818cf8" />
-                        </linearGradient>
-                    </defs>
-                    <text x="50%" y="30" textAnchor="middle" fill="url(#logoGradient)" style={{ fontFamily: 'Inter, sans-serif', fontWeight: 900, fontSize: '14px', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                        App by Blues
-                    </text>
-                    <circle cx="100" cy="40" r="2" fill="#38bdf8"><animate attributeName="opacity" values="0.2;1;0.2" dur="2s" repeatCount="indefinite" /></circle>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 50" width="180" height="38" role="img" aria-label="{app by blues} logo">
+                  <style>{`
+                    .logo-text {
+                      font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+                      font-size: 24px;
+                      font-weight: 700;
+                      fill: #38bdf8; /* Adjusted to fit the theme blue */
+                    }
+                  `}</style>
+                  <text x="50%" y="33" textAnchor="middle" className="logo-text">{"{app by blues}"}</text>
                 </svg>
             </a>
         );
@@ -215,6 +212,7 @@
                     </header>
 
                     <main className="max-w-md mx-auto px-6 relative z-10">
+                        {/* Language Selection Bar */}
                         <div className="flex justify-center gap-2 mb-8 bg-white/5 p-1.5 rounded-2xl border border-white/5 backdrop-blur-sm">
                             {Object.keys(translations).map((key) => (
                                 <button 
@@ -258,7 +256,7 @@
                             <div className="space-y-3 text-slate-300">
                                 <p>{t.streetDetail}</p>
                                 <div className="flex items-center gap-2 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20 text-amber-200/80">
-                                    <CheckCircle2 size={14} className="shrink-0" />
+                                    <i data-lucide="check" style={{width:12, height:12}} />
                                     <span className="text-xs font-bold uppercase tracking-wider italic">Respect local bylaws</span>
                                 </div>
                             </div>
@@ -283,7 +281,8 @@
                             </div>
                         </div>
 
-                        <div className="flex flex-col items-center py-12 opacity-50">
+                        {/* Official Branding Link */}
+                        <div className="flex flex-col items-center py-12">
                             <AppByBluesLogo />
                         </div>
                     </main>
