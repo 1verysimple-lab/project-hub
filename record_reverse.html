@@ -3,17 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoiceMemo Pro</title>
+    <title>VoiceMemo Pro v1</title>
     
-    <!-- React & ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -39,16 +36,6 @@
         }
         ::-webkit-scrollbar-thumb:hover {
             background: #555; 
-        }
-
-        .pulse-ring {
-            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-        }
-
-        @keyframes pulse-ring {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
     </style>
 </head>
@@ -111,12 +98,12 @@
 
         const App = () => {
             const [isRecording, setIsRecording] = useState(false);
-            const [isProcessing, setIsProcessing] = useState(false); // For loading state during reversal
+            const [isProcessing, setIsProcessing] = useState(false);
             const [duration, setDuration] = useState(0);
             const [recordings, setRecordings] = useState([]);
             const [audioLevel, setAudioLevel] = useState(0);
             
-            // Refs for audio processing
+            // Refs
             const audioContextRef = useRef(null);
             const processorRef = useRef(null);
             const mediaStreamRef = useRef(null);
@@ -126,23 +113,61 @@
             const timerIntervalRef = useRef(null);
             const analyserRef = useRef(null);
             const animationFrameRef = useRef(null);
+            const fileInputRef = useRef(null); // Ref for file upload
             
-            // IMPORTANT: Ref to store the actual sample rate when recording starts
             const activeSampleRateRef = useRef(44100);
 
             useEffect(() => {
-                lucide.createIcons();
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
             }, [recordings, isRecording, isProcessing]);
 
             const formatTime = (seconds) => {
+                if (!seconds && seconds !== 0) return "--:--";
                 const mins = Math.floor(seconds / 60);
                 const secs = seconds % 60;
                 return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
             };
 
+            // --- FILE LOADING LOGIC (Added for v1.0) ---
+            const handleFileSelect = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                // Basic validation
+                if (!file.type.startsWith('audio/')) {
+                    alert("Only audio files, mate.");
+                    return;
+                }
+
+                const url = URL.createObjectURL(file);
+                
+                const newRecording = {
+                    id: Date.now(),
+                    url: url,
+                    duration: 0, // We don't know duration until load, keeping it simple for v1
+                    name: file.name,
+                    date: new Date().toLocaleString(),
+                    sampleRate: 44100, // Fallback
+                    isImported: true
+                };
+
+                setRecordings(prev => [newRecording, ...prev]);
+                
+                // Reset input so you can upload the same file again if deleted
+                event.target.value = '';
+            };
+
+            const triggerFileUpload = () => {
+                if (fileInputRef.current) {
+                    fileInputRef.current.click();
+                }
+            };
+
+            // --- RECORDING LOGIC ---
             const startRecording = async () => {
                 try {
-                    // Ensure previous context is closed if it exists (safety check)
                     if (audioContextRef.current) {
                         await audioContextRef.current.close();
                     }
@@ -152,36 +177,26 @@
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     mediaStreamRef.current = stream;
 
-                    // Initialize Audio Context
                     audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
                     const context = audioContextRef.current;
                     
-                    // Capture the ACTUAL sample rate of the device
                     activeSampleRateRef.current = context.sampleRate;
 
-                    // Create Analyser for visualizer
                     analyserRef.current = context.createAnalyser();
                     analyserRef.current.fftSize = 256;
 
-                    // Create input source
                     audioInputRef.current = context.createMediaStreamSource(stream);
-                    
-                    // Create ScriptProcessor (bufferSize, inputChannels, outputChannels)
                     processorRef.current = context.createScriptProcessor(4096, 1, 1);
 
-                    // Connect graph
                     audioInputRef.current.connect(analyserRef.current);
                     analyserRef.current.connect(processorRef.current);
                     processorRef.current.connect(context.destination);
 
-                    // Handle audio processing
                     processorRef.current.onaudioprocess = (e) => {
                         const left = e.inputBuffer.getChannelData(0);
-                        // Clone data because Chrome reuses buffers
                         leftChannelDataRef.current.push(new Float32Array(left));
                     };
 
-                    // Start Visualizer Loop
                     const updateVisualizer = () => {
                         if (!analyserRef.current) return;
                         const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
@@ -196,7 +211,6 @@
                     };
                     updateVisualizer();
 
-                    // Start Timer
                     startTimeRef.current = Date.now();
                     timerIntervalRef.current = setInterval(() => {
                         setDuration(Math.floor((Date.now() - startTimeRef.current) / 1000));
@@ -215,7 +229,6 @@
                 if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
                 setAudioLevel(0);
 
-                // Stop inputs
                 if (mediaStreamRef.current) {
                     mediaStreamRef.current.getTracks().forEach(track => track.stop());
                 }
@@ -225,13 +238,11 @@
                 }
                 if (audioInputRef.current) audioInputRef.current.disconnect();
                 
-                // Close context explicitly when stopping to free resources
                 if (audioContextRef.current) {
                     audioContextRef.current.close();
                     audioContextRef.current = null;
                 }
 
-                // Process Audio Data
                 const leftBuffer = leftChannelDataRef.current;
                 let length = 0;
                 for (let i = 0; i < leftBuffer.length; i++) {
@@ -244,20 +255,19 @@
                     offset += leftBuffer[i].length;
                 }
 
-                // Encode to WAV using the captured sample rate
                 const sampleRate = activeSampleRateRef.current || 44100;
                 const wavData = encodeWAV(result, sampleRate);
                 const blob = new Blob([wavData], { type: 'audio/wav' });
                 const url = URL.createObjectURL(blob);
 
-                // Save to state
                 const newRecording = {
                     id: Date.now(),
                     url: url,
                     duration: duration,
                     name: `Recording ${recordings.length + 1}`,
                     date: new Date().toLocaleString(),
-                    sampleRate: sampleRate
+                    sampleRate: sampleRate,
+                    isImported: false
                 };
 
                 setRecordings(prev => [newRecording, ...prev]);
@@ -270,40 +280,34 @@
                 setIsProcessing(true);
                 let tempCtx = null;
                 try {
-                    // 1. Fetch the audio data from the blob URL
                     const response = await fetch(originalRec.url);
                     const arrayBuffer = await response.arrayBuffer();
 
-                    // 2. Decode the audio data
-                    // We create a temporary context just for decoding
                     tempCtx = new (window.AudioContext || window.webkitAudioContext)();
                     const audioBuffer = await tempCtx.decodeAudioData(arrayBuffer);
 
-                    // 3. Get channel data and reverse it
-                    const channelData = audioBuffer.getChannelData(0); // Mono
+                    const channelData = audioBuffer.getChannelData(0);
                     channelData.reverse();
 
-                    // 4. Re-encode to WAV
                     const wavData = encodeWAV(channelData, tempCtx.sampleRate);
                     const blob = new Blob([wavData], { type: 'audio/wav' });
                     const url = URL.createObjectURL(blob);
 
-                    // 5. Add to list
                     const newRecording = {
                         id: Date.now(),
                         url: url,
-                        duration: originalRec.duration,
+                        duration: originalRec.duration || audioBuffer.duration, // Use actual duration if 0
                         name: `${originalRec.name} (Rev)`,
-                        date: new Date().toLocaleString()
+                        date: new Date().toLocaleString(),
+                        isImported: false
                     };
                     
                     setRecordings(prev => [newRecording, ...prev]);
                     
                 } catch (e) {
                     console.error("Reversal failed", e);
-                    alert("Failed to reverse audio. The file might be corrupted or too large.");
+                    alert("Failed to reverse audio. The file format might not be supported.");
                 } finally {
-                    // CRITICAL: Close the context to prevent "max AudioContext" errors
                     if (tempCtx) {
                         tempCtx.close();
                     }
@@ -318,10 +322,22 @@
             return (
                 <div className="min-h-screen bg-neutral-950 text-neutral-200 flex flex-col max-w-md mx-auto shadow-2xl overflow-hidden border-x border-neutral-800">
                     
+                    {/* Hidden File Input */}
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleFileSelect} 
+                        accept="audio/*" 
+                        className="hidden" 
+                        style={{display: 'none'}}
+                    />
+
                     {/* Header */}
-                    <div className="p-6 pt-8 bg-neutral-900 border-b border-neutral-800">
-                        <h1 className="text-xl font-semibold tracking-wide text-white">VoiceMemo Pro</h1>
-                        <p className="text-xs text-neutral-500 mt-1 uppercase tracking-wider">WAV Recorder & Reverser</p>
+                    <div className="p-6 pt-8 bg-neutral-900 border-b border-neutral-800 flex justify-between items-center">
+                        <div>
+                            <h1 className="text-xl font-semibold tracking-wide text-white">VoiceMemo Pro</h1>
+                            <p className="text-xs text-neutral-500 mt-1 uppercase tracking-wider">v1.0 • WAV Recorder</p>
+                        </div>
                     </div>
 
                     {/* Main Control Area */}
@@ -334,7 +350,6 @@
 
                         {/* Visualizer Circle */}
                         <div className="relative mb-12">
-                            {/* Outer glow ring based on volume */}
                             <div 
                                 className={`absolute inset-0 rounded-full transition-all duration-75 ease-out ${isRecording ? 'bg-red-900/30' : ''}`}
                                 style={{ 
@@ -378,8 +393,18 @@
 
                     {/* Recordings List */}
                     <div className="bg-neutral-900 flex-1 border-t border-neutral-800 flex flex-col h-1/2">
-                        <div className="p-4 border-b border-neutral-800 bg-neutral-900 z-10 sticky top-0">
+                        <div className="p-4 border-b border-neutral-800 bg-neutral-900 z-10 sticky top-0 flex justify-between items-center">
                             <h2 className="text-sm font-medium text-neutral-400 uppercase tracking-wider">Saved Recordings</h2>
+                            
+                            {/* Upload Button */}
+                            <button 
+                                onClick={triggerFileUpload}
+                                className="text-neutral-500 hover:text-white transition-colors flex items-center gap-2 text-xs uppercase tracking-wider border border-neutral-700 rounded px-2 py-1 hover:border-neutral-500"
+                                title="Import Audio File"
+                            >
+                                <i data-lucide="upload" className="w-3 h-3"></i>
+                                Import
+                            </button>
                         </div>
                         
                         <div className="overflow-y-auto flex-1 p-2 space-y-2">
@@ -396,14 +421,15 @@
                                             <div className="min-w-0">
                                                 <div className="flex items-center gap-2">
                                                     <h3 className="font-medium text-neutral-200 truncate max-w-[150px]">{rec.name}</h3>
-                                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-700 text-neutral-400">WAV</span>
+                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded text-neutral-400 ${rec.isImported ? 'bg-blue-900/30 text-blue-400' : 'bg-neutral-700'}`}>
+                                                        {rec.isImported ? 'IMP' : 'WAV'}
+                                                    </span>
                                                 </div>
                                                 <p className="text-xs text-neutral-500 mt-1">
-                                                    {rec.date} • {formatTime(rec.duration)}
+                                                    {rec.date} • {rec.duration === 0 ? 'File' : formatTime(rec.duration)}
                                                 </p>
                                             </div>
                                             
-                                            {/* Delete Button (moved to top right) */}
                                             <button 
                                                 onClick={() => deleteRecording(rec.id)}
                                                 className="p-1.5 text-neutral-600 hover:text-red-400 transition-colors"
