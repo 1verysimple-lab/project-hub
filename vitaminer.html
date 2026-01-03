@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VitalSync | Nutrient Tracker</title>
+    <title>VitalSync | {app by blues}</title>
     
     <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -21,6 +21,9 @@
                 extend: {
                     padding: {
                         'safe': 'env(safe-area-inset-bottom)'
+                    },
+                    colors: {
+                        'blues-blue': '#2563EB'
                     }
                 }
             }
@@ -52,7 +55,7 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
-        // --- ICONS (Hardcoded SVG Components to remove dependencies) ---
+        // --- ICONS (Hardcoded SVG Components) ---
         const IconWrapper = ({ children, className }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
                 {children}
@@ -498,10 +501,24 @@
                 <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
                   <div className="max-w-xl mx-auto px-4 py-3">
                     <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center gap-2">
-                        <Activity className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                        <span className="font-bold text-lg tracking-tight">VitalSync</span>
-                      </div>
+                      
+                      {/* LOGO AREA */}
+                      <a href="https://blueshub.netlify.app/" className="block hover:opacity-80 transition-opacity">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 50" role="img" aria-label="{app by blues} logo" className="h-8 w-auto">
+                          <style>
+                            {`
+                              .logo-text {
+                                font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+                                font-size: 24px;
+                                font-weight: 700;
+                                fill: #2563EB;
+                              }
+                            `}
+                          </style>
+                          <text x="50%" y="33" textAnchor="middle" className="logo-text">{`{app by blues}`}</text>
+                        </svg>
+                      </a>
+
                       <button 
                         onClick={() => setShowSettings(!showSettings)}
                         className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
