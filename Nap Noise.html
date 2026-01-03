@@ -164,12 +164,29 @@
                     <input type="text" id="preset-name" placeholder="Name" class="w-full bg-gray-800 border border-gray-700 text-xs p-1 px-2 text-white focus:outline-none focus:border-emerald-600">
                     <button onclick="savePreset()" class="bg-gray-700 px-2 text-xs hover:bg-gray-600">+</button>
                 </div>
+                
+                <!-- Import/Export Controls -->
+                <div class="flex justify-between mt-2 pt-2 border-t border-gray-700/50">
+                    <button onclick="exportPresets()" class="text-[10px] text-gray-500 hover:text-emerald-400 uppercase tracking-wider">Export</button>
+                    <button onclick="toggleImport()" class="text-[10px] text-gray-500 hover:text-blue-400 uppercase tracking-wider">Import</button>
+                </div>
             </div>
         </div>
         
         <!-- Preset List -->
         <div id="preset-list" class="mt-4 flex flex-wrap gap-2 justify-center">
             <!-- Presets injected here -->
+        </div>
+
+        <!-- Hidden Import Panel -->
+        <div id="import-panel" class="hidden mt-4 p-4 border border-gray-700 bg-gray-800">
+            <label class="text-[10px] uppercase text-blue-400 font-bold block mb-1">Paste Data Code:</label>
+            <textarea id="import-data" class="w-full h-20 bg-gray-900 border border-gray-700 text-[10px] text-gray-400 p-2 font-mono mb-2 focus:outline-none focus:border-blue-500" placeholder="Paste encoded string here..."></textarea>
+            <div class="flex gap-2">
+                <button onclick="processImport()" class="flex-1 bg-blue-900 hover:bg-blue-800 text-blue-100 text-xs py-1 border border-blue-700">LOAD DATA</button>
+                <button onclick="toggleImport()" class="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs py-1">CANCEL</button>
+            </div>
+            <p id="import-msg" class="text-[10px] mt-1 text-center h-4"></p>
         </div>
 
         <div class="mt-8 text-center">
@@ -484,10 +501,6 @@
             const presets = JSON.parse(localStorage.getItem(PRESET_KEY) || '{}');
             container.innerHTML = '';
 
-            // Add default preset
-            const defaults = { volA: 0.5, filterA: 200, volB: 0.3, filterB: 1500, lfoDepth: 0, lfoSpeed: 0.1 };
-            // We don't save default, just offer a reset button essentially? No, let's just list saved ones.
-
             if (Object.keys(presets).length === 0) {
                 container.innerHTML = '<span class="text-xs text-gray-600 italic">No user presets.</span>';
                 return;
@@ -503,6 +516,77 @@
                     <span class="text-gray-600 hover:text-red-400 font-bold px-1" onclick="deletePreset('${name}', event)">&times;</span>
                 `;
                 container.appendChild(tag);
+            }
+        }
+
+        // --- Import/Export Logic ---
+        
+        function utf8_to_b64(str) {
+            return window.btoa(unescape(encodeURIComponent(str)));
+        }
+
+        function b64_to_utf8(str) {
+            return decodeURIComponent(escape(window.atob(str)));
+        }
+
+        function exportPresets() {
+            const presets = localStorage.getItem(PRESET_KEY) || '{}';
+            // Encode to base64 to allow easy copying/pasting without JSON syntax errors
+            const code = utf8_to_b64(presets);
+            
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = document.querySelector('button[onclick="exportPresets()"]');
+                const originalText = btn.innerText;
+                btn.innerText = "COPIED!";
+                btn.classList.add("text-emerald-500");
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.remove("text-emerald-500");
+                }, 1500);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        function toggleImport() {
+            const panel = document.getElementById('import-panel');
+            panel.classList.toggle('hidden');
+            document.getElementById('import-msg').textContent = "";
+        }
+
+        function processImport() {
+            const input = document.getElementById('import-data');
+            const msg = document.getElementById('import-msg');
+            const code = input.value.trim();
+
+            if (!code) return;
+
+            try {
+                const jsonStr = b64_to_utf8(code);
+                const newPresets = JSON.parse(jsonStr);
+                
+                // Get existing presets
+                const currentPresets = JSON.parse(localStorage.getItem(PRESET_KEY) || '{}');
+                
+                // Merge strategies (overwrite existing keys)
+                const merged = { ...currentPresets, ...newPresets };
+                
+                localStorage.setItem(PRESET_KEY, JSON.stringify(merged));
+                
+                msg.textContent = "SUCCESS: PRESETS LOADED";
+                msg.className = "text-[10px] mt-1 text-center h-4 text-emerald-500 font-bold";
+                
+                renderPresets();
+                input.value = "";
+                
+                setTimeout(() => {
+                    toggleImport();
+                }, 1000);
+                
+            } catch (e) {
+                console.error(e);
+                msg.textContent = "ERROR: INVALID DATA CODE";
+                msg.className = "text-[10px] mt-1 text-center h-4 text-red-500 font-bold";
             }
         }
 
