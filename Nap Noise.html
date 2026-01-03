@@ -59,6 +59,15 @@
             <button id="toggle-btn" class="w-full py-4 bg-emerald-900 hover:bg-emerald-800 text-emerald-100 font-bold tracking-widest transition-all border border-emerald-700 uppercase">
                 Initialize Engine
             </button>
+            
+            <!-- Master Volume -->
+            <div class="mt-4 pt-4 border-t border-gray-800">
+                <div class="flex justify-between text-xs mb-1">
+                    <label class="font-bold text-gray-400">MASTER VOLUME</label>
+                    <span id="val-master-vol">20%</span>
+                </div>
+                <input type="range" id="master-vol" min="0" max="1" step="0.01" value="0.2">
+            </div>
         </div>
 
         <!-- Channel A: The Floor -->
@@ -203,7 +212,10 @@
             // 2. Setup Master Stage
             masterGain = audioCtx.createGain();
             masterGain.connect(audioCtx.destination);
-            masterGain.gain.value = 1;
+            
+            // Set initial volume from slider
+            const startVol = parseFloat(document.getElementById('master-vol').value);
+            masterGain.gain.value = startVol;
 
             console.log("Audio Engine Initialized");
         }
@@ -279,6 +291,11 @@
 
             if (!isPlaying) {
                 // START
+                // Ensure master gain is reset to slider value (in case it was faded out)
+                const vol = parseFloat(document.getElementById('master-vol').value);
+                masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+                masterGain.gain.setValueAtTime(vol, audioCtx.currentTime);
+
                 createGraph();
                 toggleBtn.textContent = "STOP ENGINE";
                 toggleBtn.classList.replace('bg-emerald-900', 'bg-red-900');
@@ -299,31 +316,26 @@
                 toggleBtn.classList.replace('border-red-700', 'border-emerald-700');
                 statusInd.classList.replace('bg-emerald-500', 'bg-red-900');
                 statusInd.classList.remove('shadow-[0_0_10px_#10b981]');
-                masterGain.gain.value = 1; // Reset master gain in case fade out happened
+                
+                // Reset master gain visual/state not strictly needed here as we do it on Start
+                // but good practice to clear scheduled events
+                masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+                
                 isPlaying = false;
             }
         });
 
         // --- Real-time Parameter Updates ---
 
-        // Helper to bind slider to AudioParam and Label
-        function bindControl(id, labelId, paramObj, paramName, suffix = '') {
-            const el = document.getElementById(id);
-            const label = document.getElementById(labelId);
-            el.addEventListener('input', (e) => {
-                const val = parseFloat(e.target.value);
-                label.textContent = suffix === '%' ? Math.round(val * 100) + '%' : val + suffix;
-                
-                // Audio Param update
-                if (isPlaying && paramObj) {
-                    // Handle nested params (like filter.frequency) or direct params
-                    if (paramObj[paramName] instanceof AudioParam) {
-                        paramObj[paramName].cancelScheduledValues(audioCtx.currentTime);
-                        paramObj[paramName].setValueAtTime(val, audioCtx.currentTime);
-                    }
-                }
-            });
-        }
+        // Master Volume
+        document.getElementById('master-vol').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            document.getElementById('val-master-vol').textContent = Math.round(val * 100) + '%';
+            if (masterGain) {
+                masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+                masterGain.gain.setTargetAtTime(val, audioCtx.currentTime, 0.1);
+            }
+        });
 
         // Since nodes are created/destroyed, we look them up dynamically in the event listener
         // Or we just update global variables.
@@ -373,9 +385,10 @@
             clearInterval(timerInterval);
             clearInterval(fadeInterval);
             
-            // Reset master gain
+            // Ensure volume is at current slider level before counting down
+            const currentVol = parseFloat(document.getElementById('master-vol').value);
             masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
-            masterGain.gain.setValueAtTime(1, audioCtx.currentTime);
+            masterGain.gain.setValueAtTime(currentVol, audioCtx.currentTime);
 
             let secondsLeft = minutes * 60;
             const display = document.getElementById('timer-display');
@@ -410,6 +423,7 @@
 
         function getSettings() {
             return {
+                masterVol: document.getElementById('master-vol').value,
                 volA: document.getElementById('vol-a').value,
                 filterA: document.getElementById('filter-a').value,
                 volB: document.getElementById('vol-b').value,
@@ -420,6 +434,11 @@
         }
 
         function applySettings(settings) {
+            // Apply Master Vol if it exists in preset (backward compatibility)
+            if (settings.masterVol !== undefined) {
+                document.getElementById('master-vol').value = settings.masterVol;
+            }
+            
             document.getElementById('vol-a').value = settings.volA;
             document.getElementById('filter-a').value = settings.filterA;
             document.getElementById('vol-b').value = settings.volB;
@@ -428,7 +447,7 @@
             document.getElementById('lfo-speed').value = settings.lfoSpeed;
 
             // Trigger input events to update UI text and Audio Params
-            ['vol-a', 'filter-a', 'vol-b', 'filter-b', 'lfo-depth', 'lfo-speed'].forEach(id => {
+            ['master-vol', 'vol-a', 'filter-a', 'vol-b', 'filter-b', 'lfo-depth', 'lfo-speed'].forEach(id => {
                 document.getElementById(id).dispatchEvent(new Event('input'));
             });
         }
