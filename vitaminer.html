@@ -1,450 +1,710 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  Sun, 
-  Moon, 
-  Coffee, 
-  Info, 
-  Plus, 
-  CheckCircle, 
-  AlertTriangle, 
-  Search,
-  Activity,
-  Trash2,
-  User,
-  Menu,
-  X
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VitalSync | Nutrient Tracker</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel (to compile JSX in browser) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    padding: {
+                        'safe': 'env(safe-area-inset-bottom)'
+                    }
+                }
+            }
+        }
+    </script>
 
-// --- DATA CORE ---
-// Expanded to handle biological sex differences
-const NUTRIENT_DB = [
-  {
-    id: 'vit_d3',
-    name: 'Vitamin D3',
-    type: 'Vitamin',
-    // Object structure allows dynamic rendering based on gender
-    rda: { m: '2000-5000 IU', f: '2000-5000 IU' }, 
-    optimal_time: 'Morning/Lunch',
-    take_with: 'Food (Fat)',
-    function: 'Bone health, immune system, hormonal support.',
-    synergy: ['Vitamin K2', 'Magnesium'],
-    antagonist: [],
-    note: 'Essential for everyone. Needs fat to absorb.'
-  },
-  {
-    id: 'vit_k2',
-    name: 'Vitamin K2 (MK-7)',
-    type: 'Vitamin',
-    rda: { m: '100-200 mcg', f: '100-200 mcg' },
-    optimal_time: 'Morning/Lunch',
-    take_with: 'Food (Fat)',
-    function: 'Directs calcium to bones, not arteries.',
-    synergy: ['Vitamin D3'],
-    antagonist: [],
-    note: 'Crucial if you take D3 or Calcium.'
-  },
-  {
-    id: 'magnesium',
-    name: 'Magnesium (Glycinate)',
-    type: 'Mineral',
-    rda: { m: '420 mg', f: '320 mg' }, // Men need slightly more muscle support
-    optimal_time: 'Evening',
-    take_with: 'Water (Any)',
-    function: 'Relaxation, sleep, enzyme function.',
-    synergy: ['Vitamin B6', 'Zinc'],
-    antagonist: ['Calcium (high doses)'],
-    note: 'Glycinate for sleep. Citrate for digestion.'
-  },
-  {
-    id: 'zinc',
-    name: 'Zinc',
-    type: 'Mineral',
-    rda: { m: '11 mg', f: '8 mg' }, // Men lose more zinc
-    optimal_time: 'Lunch',
-    take_with: 'Food',
-    function: 'Testosterone (Men), Immunity, Skin.',
-    synergy: ['Magnesium'],
-    antagonist: ['Iron', 'Calcium', 'Coffee'],
-    note: 'Nausea risk on empty stomach. Men: vital for T-levels.'
-  },
-  {
-    id: 'omega3',
-    name: 'Omega-3',
-    type: 'Fat',
-    rda: { m: '1.6g', f: '1.1g' },
-    optimal_time: 'Any Meal',
-    take_with: 'Food',
-    function: 'Heart, Brain, Inflammation.',
-    synergy: ['Vitamin E'],
-    antagonist: [],
-    note: 'Check EPA/DHA values, not total oil.'
-  },
-  {
-    id: 'iron',
-    name: 'Iron (Bisglycinate)',
-    type: 'Mineral',
-    // Huge difference here. Men rarely need it; pre-menopausal women often do.
-    rda: { m: '8 mg (Only if low)', f: '18 mg (Pre-meno) / 8mg (Post)' }, 
-    optimal_time: 'Lunch',
-    take_with: 'Vitamin C',
-    function: 'Oxygen transport.',
-    synergy: ['Vitamin C'],
-    antagonist: ['Calcium', 'Zinc', 'Caffeine'],
-    note: 'Men: Danger of accumulation (hemochromatosis). Test before supplementing.'
-  },
-  {
-    id: 'calcium',
-    name: 'Calcium',
-    type: 'Mineral',
-    rda: { m: '1000 mg', f: '1000-1200 mg' },
-    optimal_time: 'Evening',
-    take_with: 'Food',
-    function: 'Bone density.',
-    synergy: ['Vitamin D3', 'Magnesium'],
-    antagonist: ['Iron', 'Zinc'],
-    note: 'Women: Priority for bone density. Don\'t take with Iron.'
-  },
-  {
-    id: 'b_complex',
-    name: 'Vitamin B-Complex',
-    type: 'Vitamin',
-    rda: { m: 'Complex', f: 'Complex' }, // Generally similar needs
-    optimal_time: 'Morning',
-    take_with: 'Water',
-    function: 'Energy, methylation.',
-    synergy: [],
-    antagonist: [],
-    note: 'Take early. B-Vitamins maximize energy production.'
-  },
-];
+    <style>
+        /* Smooth scrolling and native feel */
+        html, body {
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        /* Custom scrollbar hiding */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 transition-colors duration-200">
+    <div id="root"></div>
 
-// --- COMPONENTS ---
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
 
-const Toggle = ({ options, selected, onChange, label }) => (
-  <div className="flex flex-col gap-1">
-    {label && <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{label}</span>}
-    <div className="flex bg-slate-200 dark:bg-slate-700 rounded-lg p-1">
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          onClick={() => onChange(opt.value)}
-          className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
-            selected === opt.value
-              ? 'bg-white dark:bg-slate-600 shadow text-indigo-600 dark:text-indigo-300'
-              : 'text-slate-500 dark:text-slate-400'
-          }`}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  </div>
-);
+        // --- ICONS (Hardcoded SVG Components to remove dependencies) ---
+        const IconWrapper = ({ children, className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {children}
+            </svg>
+        );
 
-const NutrientCard = ({ nutrient, isAdded, onToggle, isExpanded, onExpand, gender }) => {
-  const rdaDisplay = typeof nutrient.rda === 'object' ? nutrient.rda[gender === 'male' ? 'm' : 'f'] : nutrient.rda;
-  
-  return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden mb-3">
-      <div 
-        className={`p-4 flex items-center justify-between cursor-pointer active:bg-slate-50 dark:active:bg-slate-700/50 transition-colors ${isAdded ? 'bg-indigo-50/40 dark:bg-indigo-900/10' : ''}`}
-        onClick={onExpand}
-      >
-        <div className="flex-1 pr-4">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-bold text-slate-800 dark:text-slate-100">{nutrient.name}</h3>
-            {isAdded && <CheckCircle className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />}
-          </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-1">{nutrient.function}</p>
-        </div>
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggle();
-          }}
-          className={`flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full transition-all ${
-            isAdded 
-              ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300' 
-              : 'bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-400'
-          }`}
-        >
-          {isAdded ? <CheckCircle className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-        </button>
-      </div>
+        const Sun = ({ className }) => <IconWrapper className={className}><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></IconWrapper>;
+        const Moon = ({ className }) => <IconWrapper className={className}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></IconWrapper>;
+        const Coffee = ({ className }) => <IconWrapper className={className}><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" x2="6" y1="2" y2="4"/><line x1="10" x2="10" y1="2" y2="4"/><line x1="14" x2="14" y1="2" y2="4"/></IconWrapper>;
+        const Plus = ({ className }) => <IconWrapper className={className}><path d="M5 12h14"/><path d="M12 5v14"/></IconWrapper>;
+        const CheckCircle = ({ className }) => <IconWrapper className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></IconWrapper>;
+        const AlertTriangle = ({ className }) => <IconWrapper className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></IconWrapper>;
+        const Search = ({ className }) => <IconWrapper className={className}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></IconWrapper>;
+        const Activity = ({ className }) => <IconWrapper className={className}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></IconWrapper>;
+        const Menu = ({ className }) => <IconWrapper className={className}><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></IconWrapper>;
+        const X = ({ className }) => <IconWrapper className={className}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></IconWrapper>;
+        const Check = ({ className }) => <IconWrapper className={className}><path d="M20 6 9 17l-5-5"/></IconWrapper>;
+        const Calendar = ({ className }) => <IconWrapper className={className}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></IconWrapper>;
+        const RotateCcw = ({ className }) => <IconWrapper className={className}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></IconWrapper>;
+        const RefreshCw = ({ className }) => <IconWrapper className={className}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></IconWrapper>;
 
-      {isExpanded && (
-        <div className="px-4 pb-4 pt-0 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-700">
-          <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-            <div className="p-2 bg-white dark:bg-slate-700/50 rounded border border-slate-100 dark:border-slate-700">
-              <span className="block text-xs text-slate-400 uppercase">RDA ({gender === 'male' ? 'M' : 'F'})</span>
-              <span className="font-semibold text-slate-700 dark:text-slate-200">{rdaDisplay}</span>
+        // --- DATA CORE ---
+        const NUTRIENT_DB = [
+          // --- ESSENTIALS ---
+          {
+            id: 'vit_d3',
+            name: 'Vitamin D3',
+            category: 'Essential',
+            type: 'Vitamin',
+            frequency: 'Daily',
+            rda: { m: '2000-5000 IU', f: '2000-5000 IU' }, 
+            optimal_time: 'Morning/Lunch',
+            take_with: 'Food (Fat)',
+            function: 'Bone health, immune system, hormonal support.',
+            synergy: ['Vitamin K2', 'Magnesium'],
+            antagonist: [],
+            note: 'Needs fat to absorb. Daily consistency is key.'
+          },
+          {
+            id: 'vit_k2',
+            name: 'Vitamin K2 (MK-7)',
+            category: 'Essential',
+            type: 'Vitamin',
+            frequency: 'Daily',
+            rda: { m: '100-200 mcg', f: '100-200 mcg' },
+            optimal_time: 'Morning/Lunch',
+            take_with: 'Food (Fat)',
+            function: 'Directs calcium to bones, not arteries.',
+            synergy: ['Vitamin D3'],
+            antagonist: [],
+            note: 'Crucial if you take D3.'
+          },
+          {
+            id: 'magnesium',
+            name: 'Magnesium (Glycinate)',
+            category: 'Essential',
+            type: 'Mineral',
+            frequency: 'Daily',
+            rda: { m: '420 mg', f: '320 mg' },
+            optimal_time: 'Evening',
+            take_with: 'Water (Any)',
+            function: 'Relaxation, sleep, enzyme function.',
+            synergy: ['Vitamin B6', 'Zinc'],
+            antagonist: ['Calcium (high doses)'],
+            note: 'Glycinate for sleep. Citrate if you need... movement.'
+          },
+          {
+            id: 'zinc',
+            name: 'Zinc',
+            category: 'Essential',
+            type: 'Mineral',
+            frequency: 'Daily',
+            rda: { m: '11 mg', f: '8 mg' },
+            optimal_time: 'Lunch',
+            take_with: 'Food',
+            function: 'Testosterone, Immunity.',
+            synergy: ['Magnesium'],
+            antagonist: ['Iron', 'Calcium', 'Coffee'],
+            note: 'Nausea risk on empty stomach.'
+          },
+          {
+            id: 'omega3',
+            name: 'Omega-3',
+            category: 'Essential',
+            type: 'Fat',
+            frequency: 'Daily',
+            rda: { m: '1.6g', f: '1.1g' },
+            optimal_time: 'Any Meal',
+            take_with: 'Food',
+            function: 'Heart, Brain, Inflammation.',
+            synergy: ['Vitamin E'],
+            antagonist: [],
+            note: 'Anti-inflammatory powerhouse.'
+          },
+          {
+            id: 'b_complex',
+            name: 'Vitamin B-Complex',
+            category: 'Essential',
+            type: 'Vitamin',
+            frequency: 'Daily',
+            rda: { m: 'Complex', f: 'Complex' },
+            optimal_time: 'Morning',
+            take_with: 'Water',
+            function: 'Energy, methylation.',
+            synergy: ['L-Tyrosine'],
+            antagonist: [],
+            note: 'Yellow urine is normal (Riboflavin).'
+          },
+          // --- CONDITIONAL ---
+          {
+            id: 'iron',
+            name: 'Iron (Bisglycinate)',
+            category: 'Essential',
+            type: 'Mineral',
+            frequency: 'As Needed',
+            rda: { m: '8 mg (Only if low)', f: '18 mg (Pre-meno)' }, 
+            optimal_time: 'Lunch',
+            take_with: 'Vitamin C',
+            function: 'Oxygen transport.',
+            synergy: ['Vitamin C'],
+            antagonist: ['Calcium', 'Zinc', 'Caffeine'],
+            note: 'Men: Danger of accumulation. Only take if bloodwork confirms deficiency.'
+          },
+          {
+            id: 'probiotics',
+            name: 'Probiotics',
+            category: 'Essential',
+            type: 'Live',
+            frequency: 'Daily / Pulse',
+            rda: { m: '10-50 Billion', f: '10-50 Billion' },
+            optimal_time: 'Morning (Empty Stomach)',
+            take_with: 'Water',
+            function: 'Gut health, immunity.',
+            synergy: ['Fiber'],
+            antagonist: ['Antibiotics', 'Hot Drinks'],
+            note: 'Some prefer taking 2 weeks on, 2 weeks off.'
+          },
+          // --- PERFORMANCE / AMINO ---
+          {
+            id: 'l_tyrosine',
+            name: 'L-Tyrosine',
+            category: 'Performance',
+            type: 'Amino',
+            frequency: 'As Needed / Pre-Work',
+            rda: { m: '500-2000 mg', f: '500-2000 mg' },
+            optimal_time: 'Morning (Empty Stomach)',
+            take_with: 'Water (NO FOOD)',
+            function: 'Focus under stress.',
+            synergy: ['Caffeine', 'B-Complex'],
+            antagonist: ['Protein'],
+            note: 'Use before high-stress shifts. Tolerance builds fast.'
+          },
+          {
+            id: 'creatine',
+            name: 'Creatine',
+            category: 'Performance',
+            type: 'Amino',
+            frequency: 'Daily',
+            rda: { m: '5g', f: '3-5g' },
+            optimal_time: 'Post-Workout / Morning',
+            take_with: 'Water',
+            function: 'ATP Energy, Cognitive function.',
+            synergy: ['Carbs'],
+            antagonist: [],
+            note: 'Takes 2-3 weeks to saturate. Consistency matters more than timing.'
+          },
+          // --- NATURALS / HERBS ---
+          {
+            id: 'ashwagandha',
+            name: 'Ashwagandha',
+            category: 'Natural',
+            type: 'Adaptogen',
+            frequency: 'Cycle: 4 weeks on, 1 off',
+            rda: { m: '300-600 mg', f: '300-600 mg' },
+            optimal_time: 'Evening',
+            take_with: 'Water/Tea',
+            function: 'Cortisol reduction, sleep.',
+            synergy: [],
+            antagonist: [],
+            note: 'KSM-66 extract is best. Cycle off to prevent emotional blunting.'
+          },
+          {
+            id: 'rhodiola',
+            name: 'Rhodiola Rosea',
+            category: 'Natural',
+            type: 'Adaptogen',
+            frequency: 'Cycle: 5 days on, 2 off',
+            rda: { m: '200-400 mg', f: '200-400 mg' },
+            optimal_time: 'Morning',
+            take_with: 'Water (Empty Stomach)',
+            function: 'Fight fatigue, mental clarity.',
+            synergy: [],
+            antagonist: [],
+            note: 'Stimulating. Do not take before bed.'
+          },
+          {
+            id: 'milk_thistle',
+            name: 'Milk Thistle',
+            category: 'Natural',
+            type: 'Herb',
+            frequency: 'Daily / Periods of excess',
+            rda: { m: '150 mg Silymarin', f: '150 mg Silymarin' },
+            optimal_time: 'Any Meal',
+            take_with: 'Food',
+            function: 'Liver support, glutathione.',
+            synergy: [],
+            antagonist: [],
+            note: 'Essential for chefs/hospitality. Protects liver from toxins.'
+          },
+          {
+            id: 'magnesium_threonate',
+            name: 'Lion\'s Mane',
+            category: 'Natural',
+            type: 'Fungi',
+            frequency: 'Daily',
+            rda: { m: '1000 mg', f: '1000 mg' },
+            optimal_time: 'Morning',
+            take_with: 'Coffee/Water',
+            function: 'Nerve Growth Factor, Memory.',
+            synergy: ['Coffee'],
+            antagonist: [],
+            note: 'Cognitive boost. Takes time to build up.'
+          }
+        ];
+
+        // --- COMPONENTS ---
+        const Toggle = ({ options, selected, onChange, label }) => (
+          <div className="flex flex-col gap-1">
+            {label && <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{label}</span>}
+            <div className="flex bg-slate-200 dark:bg-slate-700 rounded-lg p-1">
+              {options.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => onChange(opt.value)}
+                  className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                    selected === opt.value
+                      ? 'bg-white dark:bg-slate-600 shadow text-indigo-600 dark:text-indigo-300'
+                      : 'text-slate-500 dark:text-slate-400'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
-            <div className="p-2 bg-white dark:bg-slate-700/50 rounded border border-slate-100 dark:border-slate-700">
-              <span className="block text-xs text-slate-400 uppercase">Best Time</span>
-              <span className="font-semibold text-slate-700 dark:text-slate-200">{nutrient.optimal_time}</span>
-            </div>
           </div>
-          
-          <div className="mt-3 text-sm space-y-2">
-            <p className="text-slate-600 dark:text-slate-300">
-              <span className="font-medium text-slate-900 dark:text-slate-100">Take with:</span> {nutrient.take_with}
-            </p>
-            {nutrient.antagonist.length > 0 && (
-              <p className="text-rose-600 dark:text-rose-400 text-xs flex items-start gap-1">
-                <AlertTriangle className="w-3 h-3 mt-0.5" />
-                <span>Avoid: {nutrient.antagonist.join(', ')}</span>
-              </p>
-            )}
-            <p className="text-xs italic text-slate-500 mt-2 border-l-2 border-indigo-200 dark:border-indigo-800 pl-2">
-              {nutrient.note}
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+        );
 
-export default function VitalSyncApp() {
-  // --- STATE ---
-  const [activeTab, setActiveTab] = useState('guide');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [expandedId, setExpandedId] = useState(null);
-  const [showSettings, setShowSettings] = useState(false);
-  
-  // Persistent State
-  const [userStack, setUserStack] = useState(() => JSON.parse(localStorage.getItem('vs_stack') || '[]'));
-  const [gender, setGender] = useState(() => localStorage.getItem('vs_gender') || 'male');
-  const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem('vs_theme');
-    if (saved) return saved === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
+        const Badge = ({ type }) => {
+          const colors = {
+            Vitamin: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200',
+            Mineral: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200',
+            Fat: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200',
+            Amino: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200',
+            Live: 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200',
+            Adaptogen: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-200',
+            Herb: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200',
+            Fungi: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200',
+          };
+          return (
+            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${colors[type] || 'bg-slate-100 text-slate-800'}`}>
+              {type}
+            </span>
+          );
+        };
 
-  // --- EFFECTS ---
-  useEffect(() => {
-    localStorage.setItem('vs_stack', JSON.stringify(userStack));
-  }, [userStack]);
-
-  useEffect(() => {
-    localStorage.setItem('vs_gender', gender);
-  }, [gender]);
-
-  useEffect(() => {
-    localStorage.setItem('vs_theme', isDark ? 'dark' : 'light');
-  }, [isDark]);
-
-  // --- LOGIC ---
-  const filteredNutrients = useMemo(() => {
-    return NUTRIENT_DB.filter(n => 
-      n.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      n.function.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [searchTerm]);
-
-  const toggleStack = (id) => {
-    setUserStack(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]);
-  };
-
-  const schedule = useMemo(() => {
-    const stackData = NUTRIENT_DB.filter(n => userStack.includes(n.id));
-    const slots = {
-      morning: { title: 'Morning', sub: 'Stimulants & Energy', items: [], icon: <Sun className="w-5 h-5" /> },
-      meal: { title: 'Main Meal', sub: 'Fat Solubles', items: [], icon: <Coffee className="w-5 h-5" /> },
-      evening: { title: 'Evening', sub: 'Rest & Recovery', items: [], icon: <Moon className="w-5 h-5" /> }
-    };
-
-    stackData.forEach(item => {
-      const t = item.optimal_time.toLowerCase();
-      if (t.includes('evening') || item.id === 'magnesium' || item.id === 'calcium') slots.evening.items.push(item);
-      else if (t.includes('morning') && !item.take_with.toLowerCase().includes('fat')) slots.morning.items.push(item);
-      else slots.meal.items.push(item);
-    });
-    return slots;
-  }, [userStack]);
-
-  const conflicts = useMemo(() => {
-    const alerts = [];
-    const ids = userStack;
-    if (ids.includes('iron') && (ids.includes('calcium') || ids.includes('zinc'))) 
-      alerts.push("Iron fights with Calcium/Zinc.");
-    return alerts;
-  }, [userStack]);
-
-  // --- RENDER ---
-  return (
-    // Outer wrapper handles the dark class manually since we can't control body tag
-    <div className={isDark ? 'dark' : ''}>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200 pb-20">
-        
-        {/* --- HEADER --- */}
-        <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
-          <div className="max-w-xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <Activity className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-              <span className="font-bold text-lg tracking-tight">VitalSync</span>
-            </div>
-            
-            <button 
-              onClick={() => setShowSettings(!showSettings)}
-              className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            >
-              {showSettings ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
-
-          {/* Settings Dropdown */}
-          {showSettings && (
-            <div className="max-w-xl mx-auto px-4 pb-4 animate-in slide-in-from-top-2 duration-200">
-              <div className="bg-slate-100 dark:bg-slate-800 rounded-xl p-4 space-y-4">
-                <Toggle 
-                  label="Biological Sex (Affects RDA)"
-                  options={[{label: 'Man', value: 'male'}, {label: 'Woman', value: 'female'}]}
-                  selected={gender}
-                  onChange={setGender}
-                />
-                <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-700 mt-2">
-                   <span className="text-sm font-semibold text-slate-500">Appearance</span>
-                   <button 
-                    onClick={() => setIsDark(!isDark)}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 shadow-sm text-sm font-medium"
-                   >
-                     {isDark ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-                     {isDark ? 'Dark Mode' : 'Light Mode'}
-                   </button>
+        const FrequencyBadge = ({ freq }) => {
+            if (freq === 'Daily') return null;
+            const isCycle = freq.toLowerCase().includes('cycle');
+            return (
+                <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                    isCycle ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                }`}>
+                    {isCycle ? <RefreshCw className="w-3 h-3" /> : <Calendar className="w-3 h-3" />}
+                    {freq}
                 </div>
-              </div>
-            </div>
-          )}
-        </header>
+            );
+        };
 
-        {/* --- MAIN CONTENT --- */}
-        <main className="max-w-xl mx-auto px-4 py-6">
+        const NutrientCard = ({ nutrient, isAdded, onToggle, isExpanded, onExpand, gender }) => {
+          const rdaDisplay = typeof nutrient.rda === 'object' ? nutrient.rda[gender === 'male' ? 'm' : 'f'] : nutrient.rda;
           
-          {/* GUIDE TAB */}
-          {activeTab === 'guide' && (
-            <div className="space-y-4 animate-in fade-in duration-300">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input 
-                  type="text" 
-                  placeholder="Find supplements..." 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm text-base"
-                />
+          return (
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden mb-3">
+              <div 
+                className={`p-4 flex items-center justify-between cursor-pointer active:bg-slate-50 dark:active:bg-slate-700/50 transition-colors ${isAdded ? 'bg-indigo-50/40 dark:bg-indigo-900/10' : ''}`}
+                onClick={onExpand}
+              >
+                <div className="flex-1 pr-4">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <h3 className="font-bold text-slate-800 dark:text-slate-100">{nutrient.name}</h3>
+                    <Badge type={nutrient.type} />
+                    <FrequencyBadge freq={nutrient.frequency} />
+                  </div>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-1">{nutrient.function}</p>
+                </div>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggle();
+                  }}
+                  className={`flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full transition-all ${
+                    isAdded 
+                      ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300' 
+                      : 'bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-400'
+                  }`}
+                >
+                  {isAdded ? <CheckCircle className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                </button>
               </div>
 
-              <div>
-                {filteredNutrients.map(n => (
-                  <NutrientCard 
-                    key={n.id} 
-                    nutrient={n} 
-                    isAdded={userStack.includes(n.id)}
-                    onToggle={() => toggleStack(n.id)}
-                    isExpanded={expandedId === n.id}
-                    onExpand={() => setExpandedId(expandedId === n.id ? null : n.id)}
-                    gender={gender}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* SCHEDULE TAB */}
-          {activeTab === 'schedule' && (
-            <div className="space-y-6 animate-in fade-in duration-300">
-              
-              {/* Conflicts */}
-              {conflicts.length > 0 && (
-                <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 p-4 rounded-xl flex gap-3">
-                  <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                  <div className="text-sm text-amber-900 dark:text-amber-200">
-                    <p className="font-bold">Interactions Detected</p>
-                    <ul className="list-disc list-inside mt-1 opacity-90">
-                      {conflicts.map((c, i) => <li key={i}>{c}</li>)}
-                    </ul>
+              {isExpanded && (
+                <div className="px-4 pb-4 pt-0 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-700">
+                  <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                    <div className="p-2 bg-white dark:bg-slate-700/50 rounded border border-slate-100 dark:border-slate-700">
+                      <span className="block text-xs text-slate-400 uppercase">RDA ({gender === 'male' ? 'M' : 'F'})</span>
+                      <span className="font-semibold text-slate-700 dark:text-slate-200">{rdaDisplay}</span>
+                    </div>
+                    <div className="p-2 bg-white dark:bg-slate-700/50 rounded border border-slate-100 dark:border-slate-700">
+                      <span className="block text-xs text-slate-400 uppercase">Best Time</span>
+                      <span className="font-semibold text-slate-700 dark:text-slate-200">{nutrient.optimal_time}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-3 text-sm space-y-2">
+                    <p className="text-slate-600 dark:text-slate-300">
+                      <span className="font-medium text-slate-900 dark:text-slate-100">Take with:</span> {nutrient.take_with}
+                    </p>
+                    {nutrient.antagonist.length > 0 && (
+                      <p className="text-rose-600 dark:text-rose-400 text-xs flex items-start gap-1">
+                        <AlertTriangle className="w-3 h-3 mt-0.5" />
+                        <span>Avoid: {nutrient.antagonist.join(', ')}</span>
+                      </p>
+                    )}
+                    <p className="text-xs italic text-slate-500 mt-2 border-l-2 border-indigo-200 dark:border-indigo-800 pl-2">
+                      {nutrient.note}
+                    </p>
                   </div>
                 </div>
               )}
+            </div>
+          );
+        };
 
-              {userStack.length === 0 ? (
-                <div className="text-center py-20 opacity-50">
-                  <div className="w-16 h-16 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Plus className="w-8 h-8 text-slate-400" />
-                  </div>
-                  <p>Tap "Guide" to build your stack.</p>
-                </div>
-              ) : (
-                <div className="space-y-6 relative">
-                  {/* Vertical connector line */}
-                  <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-200 dark:bg-slate-800 z-0" />
-                  
-                  {Object.entries(schedule).map(([key, slot]) => (
-                    slot.items.length > 0 && (
-                      <div key={key} className="relative z-10">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-sm border-2 ${
-                            key === 'morning' ? 'bg-amber-50 border-amber-200 text-amber-600 dark:bg-slate-800 dark:border-amber-700/50 dark:text-amber-400' :
-                            key === 'meal' ? 'bg-orange-50 border-orange-200 text-orange-600 dark:bg-slate-800 dark:border-orange-700/50 dark:text-orange-400' :
-                            'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-slate-800 dark:border-indigo-700/50 dark:text-indigo-400'
-                          }`}>
-                            {slot.icon}
-                          </div>
-                          <div>
-                            <h2 className="text-lg font-bold leading-none">{slot.title}</h2>
-                            <span className="text-xs text-slate-500 font-medium uppercase tracking-wide">{slot.sub}</span>
-                          </div>
+        function App() {
+          const [activeTab, setActiveTab] = useState('schedule');
+          const [searchTerm, setSearchTerm] = useState('');
+          const [expandedId, setExpandedId] = useState(null);
+          const [showSettings, setShowSettings] = useState(false);
+          
+          const [userStack, setUserStack] = useState(() => JSON.parse(localStorage.getItem('vs_stack') || '[]'));
+          const [gender, setGender] = useState(() => localStorage.getItem('vs_gender') || 'male');
+          const [isDark, setIsDark] = useState(() => {
+            const saved = localStorage.getItem('vs_theme');
+            if (saved) return saved === 'dark';
+            return window.matchMedia('(prefers-color-scheme: dark)').matches;
+          });
+
+          const [tracker, setTracker] = useState(() => {
+            const saved = localStorage.getItem('vs_tracker');
+            const today = new Date().toISOString().split('T')[0];
+            
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              if (parsed.date === today) return parsed;
+            }
+            return { date: today, taken: [] };
+          });
+
+          useEffect(() => {
+            localStorage.setItem('vs_stack', JSON.stringify(userStack));
+          }, [userStack]);
+
+          useEffect(() => {
+            localStorage.setItem('vs_gender', gender);
+          }, [gender]);
+
+          useEffect(() => {
+            localStorage.setItem('vs_theme', isDark ? 'dark' : 'light');
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+          }, [isDark]);
+
+          useEffect(() => {
+            localStorage.setItem('vs_tracker', JSON.stringify(tracker));
+          }, [tracker]);
+
+          const toggleStack = (id) => {
+            setUserStack(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]);
+          };
+
+          const toggleTaken = (id) => {
+            setTracker(prev => {
+              const isTaken = prev.taken.includes(id);
+              const newTaken = isTaken 
+                ? prev.taken.filter(i => i !== id) 
+                : [...prev.taken, id];
+              return { ...prev, taken: newTaken };
+            });
+          };
+
+          const filteredNutrients = useMemo(() => {
+            return NUTRIENT_DB.filter(n => 
+              n.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              n.function.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              n.category.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+          }, [searchTerm]);
+
+          const schedule = useMemo(() => {
+            const stackData = NUTRIENT_DB.filter(n => userStack.includes(n.id));
+            const slots = {
+              morning: { title: 'Morning', sub: 'Stimulants & Energy', items: [], icon: <Sun className="w-5 h-5" /> },
+              meal: { title: 'Main Meal', sub: 'Fat Solubles', items: [], icon: <Coffee className="w-5 h-5" /> },
+              evening: { title: 'Evening', sub: 'Rest & Recovery', items: [], icon: <Moon className="w-5 h-5" /> }
+            };
+
+            stackData.forEach(item => {
+              const t = item.optimal_time.toLowerCase();
+              if (t.includes('evening') || item.id === 'magnesium' || item.id === 'calcium') {
+                slots.evening.items.push(item);
+              } else if (t.includes('morning') || item.take_with.toLowerCase().includes('empty')) {
+                slots.morning.items.push(item);
+              } else {
+                slots.meal.items.push(item);
+              }
+            });
+            return slots;
+          }, [userStack]);
+
+          const progress = useMemo(() => {
+            if (userStack.length === 0) return 0;
+            const takenCount = tracker.taken.filter(id => userStack.includes(id)).length;
+            return Math.round((takenCount / userStack.length) * 100);
+          }, [userStack, tracker]);
+
+          return (
+            <div className={`min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200 pb-24 ${isDark ? 'dark' : ''}`}>
+                
+                {/* --- HEADER --- */}
+                <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
+                  <div className="max-w-xl mx-auto px-4 py-3">
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center gap-2">
+                        <Activity className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                        <span className="font-bold text-lg tracking-tight">VitalSync</span>
+                      </div>
+                      <button 
+                        onClick={() => setShowSettings(!showSettings)}
+                        className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                      >
+                        {showSettings ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                      </button>
+                    </div>
+                    
+                    {activeTab === 'schedule' && userStack.length > 0 && (
+                        <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+                            <div 
+                                className="bg-indigo-500 dark:bg-indigo-400 h-full transition-all duration-500 ease-out" 
+                                style={{ width: `${progress}%` }}
+                            />
                         </div>
+                    )}
+                  </div>
 
-                        <div className="ml-5 pl-8 space-y-3">
-                          {slot.items.map(item => (
-                            <div key={item.id} className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                              <div className="flex justify-between items-start">
-                                <span className="font-semibold">{item.name}</span>
-                                <span className="text-xs px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300">
-                                  {typeof item.rda === 'object' ? item.rda[gender === 'male' ? 'm' : 'f'] : item.rda}
-                                </span>
-                              </div>
-                              <div className="text-xs text-slate-500 mt-1">
-                                Take with: {item.take_with}
-                              </div>
-                            </div>
-                          ))}
+                  {showSettings && (
+                    <div className="max-w-xl mx-auto px-4 pb-4 animate-in slide-in-from-top-2 duration-200 border-t border-slate-200 dark:border-slate-800 pt-4">
+                      <div className="bg-slate-100 dark:bg-slate-800 rounded-xl p-4 space-y-4">
+                        <Toggle 
+                          label="Biological Sex (Affects RDA)"
+                          options={[{label: 'Man', value: 'male'}, {label: 'Woman', value: 'female'}]}
+                          selected={gender}
+                          onChange={setGender}
+                        />
+                        <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-700 mt-2">
+                           <span className="text-sm font-semibold text-slate-500">Appearance</span>
+                           <button 
+                            onClick={() => setIsDark(!isDark)}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 shadow-sm text-sm font-medium"
+                           >
+                             {isDark ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                             {isDark ? 'Dark Mode' : 'Light Mode'}
+                           </button>
                         </div>
                       </div>
-                    )
-                  ))}
+                    </div>
+                  )}
+                </header>
+
+                {/* --- MAIN CONTENT --- */}
+                <main className="max-w-xl mx-auto px-4 py-6">
+                  
+                  {activeTab === 'guide' && (
+                    <div className="space-y-6 animate-in fade-in duration-300">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <input 
+                          type="text" 
+                          placeholder="Find supplements..." 
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm text-base"
+                        />
+                      </div>
+
+                      {['Essential', 'Performance', 'Natural'].map(cat => {
+                        const items = filteredNutrients.filter(n => n.category === cat);
+                        if (items.length === 0) return null;
+                        
+                        return (
+                          <div key={cat}>
+                             <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 px-1">{cat} Support</h3>
+                             {items.map(n => (
+                                <NutrientCard 
+                                  key={n.id} 
+                                  nutrient={n} 
+                                  isAdded={userStack.includes(n.id)}
+                                  onToggle={() => toggleStack(n.id)}
+                                  isExpanded={expandedId === n.id}
+                                  onExpand={() => setExpandedId(expandedId === n.id ? null : n.id)}
+                                  gender={gender}
+                                />
+                             ))}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {activeTab === 'schedule' && (
+                    <div className="space-y-6 animate-in fade-in duration-300">
+                      {userStack.length === 0 ? (
+                        <div className="text-center py-20 opacity-50">
+                          <div className="w-16 h-16 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Plus className="w-8 h-8 text-slate-400" />
+                          </div>
+                          <p>Tap "Guide" to build your stack.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-6 relative">
+                          
+                          {Object.entries(schedule).map(([key, slot]) => (
+                            slot.items.length > 0 && (
+                              <div key={key} className="relative z-10">
+                                <div className="flex items-center gap-3 mb-3 sticky top-16 bg-slate-50 dark:bg-slate-950 py-2 z-10">
+                                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-sm border-2 ${
+                                    key === 'morning' ? 'bg-amber-50 border-amber-200 text-amber-600 dark:bg-slate-800 dark:border-amber-700/50 dark:text-amber-400' :
+                                    key === 'meal' ? 'bg-orange-50 border-orange-200 text-orange-600 dark:bg-slate-800 dark:border-orange-700/50 dark:text-orange-400' :
+                                    'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-slate-800 dark:border-indigo-700/50 dark:text-indigo-400'
+                                  }`}>
+                                    {slot.icon}
+                                  </div>
+                                  <div>
+                                    <h2 className="text-lg font-bold leading-none">{slot.title}</h2>
+                                    <span className="text-xs text-slate-500 font-medium uppercase tracking-wide">{slot.sub}</span>
+                                  </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                  {slot.items.map(item => {
+                                    const isTaken = tracker.taken.includes(item.id);
+                                    const rda = typeof item.rda === 'object' ? item.rda[gender === 'male' ? 'm' : 'f'] : item.rda;
+                                    
+                                    return (
+                                      <button 
+                                        key={item.id} 
+                                        onClick={() => toggleTaken(item.id)}
+                                        className={`w-full text-left bg-white dark:bg-slate-800 p-3 rounded-xl border shadow-sm transition-all duration-200 flex items-center gap-3 group ${
+                                          isTaken 
+                                            ? 'border-emerald-200 bg-emerald-50/30 dark:bg-emerald-900/10 dark:border-emerald-900/50' 
+                                            : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700'
+                                        }`}
+                                      >
+                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                          isTaken 
+                                            ? 'bg-emerald-500 border-emerald-500' 
+                                            : 'border-slate-300 dark:border-slate-600 group-hover:border-indigo-400'
+                                        }`}>
+                                          {isTaken && <Check className="w-4 h-4 text-white" />}
+                                        </div>
+
+                                        <div className={`flex-1 ${isTaken ? 'opacity-50' : ''}`}>
+                                          <div className="flex justify-between items-start">
+                                            <span className={`font-semibold ${isTaken ? 'line-through text-slate-500' : 'text-slate-800 dark:text-slate-100'}`}>
+                                              {item.name}
+                                            </span>
+                                            <div className="flex flex-col items-end">
+                                                <FrequencyBadge freq={item.frequency} />
+                                            </div>
+                                          </div>
+                                          <div className="text-xs text-slate-500 mt-1 flex gap-2">
+                                            <span>{rda}</span>
+                                            <span>•</span>
+                                            <span>With {item.take_with}</span>
+                                          </div>
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )
+                          ))}
+                          
+                          <div className="flex justify-center mt-8">
+                             <button 
+                               onClick={() => setTracker({ date: new Date().toISOString().split('T')[0], taken: [] })}
+                               className="text-xs text-slate-400 flex items-center gap-1 hover:text-slate-600"
+                             >
+                               <RotateCcw className="w-3 h-3" /> Reset Day
+                             </button>
+                          </div>
+
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </main>
+
+                <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-t border-slate-200 dark:border-slate-800 pb-safe pt-2 px-6 z-50">
+                  <div className="max-w-xl mx-auto flex justify-around items-center h-14">
+                    <button 
+                      onClick={() => setActiveTab('guide')}
+                      className={`flex flex-col items-center gap-1 w-16 ${activeTab === 'guide' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}
+                    >
+                      <Search className="w-6 h-6" />
+                      <span className="text-[10px] font-bold">Guide</span>
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveTab('schedule')}
+                      className={`flex flex-col items-center gap-1 w-16 relative ${activeTab === 'schedule' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}
+                    >
+                      <div className="relative">
+                        <Calendar className="w-6 h-6" />
+                        {progress > 0 && progress < 100 && (
+                          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-indigo-500 rounded-full border-2 border-white dark:border-slate-900" />
+                        )}
+                      </div>
+                      <span className="text-[10px] font-bold">Today</span>
+                    </button>
+                  </div>
                 </div>
-              )}
+
             </div>
-          )}
-        </main>
+          );
+        }
 
-        {/* --- BOTTOM NAV (Mobile Style) --- */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 pb-safe pt-2 px-6 z-50">
-          <div className="max-w-xl mx-auto flex justify-around items-center h-14">
-            <button 
-              onClick={() => setActiveTab('guide')}
-              className={`flex flex-col items-center gap-1 w-16 ${activeTab === 'guide' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}
-            >
-              <Search className="w-6 h-6" />
-              <span className="text-[10px] font-bold">Guide</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab('schedule')}
-              className={`flex flex-col items-center gap-1 w-16 ${activeTab === 'schedule' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}
-            >
-              <Activity className="w-6 h-6" />
-              <span className="text-[10px] font-bold">Plan</span>
-            </button>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  );
-}
-
-
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

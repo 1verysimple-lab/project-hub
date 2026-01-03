@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sitges Pure | App by Blues</title>
+    <!-- React & Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617;
+            margin: 0;
+            color: #f8fafc;
+        }
+        .flag-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .flag-btn:active {
+            transform: scale(0.95);
+        }
+        .logo-link {
+            transition: opacity 0.3s ease;
+        }
+        .logo-link:hover {
+            opacity: 1 !important;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Standard Icons mapping
+        const AlertTriangle = (props) => <i data-lucide="alert-triangle" {...props} style={{width: props.size, height: props.size}} />;
+        const CheckCircle2 = (props) => <i data-lucide="check-circle-2" {...props} style={{width: props.size, height: props.size}} />;
+        const Info = (props) => <i data-lucide="info" {...props} style={{width: props.size, height: props.size}} />;
+        const Wind = (props) => <i data-lucide="wind" {...props} style={{width: props.size, height: props.size}} />;
+        const ChevronDown = (props) => <i data-lucide="chevron-down" {...props} style={{width: props.size, height: props.size}} />;
+        const ChevronUp = (props) => <i data-lucide="chevron-up" {...props} style={{width: props.size, height: props.size}} />;
+        const ShieldAlert = (props) => <i data-lucide="shield-alert" {...props} style={{width: props.size, height: props.size}} />;
+        const Waves = (props) => <i data-lucide="waves" {...props} style={{width: props.size, height: props.size}} />;
+        const Coffee = (props) => <i data-lucide="coffee" {...props} style={{width: props.size, height: props.size}} />;
+        const Navigation = (props) => <i data-lucide="navigation" {...props} style={{width: props.size, height: props.size}} />;
+        const Share2 = (props) => <i data-lucide="share-2" {...props} style={{width: props.size, height: props.size}} />;
+        const Smartphone = (props) => <i data-lucide="smartphone" {...props} style={{width: props.size, height: props.size}} />;
+        const X = (props) => <i data-lucide="x" {...props} style={{width: props.size, height: props.size}} />;
+
+        // Custom SVG Flags for consistency
+        const FlagUK = () => <span>🇬🇧</span>;
+        const FlagES = () => <span>🇪🇸</span>;
+        const FlagFR = () => <span>🇫🇷</span>;
+        const FlagCA = () => (
+            <svg width="24" height="18" viewBox="0 0 9 6" className="rounded-sm shadow-sm">
+                <rect width="9" height="6" fill="#fcd116"/>
+                <rect width="9" height="0.66" y="0.66" fill="#ce1126"/>
+                <rect width="9" height="0.66" y="2" fill="#ce1126"/>
+                <rect width="9" height="0.66" y="3.33" fill="#ce1126"/>
+                <rect width="9" height="0.66" y="4.66" fill="#ce1126"/>
+            </svg>
+        );
+
+        const translations = {
+            en: {
+                flag: <FlagUK />, label: "English", title: "SITGES", subtitle: "PURE", heroTitle: "Clear Air", heroSubtitle: "Strict Rules.",
+                heroDesc: "Spain's tobacco laws have reached a total ban on public social spaces.",
+                beaches: "Beach Areas", terraces: "Dining & Terraces", streets: "Public Street", 
+                restricted: "Restricted Zones", totalProhibition: "Total Prohibition", fifteenMeter: "The 15m Rule",
+                beachFine: "On Beach", terraceFine: "Terrace", vapingTitle: "Vaping Update",
+                vapingDesc: "Vaping is legally identical to tobacco. If a sign says no smoking, it includes your device.",
+                disposableNote: "Disposable vapes are now illegal to sell in Sitges.",
+                statusActive: "SYSTEM ACTIVE", officialLaws: "Official Laws",
+                beachDetail: "Smoking and vaping are prohibited on the sand at La Fragata and San Sebastián.",
+                beachWarning: "Local police are active. Fines start at €30 but reach €300 for repeat offenses.",
+                terraceDetail: "The 2026 National Reform has ended smoking on all terraces.",
+                terraceItems: ['Rooftops', 'Sidewalks', 'Chiringuitos', 'Beach Bars'],
+                streetDetail: "You can smoke while walking, but must stay 15m away from schools and parks.",
+                shareTitle: "Share & Save", qrDesc: "Let someone scan this to share the guide instantly.",
+                saveHomeTitle: "Add to Home Screen", close: "Close"
+            },
+            ca: {
+                flag: <FlagCA />, label: "Català", title: "SITGES", subtitle: "PUR", heroTitle: "Aire Net", heroSubtitle: "Regles Estrictes.",
+                heroDesc: "Les lleis de tabac a Espanya prohibeixen fumar en espais socials públics.",
+                beaches: "Platges", terraces: "Terrasses i Restaurants", streets: "Via Pública", 
+                restricted: "Zones Restringides", totalProhibition: "Prohibició Total", fifteenMeter: "Regla dels 15m",
+                beachFine: "A Platja", terraceFine: "Terrassa", vapingTitle: "Actualització Vapeig",
+                vapingDesc: "El vapeig és legalment idèntic al tabac. Prohibit fumar implica prohibit vapejar.",
+                disposableNote: "Els vapers d'un sol ús són il·legals per a la venda a Sitges.",
+                statusActive: "SISTEMA ACTIU", officialLaws: "Lleis Oficials",
+                beachDetail: "Prohibit fumar i vapejar a la sorra de La Fragata i Sant Sebastià.",
+                beachWarning: "Policia local activa. Multes de €30 fins a €300 per reincidència.",
+                terraceDetail: "La Reforma Nacional 2026 prohibeix fumar a totes les terrasses.",
+                terraceItems: ['Terrats', 'Voreres', 'Xiringuitos', 'Terrasses'],
+                streetDetail: "Es pot fumar caminant, però a 15m de distància d'escoles i parcs.",
+                shareTitle: "Compartir i Desar", qrDesc: "Deixa que algú escanegi això per compartir la guia.",
+                saveHomeTitle: "Afegir a l'Inici", close: "Tancar"
+            },
+            es: {
+                flag: <FlagES />, label: "Español", title: "SITGES", subtitle: "PURO", heroTitle: "Aire Limpio", heroSubtitle: "Reglas Estrictas.",
+                heroDesc: "Las leyes de tabaco en España prohíben fumar en espacios sociales públicos.",
+                beaches: "Playas", terraces: "Terrazas y Restaurantes", streets: "Vía Pública", 
+                restricted: "Zonas Restringidas", totalProhibition: "Prohibición Total", fifteenMeter: "Regla de los 15m",
+                beachFine: "En Playa", terraceFine: "Terraza", vapingTitle: "Actualización Vapeo",
+                vapingDesc: "El vapeo es legalmente idéntico al tabaco. Prohibido fumar implica prohibido vapear.",
+                disposableNote: "Los vapers desechables son ilegales para la venta en Sitges.",
+                statusActive: "SISTEMA ACTIVO", officialLaws: "Leyes Oficiales",
+                beachDetail: "Prohibido fumar y vapear en la arena de La Fragata y San Sebastián.",
+                beachWarning: "Policía local activa. Multas de €30 hasta €300 por reincidencia.",
+                terraceDetail: "La Reforma Nacional 2026 prohíbe fumar en todas las terrazas.",
+                terraceItems: ['Azoteas', 'Aceras', 'Chiringuitos', 'Terrazas'],
+                streetDetail: "Se puede fumar caminando, pero a 15m de distancia de escuelas y parques.",
+                shareTitle: "Compartir y Guardar", qrDesc: "Deja que alguien escanee esto para compartir la guía.",
+                saveHomeTitle: "Añadir a Inicio", close: "Cerrar"
+            },
+            fr: {
+                flag: <FlagFR />, label: "Français", title: "SITGES", subtitle: "PUR", heroTitle: "Air Pur", heroSubtitle: "Règles Strictes.",
+                heroDesc: "Les lois espagnoles interdisent désormais de fumer dans tous les espaces publics sociaux.",
+                beaches: "Zones de Plage", terraces: "Terrasses et Restos", streets: "Voie Publique", 
+                restricted: "Zones Restreintes", totalProhibition: "Interdiction Totale", fifteenMeter: "Règle des 15m",
+                beachFine: "À la Plage", terraceFine: "Terrasse", vapingTitle: "Infos Vapotage",
+                vapingDesc: "Le vapotage est légalement identique au tabac. Interdit de fumer = interdit de vapoter.",
+                disposableNote: "Les puffs jetables sont désormais illégales à la vente à Sitges.",
+                statusActive: "SYSTÈME ACTIF", officialLaws: "Lois Officielles",
+                beachDetail: "Interdiction de fumer/vapoter sur le sable à La Fragata et San Sebastián.",
+                beachWarning: "Police locale active. Amendes de 30 € à 300 € en cas de récidive.",
+                terraceDetail: "La réforme nationale 2026 interdit de fumer sur toutes les terrasses.",
+                terraceItems: ['Toits', 'Trottoirs', 'Chiringuitos', 'Terrasses'],
+                streetDetail: "Vous pouvez fumer en marchant, mas restez à 15m des écoles et des parcs.",
+                shareTitle: "Partager & Enregistrer", qrDesc: "Laissez quelqu'un scanner ceci pour partager le guide.",
+                saveHomeTitle: "Ajouter à l'accueil", close: "Fermer"
+            }
+        };
+
+        const AppByBluesLogo = ({ className = "" }) => (
+            <a 
+                href="https://blueshub.netlify.app/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className={`logo-link block cursor-pointer outline-none focus:ring-2 focus:ring-sky-500/50 rounded-lg ${className}`}
+            >
+                <svg viewBox="0 0 200 60" className="w-28 h-auto" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#38bdf8" />
+                            <stop offset="100%" stopColor="#818cf8" />
+                        </linearGradient>
+                    </defs>
+                    <text x="50%" y="30" textAnchor="middle" fill="url(#logoGradient)" style={{ fontFamily: 'Inter, sans-serif', fontWeight: 900, fontSize: '14px', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                        App by Blues
+                    </text>
+                    <circle cx="100" cy="40" r="2" fill="#38bdf8"><animate attributeName="opacity" values="0.2;1;0.2" dur="2s" repeatCount="indefinite" /></circle>
+                </svg>
+            </a>
+        );
+
+        const App = () => {
+            const [activeAccordion, setActiveAccordion] = React.useState(null);
+            const [lang, setLang] = React.useState('en');
+            const [showShare, setShowShare] = React.useState(false);
+            const t = translations[lang];
+
+            React.useEffect(() => {
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }, [activeAccordion, lang, showShare]);
+
+            const LawCard = ({ title, status, icon: Icon, type, details }) => {
+                const isRed = type === 'danger';
+                return (
+                    <div className="mb-4">
+                        <div onClick={() => setActiveAccordion(activeAccordion === title ? null : title)}
+                             className={`rounded-2xl border backdrop-blur-md transition-all cursor-pointer ${activeAccordion === title ? 'bg-white/15 border-white/20 shadow-lg' : 'bg-white/5 border-white/10'}`}>
+                            <div className="p-5 flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className={`p-3 rounded-xl flex items-center justify-center ${isRed ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`}>
+                                        <Icon size={20} className="shrink-0" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-white text-sm">{title}</h3>
+                                        <p className={`text-[10px] uppercase font-black ${isRed ? 'text-red-400' : 'text-amber-400'}`}>{status}</p>
+                                    </div>
+                                </div>
+                                <div className="text-white/40">{activeAccordion === title ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</div>
+                            </div>
+                            {activeAccordion === title && (
+                                <div className="px-5 pb-6 text-slate-300 text-sm leading-relaxed animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <div className="h-px bg-white/10 mb-4" />
+                                    {details}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="min-h-screen bg-[#020617] text-slate-200 pb-32 relative overflow-x-hidden">
+                    <div className="absolute top-[-5%] right-[-10%] w-[60%] h-[40%] bg-sky-600/10 blur-[100px] rounded-full" />
+                    
+                    <header className="px-6 py-6 relative max-w-md mx-auto flex items-center justify-between z-50">
+                        <div className="flex items-center gap-2">
+                            <div className="bg-sky-500 p-1.5 rounded-lg flex items-center justify-center shadow-lg shadow-sky-500/20"><Wind className="text-white" size={18} /></div>
+                            <h1 className="text-base font-black text-white tracking-tight">{t.title} <span className="text-sky-400">{t.subtitle}</span></h1>
+                        </div>
+                        <button onClick={() => setShowShare(true)} className="p-2.5 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-white transition-colors"><Share2 size={18} /></button>
+                    </header>
+
+                    <main className="max-w-md mx-auto px-6 relative z-10">
+                        <div className="flex justify-center gap-2 mb-8 bg-white/5 p-1.5 rounded-2xl border border-white/5 backdrop-blur-sm">
+                            {Object.keys(translations).map((key) => (
+                                <button 
+                                    key={key} 
+                                    onClick={() => setLang(key)}
+                                    className={`flag-btn flex-1 flex flex-col items-center gap-2 py-3 rounded-xl transition-all ${lang === key ? 'bg-white/10 border border-white/10 shadow-inner' : 'opacity-40 grayscale hover:grayscale-0 hover:opacity-100'}`}
+                                >
+                                    <div className="h-6 flex items-center justify-center text-xl">
+                                        {translations[key].flag}
+                                    </div>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-white">{translations[key].label}</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        <section className="mb-10 text-center">
+                            <h2 className="text-4xl font-black text-white leading-tight mb-3 tracking-tighter">{t.heroTitle} <br/><span className="text-sky-400">{t.heroSubtitle}</span></h2>
+                            <p className="text-slate-400 text-sm leading-relaxed px-4">{t.heroDesc}</p>
+                        </section>
+
+                        <LawCard title={t.beaches} status={t.restricted} icon={Waves} type="danger" details={
+                            <div className="space-y-4">
+                                <p>{t.beachDetail}</p>
+                                <div className="flex items-start gap-3 bg-red-500/10 p-4 rounded-xl border border-red-500/20 text-red-200/90">
+                                    <ShieldAlert className="text-red-400 shrink-0 mt-0.5" size={18} />
+                                    <p className="text-xs font-medium leading-tight">{t.beachWarning}</p>
+                                </div>
+                            </div>
+                        }/>
+
+                        <LawCard title={t.terraces} status={t.totalProhibition} icon={Coffee} type="danger" details={
+                            <div className="space-y-4">
+                                <p>{t.terraceDetail}</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {t.terraceItems.map(item => <div key={item} className="bg-white/5 border border-white/5 px-3 py-2.5 rounded-xl text-[11px] font-bold text-center text-slate-300">{item}</div>)}
+                                </div>
+                            </div>
+                        }/>
+
+                        <LawCard title={t.streets} status={t.fifteenMeter} icon={Navigation} type="warning" details={
+                            <div className="space-y-3 text-slate-300">
+                                <p>{t.streetDetail}</p>
+                                <div className="flex items-center gap-2 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20 text-amber-200/80">
+                                    <CheckCircle2 size={14} className="shrink-0" />
+                                    <span className="text-xs font-bold uppercase tracking-wider italic">Respect local bylaws</span>
+                                </div>
+                            </div>
+                        }/>
+
+                        <section className="mt-8 mb-10 p-6 rounded-3xl border border-sky-500/20 bg-sky-500/5 backdrop-blur-sm relative overflow-hidden">
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="bg-sky-500 p-2 rounded-lg flex items-center justify-center shadow-lg shadow-sky-500/20"><Wind size={18} className="text-white" /></div>
+                                <h3 className="font-bold text-white uppercase text-xs tracking-widest">{t.vapingTitle}</h3>
+                            </div>
+                            <p className="text-sm text-slate-300 leading-relaxed">{t.vapingDesc} <br/><br/><span className="text-sky-400 font-bold">{t.disposableNote}</span></p>
+                        </section>
+
+                        <div className="grid grid-cols-2 gap-4 mb-16 text-center">
+                            <div className="bg-white/5 border border-white/5 p-5 rounded-3xl">
+                                <span className="block text-[10px] uppercase text-slate-500 font-black tracking-widest mb-1">{t.beachFine}</span>
+                                <span className="text-3xl font-black text-white italic">€300</span>
+                            </div>
+                            <div className="bg-white/5 border border-white/5 p-5 rounded-3xl">
+                                <span className="block text-[10px] uppercase text-slate-500 font-black tracking-widest mb-1">{t.terraceFine}</span>
+                                <span className="text-3xl font-black text-white italic">€100+</span>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col items-center py-12 opacity-50">
+                            <AppByBluesLogo />
+                        </div>
+                    </main>
+
+                    {showShare && (
+                        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4">
+                            <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowShare(false)} />
+                            <div className="relative w-full max-w-sm bg-[#0f172a] border border-white/10 rounded-[32px] p-8 shadow-2xl animate-in slide-in-from-bottom-10 duration-300">
+                                <div className="flex justify-between items-center mb-8">
+                                    <h2 className="text-2xl font-black text-white tracking-tighter">{t.shareTitle}</h2>
+                                    <button onClick={() => setShowShare(false)} className="bg-white/10 p-2 rounded-full text-slate-400"><X size={20} /></button>
+                                </div>
+                                <div className="bg-white/5 border border-white/10 rounded-2xl p-8 text-center mb-8">
+                                    <div className="bg-white p-4 rounded-2xl inline-block mb-4 shadow-xl shadow-sky-500/10"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.href)}&color=0ea5e9&bgcolor=ffffff`} alt="QR" className="w-32 h-32" /></div>
+                                    <p className="text-xs text-slate-400 font-medium px-4">{t.qrDesc}</p>
+                                </div>
+                                <div className="flex gap-4 p-5 rounded-2xl bg-sky-500/10 border border-sky-500/20">
+                                    <Smartphone className="text-sky-400 shrink-0" size={24} />
+                                    <div>
+                                        <h3 className="text-sm font-bold text-sky-100">{t.saveHomeTitle}</h3>
+                                        <p className="text-[11px] text-sky-200/60 leading-tight mt-1">Browser Menu &gt; Add to Home Screen</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="fixed bottom-6 left-0 right-0 px-6 z-50 pointer-events-none">
+                        <div className="max-w-md mx-auto pointer-events-auto">
+                            <div className="bg-slate-900/80 backdrop-blur-2xl border border-white/20 rounded-2xl p-3 shadow-2xl flex items-center justify-between">
+                                <div className="flex items-center gap-3 pl-3">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
+                                    <span className="text-[11px] font-black tracking-widest text-white uppercase">{t.statusActive}</span>
+                                </div>
+                                <button className="bg-sky-500 text-white px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-sky-500/20">{t.officialLaws}</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
