@@ -11,9 +11,8 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <!-- Babel (to compile JSX) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/lucide-react@latest"></script>
+    <!-- Lucide Icons (React UMD) -->
+    <script src="https://unpkg.com/lucide-react@0.292.0/dist/umd/lucide-react.min.js"></script>
 
     <style>
         /* Custom scrollbar for webkit */
@@ -34,17 +33,17 @@
         
         /* Grid setup for periodic table - 18 columns */
         .grid-cols-18 {
+            display: grid;
             grid-template-columns: repeat(18, minmax(0, 1fr));
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-200">
+<body class="bg-slate-950 text-slate-200 font-sans">
 
     <!-- NAVIGATION / LOGO -->
     <div class="fixed top-4 right-4 z-50">
-        <a href="https://blueshub.netlify.app/" class="block w-48 opacity-80 hover:opacity-100 transition-opacity bg-slate-900/80 backdrop-blur rounded-lg border border-slate-700 p-2">
-            <div class="text-xs text-center text-slate-500 mb-1">Back to Hub</div>
-            <img src="logoani.svg" alt="App by Blues" class="w-full h-auto">
+        <a href="index.html" class="block w-48 opacity-80 hover:opacity-100 transition-opacity bg-slate-900/80 backdrop-blur rounded-lg border border-slate-700 p-2 text-center text-slate-400 hover:text-white">
+            <span class="text-xs font-bold">Back to Index</span>
         </a>
     </div>
 
@@ -53,24 +52,27 @@
 
     <!-- REACT APPLICATION -->
     <script type="text/babel">
-        // Since we are in a standalone environment, we access React and Lucide from the global window object.
         const { useState, useEffect } = React;
-        const { Beaker, Droplet, Wind, Zap, Mountain, ShieldAlert, Radio, Crown, BookOpen, ChevronRight, CheckCircle2, Atom, Lock, Unlock, X, FlaskConical, Pill, Apple } = lucide;
+        
+        // Handle Lucide export variations
+        const LucideIcons = window.lucideReact || window.lucide || {};
+        const { Beaker, Droplet, Wind, Zap, Mountain, ShieldAlert, Radio, Crown, BookOpen, ChevronRight, CheckCircle2, Atom, Lock, Unlock, X, FlaskConical, Pill, Apple } = LucideIcons;
 
         // --- Data: The Full Periodic Table Layout ---
 
+        // We explicitly define border and text colors so Tailwind scanner picks them up
         const categories = {
-          alkali: { name: 'Alkali Metals', color: 'bg-red-500', desc: 'Highly reactive. They explode in water. Soft enough to cut with a knife.' },
-          alkaline: { name: 'Alkaline Earth', color: 'bg-orange-400', desc: 'Reactive, but less dramatic than Alkali. Found in rocks and bones.' },
-          transition: { name: 'Transition Metals', color: 'bg-yellow-500', desc: 'The classic metals. Hard, conductive, shiny. Gold, Iron, Copper.' },
-          basic: { name: 'Post-Transition', color: 'bg-green-500', desc: 'Soft metals, often with poor mechanical strength. Aluminium, Tin, Lead.' },
-          metalloid: { name: 'Metalloids', color: 'bg-teal-500', desc: 'The hybrids. Semi-conductors that power your electronics. Silicon is the king here.' },
-          nonmetal: { name: 'Other Non-metals', color: 'bg-blue-500', desc: 'The building blocks of life. Carbon, Nitrogen, Oxygen. Brittle solids or gases.' },
-          halogen: { name: 'Halogens', color: 'bg-indigo-500', desc: 'The salt-formers. Very reactive non-metals. Chlorine, Iodine.' },
-          noble: { name: 'Noble Gases', color: 'bg-purple-500', desc: 'The snobs. They don\'t react with anything. Used in neon lights and balloons.' },
-          lanthanide: { name: 'Lanthanides', color: 'bg-pink-500', desc: 'Rare earth elements. Crucial for magnets and smartphones.' },
-          actinide: { name: 'Actinides', color: 'bg-pink-700', desc: 'The heavyweights. All radioactive. Uranium, Plutonium.' },
-          unknown: { name: 'Unknown properties', color: 'bg-slate-600', desc: 'Synthetic elements that exist for milliseconds in a lab.' },
+          alkali: { name: 'Alkali Metals', color: 'bg-red-500', borderColor: 'border-red-500', textColor: 'text-red-300', desc: 'Highly reactive. They explode in water. Soft enough to cut with a knife.' },
+          alkaline: { name: 'Alkaline Earth', color: 'bg-orange-400', borderColor: 'border-orange-400', textColor: 'text-orange-300', desc: 'Reactive, but less dramatic than Alkali. Found in rocks and bones.' },
+          transition: { name: 'Transition Metals', color: 'bg-yellow-500', borderColor: 'border-yellow-500', textColor: 'text-yellow-300', desc: 'The classic metals. Hard, conductive, shiny. Gold, Iron, Copper.' },
+          basic: { name: 'Post-Transition', color: 'bg-green-500', borderColor: 'border-green-500', textColor: 'text-green-300', desc: 'Soft metals, often with poor mechanical strength. Aluminium, Tin, Lead.' },
+          metalloid: { name: 'Metalloids', color: 'bg-teal-500', borderColor: 'border-teal-500', textColor: 'text-teal-300', desc: 'The hybrids. Semi-conductors that power your electronics. Silicon is the king here.' },
+          nonmetal: { name: 'Other Non-metals', color: 'bg-blue-500', borderColor: 'border-blue-500', textColor: 'text-blue-300', desc: 'The building blocks of life. Carbon, Nitrogen, Oxygen. Brittle solids or gases.' },
+          halogen: { name: 'Halogens', color: 'bg-indigo-500', borderColor: 'border-indigo-500', textColor: 'text-indigo-300', desc: 'The salt-formers. Very reactive non-metals. Chlorine, Iodine.' },
+          noble: { name: 'Noble Gases', color: 'bg-purple-500', borderColor: 'border-purple-500', textColor: 'text-purple-300', desc: 'The snobs. They don\'t react with anything. Used in neon lights and balloons.' },
+          lanthanide: { name: 'Lanthanides', color: 'bg-pink-500', borderColor: 'border-pink-500', textColor: 'text-pink-300', desc: 'Rare earth elements. Crucial for magnets and smartphones.' },
+          actinide: { name: 'Actinides', color: 'bg-pink-700', borderColor: 'border-pink-700', textColor: 'text-pink-300', desc: 'The heavyweights. All radioactive. Uranium, Plutonium.' },
+          unknown: { name: 'Unknown properties', color: 'bg-slate-600', borderColor: 'border-slate-600', textColor: 'text-slate-400', desc: 'Synthetic elements that exist for milliseconds in a lab.' },
         };
 
         const elementStringData = [
@@ -266,12 +268,10 @@
             if (currentLevel > 1) setCurrentLevel(c => c - 1);
           };
 
-          const LevelIcon = levelData.icon;
-
           return (
             <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-teal-500 selection:text-white pb-12 flex flex-col md:flex-row">
               
-              {/* Sidebar / Progress */}
+              {/* Sidebar / Progress */} 
               <aside className="w-full md:w-80 bg-slate-900 border-r border-slate-800 flex flex-col h-auto md:h-screen sticky top-0 z-30 overflow-y-auto">
                 <div className="p-6 border-b border-slate-800">
                   <h1 className="text-xl font-bold tracking-tight text-teal-500 flex items-center gap-2">
@@ -297,7 +297,7 @@
                         `}
                       >
                         <div className={`${currentLevel === l.id ? 'text-teal-400' : 'text-slate-600'}`}>
-                          <Icon className="w-5 h-5" />
+                          {Icon && <Icon className="w-5 h-5" />}
                         </div>
                         <div>
                           <div className="font-semibold">{l.id}. {l.title}</div>
@@ -314,10 +314,10 @@
                 </div>
               </aside>
 
-              {/* Main Content */}
+              {/* Main Content */} 
               <main className="flex-1 p-4 md:p-8 overflow-y-auto">
                 
-                {/* Lesson Header */}
+                {/* Lesson Header */} 
                 <div className="mb-8 bg-slate-900/50 p-6 rounded-xl border border-slate-800 backdrop-blur-sm animate-in fade-in slide-in-from-top-4">
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
                     <div>
@@ -348,18 +348,18 @@
                   </div>
                 </div>
 
-                {/* SPECIAL VIEW: LEVEL 1 (WATER) */}
+                {/* SPECIAL VIEW: LEVEL 1 (WATER) */} 
                 {currentLevel === 1 && (
                    <div className="mb-12 flex flex-col items-center justify-center p-12 border border-dashed border-slate-700 rounded-2xl bg-slate-900/30">
                       <div className="relative w-64 h-48 flex items-center justify-center">
-                         {/* Oxygen */}
+                         {/* Oxygen */} 
                          <button 
                            onClick={() => setSelectedElement(fullElements.find(e => e.atomic === 8) || null)}
                            className="w-24 h-24 rounded-full bg-blue-500 text-white text-3xl font-bold flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:scale-110 transition z-10"
                          >
                            O
                          </button>
-                         {/* Hydrogens */}
+                         {/* Hydrogens */} 
                          <button 
                            onClick={() => setSelectedElement(fullElements.find(e => e.atomic === 1) || null)}
                            className="absolute top-0 right-0 w-14 h-14 rounded-full bg-slate-200 text-slate-900 text-xl font-bold flex items-center justify-center shadow-lg hover:scale-110 transition"
@@ -372,7 +372,7 @@
                          >
                            H
                          </button>
-                         {/* Bonds */}
+                         {/* Bonds */} 
                          <div className="absolute top-10 right-10 w-16 h-2 bg-slate-600 -rotate-45 -z-0 origin-left"></div>
                          <div className="absolute top-10 left-12 w-16 h-2 bg-slate-600 rotate-45 -z-0 origin-right"></div>
                       </div>
@@ -383,32 +383,32 @@
                    </div>
                 )}
 
-                {/* SPECIAL VIEW: LEVEL 9 (CRUDE) */}
+                {/* SPECIAL VIEW: LEVEL 9 (CRUDE) */} 
                 {currentLevel === 9 && (
                   <div className="grid md:grid-cols-3 gap-6 mb-8">
                      <div className="bg-slate-900 p-6 rounded-xl border border-slate-700">
-                        <Droplet className="w-8 h-8 text-pink-400 mb-4" />
+                        {Droplet && <Droplet className="w-8 h-8 text-pink-400 mb-4" />}
                         <h3 className="font-bold text-lg mb-2">Perfume</h3>
                         <p className="text-sm text-slate-400">Crude oil &rarr; Phenols &rarr; Artificial Vanilla. You are wearing fossil fuels.</p>
                      </div>
                      <div className="bg-slate-900 p-6 rounded-xl border border-slate-700">
-                        <Pill className="w-8 h-8 text-blue-400 mb-4" />
+                        {Pill && <Pill className="w-8 h-8 text-blue-400 mb-4" />}
                         <h3 className="font-bold text-lg mb-2">Medicine</h3>
                         <p className="text-sm text-slate-400">Oil provides the Carbon backbone for Aspirin and Antihistamines.</p>
                      </div>
                      <div className="bg-slate-900 p-6 rounded-xl border border-slate-700">
-                        <Apple className="w-8 h-8 text-green-400 mb-4" />
+                        {Apple && <Apple className="w-8 h-8 text-green-400 mb-4" />}
                         <h3 className="font-bold text-lg mb-2">Food</h3>
                         <p className="text-sm text-slate-400">Food dyes (Red 40) and preservatives are synthesized from petroleum byproducts.</p>
                      </div>
                   </div>
                 )}
 
-                {/* THE TABLE (Always visible but states change) */}
+                {/* THE TABLE (Always visible but states change) */} 
                 <div className="overflow-x-auto pb-12">
                   <div className="min-w-[900px] grid grid-cols-18 gap-1 p-4 bg-slate-900 rounded-xl border border-slate-800 relative">
                     
-                    {/* Legend */}
+                    {/* Legend */} 
                     {currentLevel > 3 && (
                       <div className="absolute top-4 left-20 md:left-32 grid grid-cols-2 gap-2 text-xs opacity-70 bg-slate-950/80 p-2 rounded border border-slate-800 z-10">
                          {Object.entries(categories).map(([key, cat]) => (
@@ -423,7 +423,8 @@
                     {fullElements.map((el) => {
                       const unlocked = isUnlocked(el.atomic);
                       const isRelevant = levelData?.unlocks === 'ALL' || (Array.isArray(levelData?.unlocks) && levelData.unlocks.includes(el.atomic));
-                      
+                      const catData = categories[el.cat];
+
                       return (
                         <button
                           key={el.atomic}
@@ -434,7 +435,7 @@
                             aspect-square flex flex-col justify-center items-center rounded-md border
                             transition-all duration-300 relative group
                             ${unlocked 
-                              ? `${categories[el.cat].color} bg-opacity-10 border-${categories[el.cat].color.replace('bg-', '')} hover:scale-125 hover:z-20 hover:bg-opacity-30 cursor-pointer` 
+                              ? `${catData.color} bg-opacity-10 ${catData.borderColor} hover:scale-125 hover:z-20 hover:bg-opacity-30 cursor-pointer` 
                               : 'bg-slate-900 border-slate-800 text-slate-700 cursor-not-allowed opacity-40'}
                             ${isRelevant && currentLevel !== 10 ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900 animate-pulse' : ''}
                           `}
@@ -453,7 +454,7 @@
 
               </main>
 
-              {/* Detail Modal */}
+              {/* Detail Modal */} 
               {selectedElement && (
                 <div 
                   className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
@@ -473,7 +474,7 @@
                     <div className="flex items-start justify-between mb-8">
                       <div>
                          <h2 className="text-3xl font-bold text-white tracking-tight">{selectedElement.name}</h2>
-                         <span className={`inline-block px-3 py-1 mt-3 text-xs font-semibold rounded-full bg-opacity-20 border border-opacity-30 ${categories[selectedElement.cat].color.replace('bg-', 'text-').replace('500', '300')} border-white`}>
+                         <span className={`inline-block px-3 py-1 mt-3 text-xs font-semibold rounded-full bg-opacity-20 border border-opacity-30 ${categories[selectedElement.cat].textColor} ${categories[selectedElement.cat].borderColor}`}>
                            {categories[selectedElement.cat].name}
                          </span>
                       </div>

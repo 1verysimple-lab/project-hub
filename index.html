@@ -3,151 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Projects Hub</title>
+    <title>Blues' Lab</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #0f1115; /* Deep space grey */
+            --card-bg: #181b21;
+            --accent: #6366f1; /* Indigo 500 */
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+        }
+
         body {
-            background-color: #0f0f11;
-            color: #e2e2e2;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
             font-family: 'Inter', sans-serif;
         }
-        .card {
-            transition: transform 0.2s, box-shadow 0.2s;
+
+        /* Bento Grid Layout */
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            auto-rows: minmax(180px, auto);
         }
+
+        /* Card Styles */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid #2d3139;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
         .card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
-            border-color: #6366f1;
+            border-color: var(--accent);
+            box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.2);
         }
-        /* Logo Styles */
-        .logo-container svg {
-            width: 100%;
-            max-width: 300px;
-            height: auto;
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, var(--accent), #a855f7);
+            opacity: 0;
+            transition: opacity 0.3s;
         }
+
+        .card:hover::before { opacity: 1; }
+
+        .type-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 999px;
+            background: #2d3139;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Search Bar */
+        .search-input {
+            background: #181b21;
+            border: 1px solid #2d3139;
+            color: white;
+            transition: border-color 0.2s;
+        }
+        .search-input:focus {
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Logo Animation */
+        .fade-in { animation: fadeIn 1s ease-out forwards; opacity: 0; }
+        @keyframes fadeIn { to { opacity: 1; } }
     </style>
 </head>
-<body class="min-h-screen p-8 flex flex-col">
+<body class="min-h-screen flex flex-col p-6 md:p-12">
 
-    <!-- Header -->
-    <header class="max-w-4xl mx-auto mb-12 text-center pt-10 w-full flex flex-col items-center">
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto w-full mb-12 flex flex-col md:flex-row justify-between items-center gap-8">
+        
         <!-- Animated Logo -->
-        <div class="logo-container mb-6 text-indigo-400">
-             <a href="https://blueshub.netlify.app/" title="Go to Main Hub">
-                 <svg width="300" height="60" viewBox="0 0 300 60" xmlns="http://www.w3.org/2000/svg" aria-label="app by blues">
-              <style>
-                .base { 
-                  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-                  font-size: 28px;
-                  fill: currentColor; 
-                }
-                .bold { font-weight: 700; }
-                .light { font-weight: 300; opacity: 0.7; }
-            
-                .fade-in {
-                  opacity: 0;
-                  animation: cinematic 1.2s cubic-bezier(0.215, 0.610, 0.355, 1.000) forwards;
-                }
-                
-                .delay {
-                  animation-delay: 0.15s;
-                }
-            
-                @keyframes cinematic {
-                  0% { 
-                    opacity: 0; 
-                    letter-spacing: -1px; 
-                    transform: translateY(5px); 
-                  }
-                  100% { 
-                    opacity: 1; 
-                    letter-spacing: 0px; 
-                    transform: translateY(0); 
-                  }
-                }
-              </style>
-            
-              <text x="50%" y="38" text-anchor="middle" class="base">
-                <tspan class="bold fade-in">app</tspan>
-                <tspan class="light fade-in" dx="5">by</tspan>
-                <tspan class="bold fade-in delay" dx="5">blues</tspan>
-              </text>
-            </svg>
-             </a>
+        <div class="w-64 text-indigo-400">
+            <a href="https://blueshub.netlify.app/" title="Go to Main Hub">
+                <img src="logoani.svg" alt="app by blues" class="w-full h-auto">
+            </a>
         </div>
 
-        <h1 class="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">
-            Project Showcase
-        </h1>
-        <p class="text-gray-400">A collection of my interactive web experiments and tools.</p>
+        <!-- Controls -->
+        <div class="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+            <!-- Filter Pills -->
+            <div class="flex bg-[#181b21] p-1 rounded-lg border border-[#2d3139]" id="filter-container">
+                <button class="px-4 py-1.5 rounded-md text-sm font-medium bg-indigo-600 text-white shadow-sm transition-all" data-filter="all">All</button>
+                <button class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-400 hover:text-white transition-all" data-filter="Game">Games</button>
+                <button class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-400 hover:text-white transition-all" data-filter="Tool">Tools</button>
+                <button class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-400 hover:text-white transition-all" data-filter="Guide">Guides</button>
+            </div>
+
+            <!-- Search -->
+            <div class="relative">
+                <i data-lucide="search" class="absolute left-3 top-2.5 h-4 w-4 text-gray-500"></i>
+                <input type="text" id="search-box" placeholder="Search projects..." class="search-input pl-10 pr-4 py-1.5 rounded-lg w-full md:w-64 text-sm">
+            </div>
+        </div>
     </header>
 
-    <!-- Grid Container -->
-    <main id="projects-grid" class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 w-full flex-grow">
-        <!-- Projects will be loaded here -->
-        <div class="col-span-full text-center text-zinc-500 animate-pulse">
-            Loading projects...
+    <!-- Main Grid -->
+    <main class="max-w-7xl mx-auto w-full flex-grow">
+        <div id="projects-grid" class="bento-grid">
+            <!-- Loading Skeleton -->
+            <div class="col-span-full text-center py-20 text-gray-600 animate-pulse">
+                Initializing Lab Protocol...
+            </div>
         </div>
     </main>
 
-    <footer class="max-w-4xl mx-auto mt-16 text-center text-zinc-600 text-sm w-full">
-        <p>Hosted on GitHub Pages</p>
+    <footer class="mt-16 text-center text-xs text-gray-600 font-mono">
+        <p>SYSTEM.VERSION: 2.1.0 // SYNCED_VIA_PUBLISH_PY</p>
     </footer>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            fetch('projects.json')
-                .then(response => response.json())
-                .then(projects => {
-                    const grid = document.getElementById('projects-grid');
-                    grid.innerHTML = ''; // Clear loading state
+        let allProjects = [];
 
-                    projects.forEach(project => {
-                        const isExternal = project.type === 'External' || project.filename.startsWith('http');
-                        const target = isExternal ? 'target="_blank"' : '';
-                        const icon = getIconForType(project.type);
-                        const hoverColor = getHoverColorForType(project.type);
-                        const textColor = getTextColorForType(project.type);
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch('projects.json');
+                allProjects = await response.json();
+                renderProjects(allProjects);
+                lucide.createIcons();
+            } catch (error) {
+                console.error("Failed to load projects:", error);
+                document.getElementById('projects-grid').innerHTML = '<p class="text-red-500">System Failure: projects.json not found.</p>';
+            }
 
-                        const cardHTML = `
-                            <a href="${project.filename}" ${target} class="card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:${hoverColor} group">
-                                <div class="flex items-center justify-between mb-4">
-                                    <div class="p-3 bg-zinc-800 rounded-lg ${textColor} group-hover:text-white transition-colors">
-                                        <i data-lucide="${icon}"></i>
-                                    </div>
-                                    <span class="text-xs font-mono text-zinc-500">${project.type}</span>
-                                </div>
-                                <h2 class="text-xl font-semibold mb-2 group-hover:${textColor} transition-colors">${project.title}</h2>
-                                <p class="text-zinc-400 text-sm">
-                                    ${project.description}
-                                </p>
-                            </a>
-                        `;
-                        grid.insertAdjacentHTML('beforeend', cardHTML);
-                    });
-                    lucide.createIcons();
-                })
-                .catch(error => {
-                    console.error('Error loading projects:', error);
-                    document.getElementById('projects-grid').innerHTML = '<p class="text-red-500 text-center col-span-full">Failed to load projects.</p>';
-                });
+            setupFilters();
+            setupSearch();
         });
 
-        function getIconForType(type) {
-            if (type === 'External') return 'map';
-            if (type.includes('Audio')) return 'mic'; // Example if we add Audio type
-            return 'layout-template';
+        function renderProjects(projects) {
+            const grid = document.getElementById('projects-grid');
+            grid.innerHTML = '';
+
+            if (projects.length === 0) {
+                grid.innerHTML = '<div class="col-span-full text-center text-gray-500 py-10">No matching subjects found.</div>';
+                return;
+            }
+
+            projects.forEach((p, index) => {
+                const delay = index * 50; // Stagger animation
+                const type = p.type || 'Experiment';
+                const icon = getIcon(type);
+                
+                const card = `
+                    <a href="${p.filename}" class="card group fade-in" style="animation-delay: ${delay}ms">
+                        <div>
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="p-2 bg-[#252932] rounded-lg text-indigo-400 group-hover:text-white transition-colors">
+                                    <i data-lucide="${icon}" width="20"></i>
+                                </div>
+                                <span class="type-badge">${type}</span>
+                            </div>
+                            <h2 class="text-lg font-bold mb-2 group-hover:text-indigo-400 transition-colors">${p.title}</h2>
+                            <p class="text-sm text-gray-400 leading-relaxed line-clamp-3">${p.description}</p>
+                        </div>
+                        <div class="mt-4 flex items-center text-xs text-gray-500 font-mono">
+                            <span>OPEN_PROJECT</span>
+                            <i data-lucide="arrow-right" width="14" class="ml-2 transform group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </a>
+                `;
+                grid.insertAdjacentHTML('beforeend', card);
+            });
+            lucide.createIcons();
         }
 
-        function getHoverColorForType(type) {
-            if (type === 'External') return 'border-orange-500';
-            return 'border-emerald-500';
+        function getIcon(type) {
+            const map = {
+                'Game': 'gamepad-2',
+                'Tool': 'wrench',
+                'Guide': 'book-open',
+                'Art': 'palette',
+                'External': 'link'
+            };
+            return map[type] || 'flask-conical';
         }
 
-        function getTextColorForType(type) {
-            if (type === 'External') return 'text-orange-400';
-            return 'text-emerald-400';
+        function setupFilters() {
+            const buttons = document.querySelectorAll('#filter-container button');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Update UI
+                    buttons.forEach(b => {
+                        b.classList.remove('bg-indigo-600', 'text-white', 'shadow-sm');
+                        b.classList.add('text-gray-400');
+                    });
+                    btn.classList.remove('text-gray-400');
+                    btn.classList.add('bg-indigo-600', 'text-white', 'shadow-sm');
+
+                    // Filter Logic
+                    const filter = btn.dataset.filter;
+                    const filtered = filter === 'all' 
+                        ? allProjects 
+                        : allProjects.filter(p => (p.type || 'Experiment') === filter);
+                    
+                    renderProjects(filtered);
+                });
+            });
+        }
+
+        function setupSearch() {
+            const searchBox = document.getElementById('search-box');
+            searchBox.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
+                const filtered = allProjects.filter(p => 
+                    p.title.toLowerCase().includes(term) || 
+                    p.description.toLowerCase().includes(term)
+                );
+                renderProjects(filtered);
+            });
         }
     </script>
 </body>
