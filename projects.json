@@ -1,5 +1,12 @@
 [
     {
+        "filename": "green hell guide.html",
+        "title": "A guide",
+        "description": "A guide to green hell",
+        "type": "Guide",
+        "date_added": "2026-01-04"
+    },
+    {
         "filename": "FAN_SIM.html",
         "title": "Void Fan 2.0",
         "description": "An interactive fan simulation with realistic physics and sound. Experience the void.",

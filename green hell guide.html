@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Hell | Co-op Survival Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Inter:wght@300;400;700&display=swap');
+
+        :root {
+            --jungle-green: #1a2e1a;
+            --accent-gold: #c5a059;
+            --paper-light: #e8e2d2;
+        }
+
+        body {
+            background-color: #0d140d;
+            color: #d1d5db;
+            font-family: 'Inter', sans-serif;
+            background-image: linear-gradient(rgba(13, 20, 13, 0.85), rgba(13, 20, 13, 0.85)), 
+                              url('https://images.unsplash.com/photo-1502082553048-f009c37129b9?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-attachment: fixed;
+            background-size: cover;
+        }
+
+        .notebook-font {
+            font-family: 'Special Elite', cursive;
+        }
+
+        .card {
+            background: rgba(30, 41, 30, 0.9);
+            border: 1px solid #2d3f2d;
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            border-color: var(--accent-gold);
+        }
+
+        .keybind-row:nth-child(even) {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .status-bar {
+            height: 6px;
+            border-radius: 3px;
+            margin-top: 4px;
+        }
+
+        .nav-link {
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .nav-link:hover {
+            color: var(--accent-gold);
+            border-bottom-color: var(--accent-gold);
+        }
+
+        .coord-badge {
+            background: #2d3f2d;
+            color: var(--accent-gold);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d140d;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d3f2d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-gold);
+        }
+    </style>
+</head>
+<body class="pb-12">
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-50 bg-[#0d140d] border-b border-[#2d3f2d] shadow-xl">
+        <div class="container mx-auto px-4 py-4 flex flex-wrap justify-between items-center">
+            <h1 class="text-2xl font-bold tracking-tighter notebook-font text-green-500 uppercase">
+                <i class="fas fa-leaf mr-2"></i>Green Hell Guide
+            </h1>
+            <nav class="flex space-x-6 text-sm font-bold uppercase tracking-widest overflow-x-auto pb-2 md:pb-0">
+                <a href="#keybinds" class="nav-link">Controls</a>
+                <a href="#tutorial" class="nav-link">Survival</a>
+                <a href="#crafting" class="nav-link">Crafting</a>
+                <a href="#maps" class="nav-link">Maps</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 mt-8 max-w-6xl">
+        
+        <!-- INTRO HERO -->
+        <section class="mb-12 text-center py-10">
+            <h2 class="text-4xl md:text-5xl font-bold text-white mb-4">Welcome to the Amazon, Survivor.</h2>
+            <p class="text-lg text-gray-400 max-w-2xl mx-auto">A companion dashboard for you and your partner to conquer the jungle together. Stay fed, stay hydrated, and stay sane.</p>
+        </section>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- LEFT COLUMN: CONTROLS -->
+            <div id="keybinds" class="lg:col-span-1">
+                <div class="card p-6 h-full">
+                    <h3 class="text-xl font-bold text-green-500 mb-6 flex items-center">
+                        <i class="fas fa-keyboard mr-3"></i>Quick Keybinds
+                    </h3>
+                    <div class="space-y-1">
+                        <div class="flex justify-between p-3 keybind-row rounded">
+                            <span class="font-bold text-gray-300">Inventory</span>
+                            <kbd class="px-2 py-1 bg-gray-700 rounded text-xs text-white border-b-2 border-gray-900">TAB</kbd>
+                        </div>
+                        <div class="flex justify-between p-3 keybind-row rounded">
+                            <span class="font-bold text-gray-300">Smartwatch / GPS</span>
+                            <kbd class="px-2 py-1 bg-gray-700 rounded text-xs text-white border-b-2 border-gray-900">F</kbd>
+                        </div>
+                        <div class="flex justify-between p-3 keybind-row rounded">
+                            <span class="font-bold text-gray-300">Notebook</span>
+                            <kbd class="px-2 py-1 bg-gray-700 rounded text-xs text-white border-b-2 border-gray-900">N</kbd>
+                        </div>
+                        <div class="flex justify-between p-3 keybind-row rounded">
+                            <span class="font-bold text-gray-300">Body Inspection</span>
+                            <kbd class="px-2 py-1 bg-gray-700 rounded text-xs text-white border-b-2 border-gray-900">C (Hold)</kbd>
+                        </div>
+                        <div class="flex justify-between p-3 keybind-row rounded">
+                            <span class="font-bold text-gray-300">Wheel Menu</span>
+                            <kbd class="px-2 py-1 bg-gray-700 rounded text-xs text-white border-b-2 border-gray-900">C (Tap)</kbd>
+                        </div>
+                        <div class="flex justify-between p-3 keybind-row rounded">
+                            <span class="font-bold text-gray-300">Map (if found)</span>
+                            <kbd class="px-2 py-1 bg-gray-700 rounded text-xs text-white border-b-2 border-gray-900">M</kbd>
+                        </div>
+                        <div class="flex justify-between p-3 keybind-row rounded">
+                            <span class="font-bold text-gray-300">Block Attack</span>
+                            <kbd class="px-2 py-1 bg-gray-700 rounded text-xs text-white border-b-2 border-gray-900">R</kbd>
+                        </div>
+                        <div class="flex justify-between p-3 keybind-row rounded">
+                            <span class="font-bold text-gray-300">Throw / Knock Down</span>
+                            <kbd class="px-2 py-1 bg-gray-700 rounded text-xs text-white border-b-2 border-gray-900">Middle Click</kbd>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 bg-green-900/20 p-4 border border-green-800/50 rounded-lg">
+                        <h4 class="text-sm font-bold text-green-400 mb-2 uppercase tracking-tighter">Smartwatch Modes</h4>
+                        <p class="text-xs text-gray-400">Scroll the wheel while holding <kbd>F</kbd> to toggle between:</p>
+                        <ul class="text-xs mt-2 space-y-1 text-gray-300">
+                            <li><i class="fas fa-compass mr-2"></i><strong>Compass:</strong> GPS Coordinates</li>
+                            <li><i class="fas fa-apple-whole mr-2"></i><strong>Macros:</strong> Carb, Protein, Fat, Water</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CENTER COLUMN: SURVIVAL & TUTORIAL -->
+            <div id="tutorial" class="lg:col-span-2 space-y-8">
+                
+                <!-- Macro Management -->
+                <div class="card p-6">
+                    <h3 class="text-xl font-bold text-green-500 mb-6 flex items-center">
+                        <i class="fas fa-heartbeat mr-3"></i>Nutrition Survival
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-xs font-bold text-red-400"><span>PROTEIN (Red)</span><span>Meat / Fish / Larvae</span></div>
+                                <div class="status-bar bg-gray-800"><div class="h-full bg-red-500 w-1/3 rounded"></div></div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-bold text-yellow-500"><span>FATS (Yellow)</span><span>Nuts / Meat / Avocado</span></div>
+                                <div class="status-bar bg-gray-800"><div class="h-full bg-yellow-600 w-1/2 rounded"></div></div>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-xs font-bold text-green-400"><span>CARBS (Green)</span><span>Bananas / Roots / Fruit</span></div>
+                                <div class="status-bar bg-gray-800"><div class="h-full bg-green-500 w-3/4 rounded"></div></div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-bold text-blue-400"><span>WATER (Blue)</span><span>Coconut / Boiling / Rain</span></div>
+                                <div class="status-bar bg-gray-800"><div class="h-full bg-blue-500 w-2/3 rounded"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pro Tips Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="card p-6 bg-blue-900/10 border-blue-900/30">
+                        <h4 class="font-bold text-blue-400 mb-3"><i class="fas fa-tint mr-2"></i>Water Strategy</h4>
+                        <ul class="text-sm space-y-2 text-gray-300">
+                            <li>• Find <strong>Coconuts</strong>. Drink milk, then use bowl to collect rain.</li>
+                            <li>• Use <strong>Turtle Shells</strong> as massive water collectors.</li>
+                            <li>• Never drink "Dirty" water unless you have a <strong>Charcoal</strong> or <strong>Bone Soup</strong>.</li>
+                        </ul>
+                    </div>
+                    <div class="card p-6 bg-orange-900/10 border-orange-900/30">
+                        <h4 class="font-bold text-orange-400 mb-3"><i class="fas fa-user-shield mr-2"></i>Co-op Strategy</h4>
+                        <ul class="text-sm space-y-2 text-gray-300">
+                            <li>• <strong>Watch Each Other:</strong> One player cuts trees, the other watches for predators.</li>
+                            <li>• <strong>The Medic:</strong> Keep Molineria leaves in your pack for instant bandages.</li>
+                            <li>• <strong>Share XP:</strong> Blueprints found by one are shared by both.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Crafting Section -->
+                <div id="crafting" class="card p-6">
+                    <h3 class="text-xl font-bold text-green-500 mb-6 flex items-center">
+                        <i class="fas fa-hammer mr-3"></i>Essential Recipes
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="p-4 bg-black/30 rounded border border-white/5">
+                            <span class="text-xs text-accent-gold font-bold uppercase block mb-1">Combat</span>
+                            <p class="font-bold text-white">Stone Spear</p>
+                            <p class="text-xs text-gray-400 mt-1">1x Long Stick + 1x Stone Blade + 1x Rope</p>
+                        </div>
+                        <div class="p-4 bg-black/30 rounded border border-white/5">
+                            <span class="text-xs text-accent-gold font-bold uppercase block mb-1">Harvesting</span>
+                            <p class="font-bold text-white">Stone Axe</p>
+                            <p class="text-xs text-gray-400 mt-1">1x Stick + 1x Stone Blade + 1x Rope</p>
+                        </div>
+                        <div class="p-4 bg-black/30 rounded border border-white/5">
+                            <span class="text-xs text-accent-gold font-bold uppercase block mb-1">Medicine</span>
+                            <p class="font-bold text-white">Weak Bandage</p>
+                            <p class="text-xs text-gray-400 mt-1">1x Molineria Leaf</p>
+                        </div>
+                        <div class="p-4 bg-black/30 rounded border border-white/5">
+                            <span class="text-xs text-accent-gold font-bold uppercase block mb-1">Storage</span>
+                            <p class="font-bold text-white">Bidon (Bottle)</p>
+                            <p class="text-xs text-gray-400 mt-1">1x Whole Coconut (Green) + 1x Rope</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FULL WIDTH: MAPS & LOCATIONS -->
+        <section id="maps" class="mt-12">
+            <div class="card p-8">
+                <h3 class="text-2xl font-bold text-green-500 mb-8 flex items-center">
+                    <i class="fas fa-map-marked-alt mr-3"></i>Navigation & Landmarks
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+                    <div class="text-center p-6 bg-black/20 rounded-xl">
+                        <i class="fas fa-scroll text-3xl text-accent-gold mb-4"></i>
+                        <h4 class="font-bold text-white mb-2 uppercase tracking-wide">Map 1 Location</h4>
+                        <p class="text-sm text-gray-400 mb-2 italic">Found at the Drug Facility</p>
+                        <span class="coord-badge">51W 27S</span>
+                    </div>
+                    <div class="text-center p-6 bg-black/20 rounded-xl">
+                        <i class="fas fa-plane-arrival text-3xl text-accent-gold mb-4"></i>
+                        <h4 class="font-bold text-white mb-2 uppercase tracking-wide">Map 2 Location</h4>
+                        <p class="text-sm text-gray-400 mb-2 italic">Found at the Airport</p>
+                        <span class="coord-badge">29W 22S</span>
+                    </div>
+                    <div class="text-center p-6 bg-black/20 rounded-xl">
+                        <i class="fas fa-flask text-3xl text-accent-gold mb-4"></i>
+                        <h4 class="font-bold text-white mb-2 uppercase tracking-wide">Map 3 Location</h4>
+                        <p class="text-sm text-gray-400 mb-2 italic">Found at Omega Camp</p>
+                        <span class="coord-badge">25W 33S</span>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-accent-gold border-b border-white/10 text-sm">
+                                <th class="pb-4 pr-4 uppercase tracking-widest">Key Landmark</th>
+                                <th class="pb-4 pr-4 uppercase tracking-widest">Coordinates</th>
+                                <th class="pb-4 pr-4 uppercase tracking-widest">Items/Value</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-300">
+                            <tr class="border-b border-white/5 hover:bg-white/5">
+                                <td class="py-4 pr-4 font-bold text-white">Abandoned Village</td>
+                                <td class="py-4 pr-4"><span class="coord-badge">46W 26S</span></td>
+                                <td class="py-4 pr-4 text-sm">Pre-built fire, blueprint for Cage Trap. Perfect first base.</td>
+                            </tr>
+                            <tr class="border-b border-white/5 hover:bg-white/5">
+                                <td class="py-4 pr-4 font-bold text-white">Fishing Docks</td>
+                                <td class="py-4 pr-4"><span class="coord-badge">51W 19S</span></td>
+                                <td class="py-4 pr-4 text-sm">Fishing Rod, Water Filter blueprint. Great food source.</td>
+                            </tr>
+                            <tr class="border-b border-white/5 hover:bg-white/5">
+                                <td class="py-4 pr-4 font-bold text-white">The Crashed Jeep</td>
+                                <td class="py-4 pr-4"><span class="coord-badge">44W 17S</span></td>
+                                <td class="py-4 pr-4 text-sm">Fuel, Food, and the metal Bidon (Bottle). High priority.</td>
+                            </tr>
+                            <tr class="border-b border-white/5 hover:bg-white/5">
+                                <td class="py-4 pr-4 font-bold text-white">Anaconda Island</td>
+                                <td class="py-4 pr-4"><span class="coord-badge">35W 25S</span></td>
+                                <td class="py-4 pr-4 text-sm">Safe mid-map island. Good for planting crops.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer Stats -->
+    <footer class="fixed bottom-0 left-0 w-full bg-[#1a2e1a] border-t border-green-800/30 p-2 text-[10px] text-center uppercase tracking-[0.2em] text-green-500/70">
+        Active Session: Jungle Explorer | Player 1 & Player 2 Connected
+    </footer>
+
+</body>
+</html>
