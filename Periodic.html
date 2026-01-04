@@ -3,505 +3,529 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Elemental Mastery</title>
+    <title>Elemental Mastery | Blues Lab</title>
+    
+    <!-- React & Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React & ReactDOM -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Babel (to compile JSX) -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Lucide Icons (React UMD) -->
-    <script src="https://unpkg.com/lucide-react@0.292.0/dist/umd/lucide-react.min.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        /* Custom scrollbar for webkit */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0f172a;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #475569;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* slate-950 */
         }
         
-        /* Grid setup for periodic table - 18 columns */
-        .grid-cols-18 {
-            display: grid;
-            grid-template-columns: repeat(18, minmax(0, 1fr));
-        }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        .grid-cols-18 { grid-template-columns: repeat(18, minmax(0, 1fr)); }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-200 font-sans">
+<body class="text-slate-200 overflow-x-hidden">
 
-    <!-- NAVIGATION / LOGO -->
-    <div class="fixed top-4 right-4 z-50">
-        <a href="index.html" class="block w-48 opacity-80 hover:opacity-100 transition-opacity bg-slate-900/80 backdrop-blur rounded-lg border border-slate-700 p-2 text-center text-slate-400 hover:text-white">
-            <span class="text-xs font-bold">Back to Index</span>
-        </a>
-    </div>
-
-    <!-- REACT ROOT -->
     <div id="root"></div>
 
-    <!-- REACT APPLICATION -->
-    <script type="text/babel">
+    <script type="text/babel" data-presets="typescript,react">
         const { useState, useEffect } = React;
-        
-        // Handle Lucide export variations
-        const LucideIcons = window.lucideReact || window.lucide || {};
-        const { Beaker, Droplet, Wind, Zap, Mountain, ShieldAlert, Radio, Crown, BookOpen, ChevronRight, CheckCircle2, Atom, Lock, Unlock, X, FlaskConical, Pill, Apple } = LucideIcons;
 
-        // --- Data: The Full Periodic Table Layout ---
+        // --- Icon Helper Wrapper ---
+        const Icon = ({ name, className }) => {
+            useEffect(() => {
+                lucide.createIcons();
+            }, [name]); // Re-run when name changes
 
-        // We explicitly define border and text colors so Tailwind scanner picks them up
-        const categories = {
-          alkali: { name: 'Alkali Metals', color: 'bg-red-500', borderColor: 'border-red-500', textColor: 'text-red-300', desc: 'Highly reactive. They explode in water. Soft enough to cut with a knife.' },
-          alkaline: { name: 'Alkaline Earth', color: 'bg-orange-400', borderColor: 'border-orange-400', textColor: 'text-orange-300', desc: 'Reactive, but less dramatic than Alkali. Found in rocks and bones.' },
-          transition: { name: 'Transition Metals', color: 'bg-yellow-500', borderColor: 'border-yellow-500', textColor: 'text-yellow-300', desc: 'The classic metals. Hard, conductive, shiny. Gold, Iron, Copper.' },
-          basic: { name: 'Post-Transition', color: 'bg-green-500', borderColor: 'border-green-500', textColor: 'text-green-300', desc: 'Soft metals, often with poor mechanical strength. Aluminium, Tin, Lead.' },
-          metalloid: { name: 'Metalloids', color: 'bg-teal-500', borderColor: 'border-teal-500', textColor: 'text-teal-300', desc: 'The hybrids. Semi-conductors that power your electronics. Silicon is the king here.' },
-          nonmetal: { name: 'Other Non-metals', color: 'bg-blue-500', borderColor: 'border-blue-500', textColor: 'text-blue-300', desc: 'The building blocks of life. Carbon, Nitrogen, Oxygen. Brittle solids or gases.' },
-          halogen: { name: 'Halogens', color: 'bg-indigo-500', borderColor: 'border-indigo-500', textColor: 'text-indigo-300', desc: 'The salt-formers. Very reactive non-metals. Chlorine, Iodine.' },
-          noble: { name: 'Noble Gases', color: 'bg-purple-500', borderColor: 'border-purple-500', textColor: 'text-purple-300', desc: 'The snobs. They don\'t react with anything. Used in neon lights and balloons.' },
-          lanthanide: { name: 'Lanthanides', color: 'bg-pink-500', borderColor: 'border-pink-500', textColor: 'text-pink-300', desc: 'Rare earth elements. Crucial for magnets and smartphones.' },
-          actinide: { name: 'Actinides', color: 'bg-pink-700', borderColor: 'border-pink-700', textColor: 'text-pink-300', desc: 'The heavyweights. All radioactive. Uranium, Plutonium.' },
-          unknown: { name: 'Unknown properties', color: 'bg-slate-600', borderColor: 'border-slate-600', textColor: 'text-slate-400', desc: 'Synthetic elements that exist for milliseconds in a lab.' },
+            // Convert PascalCase component name to kebab-case for data-lucide
+            // e.g. "CheckCircle2" -> "check-circle-2"
+            // Simple mapping for this specific file:
+            const map: Record<string, string> = {
+                'Beaker': 'beaker', 'Droplet': 'droplet', 'Wind': 'wind', 'Zap': 'zap',
+                'Mountain': 'mountain', 'ShieldAlert': 'shield-alert', 'Radio': 'radio',
+                'Crown': 'crown', 'BookOpen': 'book-open', 'ChevronRight': 'chevron-right',
+                'CheckCircle2': 'check-circle-2', 'Atom': 'atom', 'Lock': 'lock',
+                'Unlock': 'unlock', 'X': 'x', 'FlaskConical': 'flask-conical',
+                'Pill': 'pill', 'Apple': 'apple'
+            };
+            
+            return <i data-lucide={map[name] || 'circle'} className={className}></i>;
+        };
+
+        // --- Types & Data ---
+
+        type Category = 'alkali' | 'alkaline' | 'transition' | 'basic' | 'metalloid' | 'nonmetal' | 'halogen' | 'noble' | 'lanthanide' | 'actinide' | 'unknown';
+
+        interface ElementData {
+            atomic: number;
+            symbol: string;
+            name: string;
+            cat: Category;
+            row: number;
+            col: number;
+            desc?: string;
+        }
+
+        const categories: Record<Category, { name: string; color: string; desc: string }> = {
+            alkali: { name: 'Alkali Metals', color: 'bg-red-500', desc: 'Highly reactive. They explode in water. Soft enough to cut with a knife.' },
+            alkaline: { name: 'Alkaline Earth', color: 'bg-orange-400', desc: 'Reactive, but less dramatic than Alkali. Found in rocks and bones.' },
+            transition: { name: 'Transition Metals', color: 'bg-yellow-500', desc: 'The classic metals. Hard, conductive, shiny. Gold, Iron, Copper.' },
+            basic: { name: 'Post-Transition', color: 'bg-green-500', desc: 'Soft metals, often with poor mechanical strength. Aluminium, Tin, Lead.' },
+            metalloid: { name: 'Metalloids', color: 'bg-teal-500', desc: 'The hybrids. Semi-conductors that power your electronics. Silicon is the king here.' },
+            nonmetal: { name: 'Other Non-metals', color: 'bg-blue-500', desc: 'The building blocks of life. Carbon, Nitrogen, Oxygen. Brittle solids or gases.' },
+            halogen: { name: 'Halogens', color: 'bg-indigo-500', desc: 'The salt-formers. Very reactive non-metals. Chlorine, Iodine.' },
+            noble: { name: 'Noble Gases', color: 'bg-purple-500', desc: 'The snobs. They don\'t react with anything. Used in neon lights and balloons.' },
+            lanthanide: { name: 'Lanthanides', color: 'bg-pink-500', desc: 'Rare earth elements. Crucial for magnets and smartphones.' },
+            actinide: { name: 'Actinides', color: 'bg-pink-700', desc: 'The heavyweights. All radioactive. Uranium, Plutonium.' },
+            unknown: { name: 'Unknown properties', color: 'bg-slate-600', desc: 'Synthetic elements that exist for milliseconds in a lab.' },
         };
 
         const elementStringData = [
-          "1|H|Hydrogen|nonmetal", "2|He|Helium|noble",
-          "3|Li|Lithium|alkali", "4|Be|Beryllium|alkaline", "5|B|Boron|metalloid", "6|C|Carbon|nonmetal", "7|N|Nitrogen|nonmetal", "8|O|Oxygen|nonmetal", "9|F|Fluorine|halogen", "10|Ne|Neon|noble",
-          "11|Na|Sodium|alkali", "12|Mg|Magnesium|alkaline", "13|Al|Aluminium|basic", "14|Si|Silicon|metalloid", "15|P|Phosphorus|nonmetal", "16|S|Sulfur|nonmetal", "17|Cl|Chlorine|halogen", "18|Ar|Argon|noble",
-          "19|K|Potassium|alkali", "20|Ca|Calcium|alkaline", "21|Sc|Scandium|transition", "22|Ti|Titanium|transition", "23|V|Vanadium|transition", "24|Cr|Chromium|transition", "25|Mn|Manganese|transition", "26|Fe|Iron|transition", "27|Co|Cobalt|transition", "28|Ni|Nickel|transition", "29|Cu|Copper|transition", "30|Zn|Zinc|transition", "31|Ga|Gallium|basic", "32|Ge|Germanium|metalloid", "33|As|Arsenic|metalloid", "34|Se|Selenium|nonmetal", "35|Br|Bromine|halogen", "36|Kr|Krypton|noble",
-          "37|Rb|Rubidium|alkali", "38|Sr|Strontium|alkaline", "39|Y|Yttrium|transition", "40|Zr|Zirconium|transition", "41|Nb|Niobium|transition", "42|Mo|Molybdenum|transition", "43|Tc|Technetium|transition", "44|Ru|Ruthenium|transition", "45|Rh|Rhodium|transition", "46|Pd|Palladium|transition", "47|Ag|Silver|transition", "48|Cd|Cadmium|transition", "49|In|Indium|basic", "50|Sn|Tin|basic", "51|Sb|Antimony|metalloid", "52|Te|Tellurium|metalloid", "53|I|Iodine|halogen", "54|Xe|Xenon|noble",
-          "55|Cs|Cesium|alkali", "56|Ba|Barium|alkaline", 
-          "72|Hf|Hafnium|transition", "73|Ta|Tantalum|transition", "74|W|Tungsten|transition", "75|Re|Rhenium|transition", "76|Os|Osmium|transition", "77|Ir|Iridium|transition", "78|Pt|Platinum|transition", "79|Au|Gold|transition", "80|Hg|Mercury|transition", "81|Tl|Thallium|basic", "82|Pb|Lead|basic", "83|Bi|Bismuth|basic", "84|Po|Polonium|metalloid", "85|At|Astatine|halogen", "86|Rn|Radon|noble",
-          "87|Fr|Francium|alkali", "88|Ra|Radium|alkaline",
-          "104|Rf|Rutherfordium|transition", "105|Db|Dubnium|transition", "106|Sg|Seaborgium|transition", "107|Bh|Bohrium|transition", "108|Hs|Hassium|transition", "109|Mt|Meitnerium|unknown", "110|Ds|Darmstadtium|unknown", "111|Rg|Roentgenium|unknown", "112|Cn|Copernicium|transition", "113|Nh|Nihonium|basic", "114|Fl|Flerovium|basic", "115|Mc|Moscovium|basic", "116|Lv|Livermorium|basic", "117|Ts|Tennessine|halogen", "118|Og|Oganesson|noble",
-          "57|La|Lanthanum|lanthanide", "58|Ce|Cerium|lanthanide", "59|Pr|Praseodymium|lanthanide", "60|Nd|Neodymium|lanthanide", "61|Pm|Promethium|lanthanide", "62|Sm|Samarium|lanthanide", "63|Eu|Europium|lanthanide", "64|Gd|Gadolinium|lanthanide", "65|Tb|Terbium|lanthanide", "66|Dy|Dysprosium|lanthanide", "67|Ho|Holmium|lanthanide", "68|Er|Erbium|lanthanide", "69|Tm|Thulium|lanthanide", "70|Yb|Ytterbium|lanthanide", "71|Lu|Lutetium|lanthanide",
-          "89|Ac|Actinium|actinide", "90|Th|Thorium|actinide", "91|Pa|Protactinium|actinide", "92|U|Uranium|actinide", "93|Np|Neptunium|actinide", "94|Pu|Plutonium|actinide", "95|Am|Americium|actinide", "96|Cm|Curium|actinide", "97|Bk|Berkelium|actinide", "98|Cf|Californium|actinide", "99|Es|Einsteinium|actinide", "100|Fm|Fermium|actinide", "101|Md|Mendelevium|actinide", "102|No|Nobelium|actinide", "103|Lr|Lawrencium|actinide"
+            "1|H|Hydrogen|nonmetal", "2|He|Helium|noble",
+            "3|Li|Lithium|alkali", "4|Be|Beryllium|alkaline", "5|B|Boron|metalloid", "6|C|Carbon|nonmetal", "7|N|Nitrogen|nonmetal", "8|O|Oxygen|nonmetal", "9|F|Fluorine|halogen", "10|Ne|Neon|noble",
+            "11|Na|Sodium|alkali", "12|Mg|Magnesium|alkaline", "13|Al|Aluminium|basic", "14|Si|Silicon|metalloid", "15|P|Phosphorus|nonmetal", "16|S|Sulfur|nonmetal", "17|Cl|Chlorine|halogen", "18|Ar|Argon|noble",
+            "19|K|Potassium|alkali", "20|Ca|Calcium|alkaline", "21|Sc|Scandium|transition", "22|Ti|Titanium|transition", "23|V|Vanadium|transition", "24|Cr|Chromium|transition", "25|Mn|Manganese|transition", "26|Fe|Iron|transition", "27|Co|Cobalt|transition", "28|Ni|Nickel|transition", "29|Cu|Copper|transition", "30|Zn|Zinc|transition", "31|Ga|Gallium|basic", "32|Ge|Germanium|metalloid", "33|As|Arsenic|metalloid", "34|Se|Selenium|nonmetal", "35|Br|Bromine|halogen", "36|Kr|Krypton|noble",
+            "37|Rb|Rubidium|alkali", "38|Sr|Strontium|alkaline", "39|Y|Yttrium|transition", "40|Zr|Zirconium|transition", "41|Nb|Niobium|transition", "42|Mo|Molybdenum|transition", "43|Tc|Technetium|transition", "44|Ru|Ruthenium|transition", "45|Rh|Rhodium|transition", "46|Pd|Palladium|transition", "47|Ag|Silver|transition", "48|Cd|Cadmium|transition", "49|In|Indium|basic", "50|Sn|Tin|basic", "51|Sb|Antimony|metalloid", "52|Te|Tellurium|metalloid", "53|I|Iodine|halogen", "54|Xe|Xenon|noble",
+            "55|Cs|Cesium|alkali", "56|Ba|Barium|alkaline", 
+            "72|Hf|Hafnium|transition", "73|Ta|Tantalum|transition", "74|W|Tungsten|transition", "75|Re|Rhenium|transition", "76|Os|Osmium|transition", "77|Ir|Iridium|transition", "78|Pt|Platinum|transition", "79|Au|Gold|transition", "80|Hg|Mercury|transition", "81|Tl|Thallium|basic", "82|Pb|Lead|basic", "83|Bi|Bismuth|basic", "84|Po|Polonium|metalloid", "85|At|Astatine|halogen", "86|Rn|Radon|noble",
+            "87|Fr|Francium|alkali", "88|Ra|Radium|alkaline",
+            "104|Rf|Rutherfordium|transition", "105|Db|Dubnium|transition", "106|Sg|Seaborgium|transition", "107|Bh|Bohrium|transition", "108|Hs|Hassium|transition", "109|Mt|Meitnerium|unknown", "110|Ds|Darmstadtium|unknown", "111|Rg|Roentgenium|unknown", "112|Cn|Copernicium|transition", "113|Nh|Nihonium|basic", "114|Fl|Flerovium|basic", "115|Mc|Moscovium|basic", "116|Lv|Livermorium|basic", "117|Ts|Tennessine|halogen", "118|Og|Oganesson|noble",
+            "57|La|Lanthanum|lanthanide", "58|Ce|Cerium|lanthanide", "59|Pr|Praseodymium|lanthanide", "60|Nd|Neodymium|lanthanide", "61|Pm|Promethium|lanthanide", "62|Sm|Samarium|lanthanide", "63|Eu|Europium|lanthanide", "64|Gd|Gadolinium|lanthanide", "65|Tb|Terbium|lanthanide", "66|Dy|Dysprosium|lanthanide", "67|Ho|Holmium|lanthanide", "68|Er|Erbium|lanthanide", "69|Tm|Thulium|lanthanide", "70|Yb|Ytterbium|lanthanide", "71|Lu|Lutetium|lanthanide",
+            "89|Ac|Actinium|actinide", "90|Th|Thorium|actinide", "91|Pa|Protactinium|actinide", "92|U|Uranium|actinide", "93|Np|Neptunium|actinide", "94|Pu|Plutonium|actinide", "95|Am|Americium|actinide", "96|Cm|Curium|actinide", "97|Bk|Berkelium|actinide", "98|Cf|Californium|actinide", "99|Es|Einsteinium|actinide", "100|Fm|Fermium|actinide", "101|Md|Mendelevium|actinide", "102|No|Nobelium|actinide", "103|Lr|Lawrencium|actinide"
         ];
 
-        const generateFullTable = () => {
-          const elements = [];
-          
-          const descriptions = {
-            1: "The absolute basic unit. 75% of the universe. It bonds with almost everything.",
-            6: "The King of Chemistry. Life is carbon-based. Diamonds are carbon. So is the graphite in your pencil.",
-            8: "The breath of life. Highly reactive. It loves to steal electrons (oxidization/rust/fire).",
-            11: "Soft metal, explodes in water. Essential for nerves.",
-            17: "Green toxic gas. Loves to bond with Sodium to make salt.",
-            79: "Gold. Unreactive, shiny, conducts electricity. Valuable because it stays pretty forever.",
-            26: "Iron. The blood metal. It carries oxygen in your veins.",
-            92: "Uranium. The heavy hitter. Unstable nucleus = energy (and danger).",
-          };
+        const generateFullTable = (): ElementData[] => {
+            const elements: ElementData[] = [];
+            
+            const descriptions: Record<number, string> = {
+                1: "The absolute basic unit. 75% of the universe. It bonds with almost everything.",
+                6: "The King of Chemistry. Life is carbon-based. Diamonds are carbon. So is the graphite in your pencil.",
+                8: "The breath of life. Highly reactive. It loves to steal electrons (oxidization/rust/fire).",
+                11: "Soft metal, explodes in water. Essential for nerves.",
+                17: "Green toxic gas. Loves to bond with Sodium to make salt.",
+                79: "Gold. Unreactive, shiny, conducts electricity. Valuable because it stays pretty forever.",
+                26: "Iron. The blood metal. It carries oxygen in your veins.",
+                92: "Uranium. The heavy hitter. Unstable nucleus = energy (and danger).",
+            };
 
-          elementStringData.forEach(str => {
-            const [aStr, symbol, name, catStr] = str.split('|');
-            const atomic = parseInt(aStr);
-            const cat = catStr;
+            elementStringData.forEach(str => {
+                const [aStr, symbol, name, catStr] = str.split('|');
+                const atomic = parseInt(aStr);
+                const cat = catStr as Category;
 
-            let row = 0;
-            let col = 0;
+                let row = 0;
+                let col = 0;
 
-            if (atomic === 1) { row = 1; col = 1; }
-            else if (atomic === 2) { row = 1; col = 18; }
-            else if (atomic >= 3 && atomic <= 4) { row = 2; col = atomic - 2; }
-            else if (atomic >= 5 && atomic <= 10) { row = 2; col = atomic + 8; }
-            else if (atomic >= 11 && atomic <= 12) { row = 3; col = atomic - 10; }
-            else if (atomic >= 13 && atomic <= 18) { row = 3; col = atomic; }
-            else if (atomic >= 19 && atomic <= 36) { row = 4; col = atomic - 18; }
-            else if (atomic >= 37 && atomic <= 54) { row = 5; col = atomic - 36; }
-            else if (atomic >= 55 && atomic <= 56) { row = 6; col = atomic - 54; }
-            else if (atomic >= 72 && atomic <= 86) { row = 6; col = atomic - 68; } 
-            else if (atomic >= 87 && atomic <= 88) { row = 7; col = atomic - 86; }
-            else if (atomic >= 104 && atomic <= 118) { row = 7; col = atomic - 100; } 
-            else if (atomic >= 57 && atomic <= 71) { row = 9; col = atomic - 54; } 
-            else if (atomic >= 89 && atomic <= 103) { row = 10; col = atomic - 86; }
+                if (atomic === 1) { row = 1; col = 1; } 
+                else if (atomic === 2) { row = 1; col = 18; }
+                else if (atomic >= 3 && atomic <= 4) { row = 2; col = atomic - 2; }
+                else if (atomic >= 5 && atomic <= 10) { row = 2; col = atomic + 8; }
+                else if (atomic >= 11 && atomic <= 12) { row = 3; col = atomic - 10; }
+                else if (atomic >= 13 && atomic <= 18) { row = 3; col = atomic; }
+                else if (atomic >= 19 && atomic <= 36) { row = 4; col = atomic - 18; }
+                else if (atomic >= 37 && atomic <= 54) { row = 5; col = atomic - 36; }
+                else if (atomic >= 55 && atomic <= 56) { row = 6; col = atomic - 54; }
+                else if (atomic >= 72 && atomic <= 86) { row = 6; col = atomic - 68; }
+                else if (atomic >= 87 && atomic <= 88) { row = 7; col = atomic - 86; }
+                else if (atomic >= 104 && atomic <= 118) { row = 7; col = atomic - 100; }
+                else if (atomic >= 57 && atomic <= 71) { row = 9; col = atomic - 54; }
+                else if (atomic >= 89 && atomic <= 103) { row = 10; col = atomic - 86; }
 
-            elements.push({
-              atomic,
-              symbol,
-              name,
-              cat,
-              row,
-              col,
-              desc: descriptions[atomic] || `${name} (${symbol}) is a ${cat} element with atomic number ${atomic}.`
+                elements.push({
+                    atomic,
+                    symbol,
+                    name,
+                    cat,
+                    row,
+                    col,
+                    desc: descriptions[atomic] || `${name} (${symbol}) is a ${cat} element with atomic number ${atomic}.`
+                });
             });
-          });
-          
-          return elements;
+            
+            return elements;
         };
 
         const fullElements = generateFullTable();
 
         const levels = [
-          {
-            id: 1,
-            title: "The Wet Stuff",
-            subtitle: "What is an Element?",
-            icon: Droplet,
-            unlocks: [1, 8],
-            instruction: "We start with water (H₂O). It's not an element; it's a molecule made of two specific elements: Hydrogen and Oxygen. Click them to see the difference.",
-            challenge: "Find Hydrogen (H) and Oxygen (O).",
-            explanation: "Elements are the LEGO bricks. H₂O is the castle you build with them. 'H₂O' means two Hydrogen bricks and one Oxygen brick."
-          },
-          {
-            id: 2,
-            title: "The Air We Breathe",
-            subtitle: "Gases & Carbon",
-            icon: Wind,
-            unlocks: [7, 18, 6],
-            instruction: "Air isn't just 'nothing'. It's mostly Nitrogen (78%), some Oxygen (21%), a tiny bit of Argon, and Carbon Dioxide.",
-            challenge: "Identify Nitrogen (N), Carbon (C), and Argon (Ar).",
-            explanation: "Notice how Carbon is solid (coal/diamond) but binds with Oxygen to make gas (CO₂). Chemistry is about these relationships."
-          },
-          {
-            id: 3,
-            title: "Salt of the Earth",
-            subtitle: "The Reactives",
-            icon: Zap,
-            unlocks: [11, 17, 3, 9, 19],
-            instruction: "Some elements are aggressive. Alkali metals (Group 1) explode in water. Halogens (Group 17) are toxic gases. Put them together? Tasty table salt (NaCl).",
-            challenge: "Explore the Leftmost column (Alkali) and Group 17 (Halogens).",
-            explanation: "Group 1 wants to give an electron. Group 17 wants to take one. It's a perfect marriage."
-          },
-          {
-            id: 4,
-            title: "Heavy Metal",
-            subtitle: "Transition Metals",
-            icon: Crown,
-            unlocks: [26, 29, 47, 79, 22, 24],
-            instruction: "The middle block. These are what you think of when you say 'Metal'. Hard, shiny, conductive.",
-            challenge: "Find Iron (Fe), Gold (Au), and Copper (Cu).",
-            explanation: "These don't follow the simple rules of the groups on the edges. They are the sturdy workhorses of civilization."
-          },
-          {
-            id: 5,
-            title: "The Silicon Age",
-            subtitle: "Metalloids",
-            icon: Radio,
-            unlocks: [14, 5, 32, 13],
-            instruction: "Between metals and non-metals lie the Metalloids. They can conduct electricity... but only sometimes. This 'switching' ability is how computers think.",
-            challenge: "Locate Silicon (Si) and Aluminium (Al).",
-            explanation: "Silicon Valley exists because of Element 14."
-          },
-          {
-            id: 6,
-            title: "The Snobs",
-            subtitle: "Noble Gases",
-            icon: ShieldAlert,
-            unlocks: [2, 10, 18, 36, 54],
-            instruction: "Group 18 on the far right. They are 'Noble' because they don't lower themselves to react with commoners.",
-            challenge: "Find Helium (He) and Neon (Ne).",
-            explanation: "Their electron shells are full. They are perfectly content and stable."
-          },
-          {
-            id: 7,
-            title: "The Dangerous Ones",
-            subtitle: "Toxins & Radioactives",
-            icon: Atom,
-            unlocks: [80, 82, 33, 92],
-            instruction: "Some elements break the human body. Lead (Pb) confuses your enzymes. Mercury (Hg) destroys nerves.",
-            challenge: "Identify Mercury (Hg) and Uranium (U).",
-            explanation: "Uranium is so heavy its nucleus falls apart, shooting out energy (Radiation)."
-          },
-          {
-            id: 8,
-            title: "The Groups",
-            subtitle: "Reading the Columns",
-            icon: BookOpen,
-            unlocks: [],
-            instruction: "The table isn't a random list. It's a grid. Elements in the same column (Group) behave almost the same way.",
-            challenge: "Compare Lithium (Li), Sodium (Na), and Potassium (K).",
-            explanation: "If you know how Oxygen acts, you know Sulfur (below it) acts similarly. It's the ultimate cheat sheet."
-          },
-          {
-            id: 9,
-            title: "The Crude Reality",
-            subtitle: "Petrochemicals",
-            icon: FlaskConical,
-            unlocks: [],
-            instruction: "Advanced Chemistry: Organic synthesis. How we turn dead dinosaurs (Oil) into Tylenol and Vanilla.",
-            challenge: "Read the Petrochemical section.",
-            explanation: "Everything is chemicals. Natural vs Synthetic is often a marketing distinction, not a chemical one."
-          },
-          {
-            id: 10,
-            title: "Mastery",
-            subtitle: "The Full Table",
-            icon: CheckCircle2,
-            unlocks: 'ALL',
-            instruction: "You have the keys to the castle. Explore the entire 118 elements.",
-            challenge: "Explore freely.",
-            explanation: "You are now functionally literate in the building blocks of the universe."
-          }
+            {
+                id: 1,
+                title: "The Wet Stuff",
+                subtitle: "What is an Element?",
+                icon: "Droplet",
+                unlocks: [1, 8],
+                instruction: "We start with water (H₂O). It's not an element; it's a molecule made of two specific elements: Hydrogen and Oxygen. Click them to see the difference.",
+                challenge: "Find Hydrogen (H) and Oxygen (O).",
+                explanation: "Elements are the LEGO bricks. H₂O is the castle you build with them. 'H₂O' means two Hydrogen bricks and one Oxygen brick."
+            },
+            {
+                id: 2,
+                title: "The Air We Breathe",
+                subtitle: "Gases & Carbon",
+                icon: "Wind",
+                unlocks: [7, 18, 6],
+                instruction: "Air isn't just 'nothing'. It's mostly Nitrogen (78%), some Oxygen (21%), a tiny bit of Argon, and Carbon Dioxide.",
+                challenge: "Identify Nitrogen (N), Carbon (C), and Argon (Ar).",
+                explanation: "Notice how Carbon is solid (coal/diamond) but binds with Oxygen to make gas (CO₂). Chemistry is about these relationships."
+            },
+            {
+                id: 3,
+                title: "Salt of the Earth",
+                subtitle: "The Reactives",
+                icon: "Zap",
+                unlocks: [11, 17, 3, 9, 19],
+                instruction: "Some elements are aggressive. Alkali metals (Group 1) explode in water. Halogens (Group 17) are toxic gases. Put them together? Tasty table salt (NaCl).",
+                challenge: "Explore the Leftmost column (Alkali) and Group 17 (Halogens).",
+                explanation: "Group 1 wants to give an electron. Group 17 wants to take one. It's a perfect marriage."
+            },
+            {
+                id: 4,
+                title: "Heavy Metal",
+                subtitle: "Transition Metals",
+                icon: "Crown",
+                unlocks: [26, 29, 47, 79, 22, 24],
+                instruction: "The middle block. These are what you think of when you say 'Metal'. Hard, shiny, conductive.",
+                challenge: "Find Iron (Fe), Gold (Au), and Copper (Cu).",
+                explanation: "These don't follow the simple rules of the groups on the edges. They are the sturdy workhorses of civilization."
+            },
+            {
+                id: 5,
+                title: "The Silicon Age",
+                subtitle: "Metalloids",
+                icon: "Radio",
+                unlocks: [14, 5, 32, 13],
+                instruction: "Between metals and non-metals lie the Metalloids. They can conduct electricity... but only sometimes. This 'switching' ability is how computers think.",
+                challenge: "Locate Silicon (Si) and Aluminium (Al).",
+                explanation: "Silicon Valley exists because of Element 14."
+            },
+            {
+                id: 6,
+                title: "The Snobs",
+                subtitle: "Noble Gases",
+                icon: "ShieldAlert",
+                unlocks: [2, 10, 18, 36, 54],
+                instruction: "Group 18 on the far right. They are 'Noble' because they don't lower themselves to react with commoners.",
+                challenge: "Find Helium (He) and Neon (Ne).",
+                explanation: "Their electron shells are full. They are perfectly content and stable."
+            },
+            {
+                id: 7,
+                title: "The Dangerous Ones",
+                subtitle: "Toxins & Radioactives",
+                icon: "Atom",
+                unlocks: [80, 82, 33, 92],
+                instruction: "Some elements break the human body. Lead (Pb) confuses your enzymes. Mercury (Hg) destroys nerves.",
+                challenge: "Identify Mercury (Hg) and Uranium (U).",
+                explanation: "Uranium is so heavy its nucleus falls apart, shooting out energy (Radiation)."
+            },
+            {
+                id: 8,
+                title: "The Groups",
+                subtitle: "Reading the Columns",
+                icon: "BookOpen",
+                unlocks: [],
+                instruction: "The table isn't a random list. It's a grid. Elements in the same column (Group) behave almost the same way.",
+                challenge: "Compare Lithium (Li), Sodium (Na), and Potassium (K).",
+                explanation: "If you know how Oxygen acts, you know Sulfur (below it) acts similarly. It's the ultimate cheat sheet."
+            },
+            {
+                id: 9,
+                title: "The Crude Reality",
+                subtitle: "Petrochemicals",
+                icon: "FlaskConical",
+                unlocks: [],
+                instruction: "Advanced Chemistry: Organic synthesis. How we turn dead dinosaurs (Oil) into Tylenol and Vanilla.",
+                challenge: "Read the Petrochemical section.",
+                explanation: "Everything is chemicals. Natural vs Synthetic is often a marketing distinction, not a chemical one."
+            },
+            {
+                id: 10,
+                title: "Mastery",
+                subtitle: "The Full Table",
+                icon: "CheckCircle2",
+                unlocks: 'ALL',
+                instruction: "You have the keys to the castle. Explore the entire 118 elements.",
+                challenge: "Explore freely.",
+                explanation: "You are now functionally literate in the building blocks of the universe."
+            }
         ];
 
         function App() {
-          const [currentLevel, setCurrentLevel] = useState(1);
-          const [selectedElement, setSelectedElement] = useState(null);
+            const [currentLevel, setCurrentLevel] = useState(1);
+            const [selectedElement, setSelectedElement] = useState(null);
 
-          const levelData = levels.find(l => l.id === currentLevel);
+            const levelData = levels.find(l => l.id === currentLevel);
 
-          const isUnlocked = (atomic) => {
-            if (levelData?.unlocks === 'ALL') return true;
-            for (let i = 1; i <= currentLevel; i++) {
-                const l = levels.find(lvl => lvl.id === i);
-                if (Array.isArray(l?.unlocks) && l.unlocks.includes(atomic)) return true;
-            }
-            return false;
-          };
+            useEffect(() => {
+                lucide.createIcons();
+            }, [currentLevel, selectedElement]);
 
-          const nextLevel = () => {
-            if (currentLevel < 10) setCurrentLevel(c => c + 1);
-          };
+            const isUnlocked = (atomic) => {
+                if (levelData?.unlocks === 'ALL') return true;
+                for (let i = 1; i <= currentLevel; i++) {
+                    const l = levels.find(lvl => lvl.id === i);
+                    if (Array.isArray(l?.unlocks) && l.unlocks.includes(atomic)) return true;
+                }
+                return false;
+            };
 
-          const prevLevel = () => {
-            if (currentLevel > 1) setCurrentLevel(c => c - 1);
-          };
+            const nextLevel = () => {
+                if (currentLevel < 10) setCurrentLevel(c => c + 1);
+            };
 
-          return (
-            <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-teal-500 selection:text-white pb-12 flex flex-col md:flex-row">
-              
-              {/* Sidebar / Progress */} 
-              <aside className="w-full md:w-80 bg-slate-900 border-r border-slate-800 flex flex-col h-auto md:h-screen sticky top-0 z-30 overflow-y-auto">
-                <div className="p-6 border-b border-slate-800">
-                  <h1 className="text-xl font-bold tracking-tight text-teal-500 flex items-center gap-2">
-                    <Atom className="w-6 h-6" />
-                    ELEMENTAL <span className="text-slate-500 font-light">MASTERY</span>
-                  </h1>
-                  <p className="text-xs text-slate-400 mt-2">Level {currentLevel} of 10: {levelData?.title}</p>
-                  <div className="w-full bg-slate-800 h-1.5 mt-3 rounded-full overflow-hidden">
-                    <div className="bg-teal-500 h-full transition-all duration-500" style={{ width: `${currentLevel * 10}%` }}></div>
-                  </div>
-                </div>
+            const prevLevel = () => {
+                if (currentLevel > 1) setCurrentLevel(c => c - 1);
+            };
 
-                <div className="flex-1 p-4 space-y-2">
-                  {levels.map((l) => {
-                    const Icon = l.icon;
-                    return (
-                      <button
+            return (
+                <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-teal-500 selection:text-white pb-12 flex flex-col md:flex-row">
+                
+                {/* Sidebar / Progress */}
+                <aside className="w-full md:w-80 bg-slate-900 border-r border-slate-800 flex flex-col h-auto md:h-screen sticky top-0 z-30 overflow-y-auto">
+                    <div className="p-6 border-b border-slate-800">
+                    <h1 className="text-xl font-bold tracking-tight text-teal-500 flex items-center gap-2">
+                        <Icon name="Atom" className="w-6 h-6" />
+                        ELEMENTAL <span className="text-slate-500 font-light">MASTERY</span>
+                    </h1>
+                    <p className="text-xs text-slate-400 mt-2">Level {currentLevel} of 10: {levelData?.title}</p>
+                    <div className="w-full bg-slate-800 h-1.5 mt-3 rounded-full overflow-hidden">
+                        <div className="bg-teal-500 h-full transition-all duration-500" style={{ width: `${currentLevel * 10}%` }}></div>
+                    </div>
+                    </div>
+
+                    <div className="flex-1 p-4 space-y-2">
+                    {levels.map((l) => (
+                        <button
                         key={l.id}
                         onClick={() => setCurrentLevel(l.id)}
                         className={`w-full flex items-center gap-3 p-3 rounded-lg text-sm transition-all duration-200 text-left
-                          ${currentLevel === l.id ? 'bg-teal-900/30 border border-teal-500/30 text-teal-200' : 'text-slate-500 hover:bg-slate-800'}
-                          ${l.id > currentLevel && currentLevel !== 10 ? 'opacity-50' : 'opacity-100'}
+                            ${currentLevel === l.id ? 'bg-teal-900/30 border border-teal-500/30 text-teal-200' : 'text-slate-500 hover:bg-slate-800'}
+                            ${l.id > currentLevel && currentLevel !== 10 ? 'opacity-50' : 'opacity-100'}
                         `}
-                      >
+                        >
                         <div className={`${currentLevel === l.id ? 'text-teal-400' : 'text-slate-600'}`}>
-                          {Icon && <Icon className="w-5 h-5" />}
+                            <Icon name={l.icon} className="w-5 h-5" />
                         </div>
-                        <div>
-                          <div className="font-semibold">{l.id}. {l.title}</div>
-                          <div className="text-xs opacity-70">{l.subtitle}</div>
+                        <div className="flex-1">
+                            <div className="font-semibold">{l.id}. {l.title}</div>
+                            <div className="text-xs opacity-70">{l.subtitle}</div>
                         </div>
                         {l.id <= currentLevel ? (
-                          <Unlock className="w-3 h-3 ml-auto text-teal-500/50" />
+                            <Icon name="Unlock" className="w-3 h-3 ml-auto text-teal-500/50" />
                         ) : (
-                          <Lock className="w-3 h-3 ml-auto text-slate-700" />
+                            <Icon name="Lock" className="w-3 h-3 ml-auto text-slate-700" />
                         )}
-                      </button>
-                    )
-                  })}
-                </div>
-              </aside>
-
-              {/* Main Content */} 
-              <main className="flex-1 p-4 md:p-8 overflow-y-auto">
-                
-                {/* Lesson Header */} 
-                <div className="mb-8 bg-slate-900/50 p-6 rounded-xl border border-slate-800 backdrop-blur-sm animate-in fade-in slide-in-from-top-4">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-                    <div>
-                      <h2 className="text-3xl font-bold text-white mb-2">{levelData?.title}</h2>
-                      <p className="text-teal-400 font-medium">{levelData?.subtitle}</p>
+                        </button>
+                    ))}
                     </div>
-                    <div className="flex gap-2">
-                      <button onClick={prevLevel} disabled={currentLevel === 1} className="p-2 rounded-full hover:bg-slate-800 disabled:opacity-30">
-                        <ChevronRight className="w-6 h-6 rotate-180" />
-                      </button>
-                      <button 
-                        onClick={nextLevel} 
-                        disabled={currentLevel === 10}
-                        className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-full font-bold transition disabled:opacity-50 disabled:bg-slate-800"
-                      >
-                        <span>Next Level</span>
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="prose prose-invert max-w-none text-slate-300">
-                    <p className="text-lg leading-relaxed">{levelData?.instruction}</p>
-                    <div className="bg-slate-800/50 p-4 rounded-lg mt-4 border-l-4 border-teal-500">
-                      <h4 className="text-sm font-bold text-teal-400 uppercase tracking-wider mb-1">Concept</h4>
-                      <p>{levelData?.explanation}</p>
-                    </div>
-                  </div>
-                </div>
+                </aside>
 
-                {/* SPECIAL VIEW: LEVEL 1 (WATER) */} 
-                {currentLevel === 1 && (
-                   <div className="mb-12 flex flex-col items-center justify-center p-12 border border-dashed border-slate-700 rounded-2xl bg-slate-900/30">
-                      <div className="relative w-64 h-48 flex items-center justify-center">
-                         {/* Oxygen */} 
-                         <button 
-                           onClick={() => setSelectedElement(fullElements.find(e => e.atomic === 8) || null)}
-                           className="w-24 h-24 rounded-full bg-blue-500 text-white text-3xl font-bold flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:scale-110 transition z-10"
-                         >
-                           O
-                         </button>
-                         {/* Hydrogens */} 
-                         <button 
-                           onClick={() => setSelectedElement(fullElements.find(e => e.atomic === 1) || null)}
-                           className="absolute top-0 right-0 w-14 h-14 rounded-full bg-slate-200 text-slate-900 text-xl font-bold flex items-center justify-center shadow-lg hover:scale-110 transition"
-                         >
-                           H
-                         </button>
-                         <button 
-                           onClick={() => setSelectedElement(fullElements.find(e => e.atomic === 1) || null)}
-                           className="absolute top-0 left-0 w-14 h-14 rounded-full bg-slate-200 text-slate-900 text-xl font-bold flex items-center justify-center shadow-lg hover:scale-110 transition"
-                         >
-                           H
-                         </button>
-                         {/* Bonds */} 
-                         <div className="absolute top-10 right-10 w-16 h-2 bg-slate-600 -rotate-45 -z-0 origin-left"></div>
-                         <div className="absolute top-10 left-12 w-16 h-2 bg-slate-600 rotate-45 -z-0 origin-right"></div>
-                      </div>
-                      <p className="mt-6 text-slate-500 text-center max-w-md">
-                        This is a Water Molecule. Click the atoms to see what they are made of. 
-                        <br/>"H" is Hydrogen. "O" is Oxygen.
-                      </p>
-                   </div>
-                )}
-
-                {/* SPECIAL VIEW: LEVEL 9 (CRUDE) */} 
-                {currentLevel === 9 && (
-                  <div className="grid md:grid-cols-3 gap-6 mb-8">
-                     <div className="bg-slate-900 p-6 rounded-xl border border-slate-700">
-                        {Droplet && <Droplet className="w-8 h-8 text-pink-400 mb-4" />}
-                        <h3 className="font-bold text-lg mb-2">Perfume</h3>
-                        <p className="text-sm text-slate-400">Crude oil &rarr; Phenols &rarr; Artificial Vanilla. You are wearing fossil fuels.</p>
-                     </div>
-                     <div className="bg-slate-900 p-6 rounded-xl border border-slate-700">
-                        {Pill && <Pill className="w-8 h-8 text-blue-400 mb-4" />}
-                        <h3 className="font-bold text-lg mb-2">Medicine</h3>
-                        <p className="text-sm text-slate-400">Oil provides the Carbon backbone for Aspirin and Antihistamines.</p>
-                     </div>
-                     <div className="bg-slate-900 p-6 rounded-xl border border-slate-700">
-                        {Apple && <Apple className="w-8 h-8 text-green-400 mb-4" />}
-                        <h3 className="font-bold text-lg mb-2">Food</h3>
-                        <p className="text-sm text-slate-400">Food dyes (Red 40) and preservatives are synthesized from petroleum byproducts.</p>
-                     </div>
-                  </div>
-                )}
-
-                {/* THE TABLE (Always visible but states change) */} 
-                <div className="overflow-x-auto pb-12">
-                  <div className="min-w-[900px] grid grid-cols-18 gap-1 p-4 bg-slate-900 rounded-xl border border-slate-800 relative">
+                {/* Main Content */}
+                <main className="flex-1 p-4 md:p-8 overflow-y-auto">
                     
-                    {/* Legend */} 
-                    {currentLevel > 3 && (
-                      <div className="absolute top-4 left-20 md:left-32 grid grid-cols-2 gap-2 text-xs opacity-70 bg-slate-950/80 p-2 rounded border border-slate-800 z-10">
-                         {Object.entries(categories).map(([key, cat]) => (
-                           <div key={key} className="flex items-center gap-2">
-                             <span className={`w-2 h-2 rounded-full ${cat.color}`}></span>
-                             <span>{cat.name}</span>
-                           </div>
-                         ))}
-                      </div>
+                    {/* Lesson Header */}
+                    <div className="mb-8 bg-slate-900/50 p-6 rounded-xl border border-slate-800 backdrop-blur-sm animate-in fade-in">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                        <div>
+                        <h2 className="text-3xl font-bold text-white mb-2">{levelData?.title}</h2>
+                        <p className="text-teal-400 font-medium">{levelData?.subtitle}</p>
+                        </div>
+                        <div className="flex gap-2">
+                        <button onClick={prevLevel} disabled={currentLevel === 1} className="p-2 rounded-full hover:bg-slate-800 disabled:opacity-30">
+                            <Icon name="ChevronRight" className="w-6 h-6 rotate-180" />
+                        </button>
+                        <button 
+                            onClick={nextLevel} 
+                            disabled={currentLevel === 10}
+                            className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-full font-bold transition disabled:opacity-50 disabled:bg-slate-800"
+                        >
+                            <span>Next Level</span>
+                            <Icon name="ChevronRight" className="w-4 h-4" />
+                        </button>
+                        </div>
+                    </div>
+                    
+                    <div className="prose prose-invert max-w-none text-slate-300">
+                        <p className="text-lg leading-relaxed">{levelData?.instruction}</p>
+                        <div className="bg-slate-800/50 p-4 rounded-lg mt-4 border-l-4 border-teal-500">
+                        <h4 className="text-sm font-bold text-teal-400 uppercase tracking-wider mb-1">Concept</h4>
+                        <p>{levelData?.explanation}</p>
+                        </div>
+                    </div>
+                    </div>
+
+                    {/* SPECIAL VIEW: LEVEL 1 (WATER) */}
+                    {currentLevel === 1 && (
+                    <div className="mb-12 flex flex-col items-center justify-center p-12 border border-dashed border-slate-700 rounded-2xl bg-slate-900/30">
+                        <div className="relative w-64 h-48 flex items-center justify-center">
+                            {/* Oxygen */}
+                            <button 
+                            onClick={() => setSelectedElement(fullElements.find(e => e.atomic === 8) || null)}
+                            className="w-24 h-24 rounded-full bg-blue-500 text-white text-3xl font-bold flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:scale-110 transition z-10"
+                            >
+                            O
+                            </button>
+                            {/* Hydrogens */}
+                            <button 
+                            onClick={() => setSelectedElement(fullElements.find(e => e.atomic === 1) || null)}
+                            className="absolute top-0 right-0 w-14 h-14 rounded-full bg-slate-200 text-slate-900 text-xl font-bold flex items-center justify-center shadow-lg hover:scale-110 transition"
+                            >
+                            H
+                            </button>
+                            <button 
+                            onClick={() => setSelectedElement(fullElements.find(e => e.atomic === 1) || null)}
+                            className="absolute top-0 left-0 w-14 h-14 rounded-full bg-slate-200 text-slate-900 text-xl font-bold flex items-center justify-center shadow-lg hover:scale-110 transition"
+                            >
+                            H
+                            </button>
+                            {/* Bonds */}
+                            <div className="absolute top-10 right-10 w-16 h-2 bg-slate-600 -rotate-45 -z-0 origin-left"></div>
+                            <div className="absolute top-10 left-12 w-16 h-2 bg-slate-600 rotate-45 -z-0 origin-right"></div>
+                        </div>
+                        <p className="mt-6 text-slate-500 text-center max-w-md">
+                            This is a Water Molecule. Click the atoms to see what they are made of. 
+                            <br/>"H" is Hydrogen. "O" is Oxygen.
+                        </p>
+                    </div>
                     )}
 
-                    {fullElements.map((el) => {
-                      const unlocked = isUnlocked(el.atomic);
-                      const isRelevant = levelData?.unlocks === 'ALL' || (Array.isArray(levelData?.unlocks) && levelData.unlocks.includes(el.atomic));
-                      const catData = categories[el.cat];
-
-                      return (
-                        <button
-                          key={el.atomic}
-                          onClick={() => unlocked && setSelectedElement(el)}
-                          style={{ gridColumn: el.col, gridRow: el.row }}
-                          disabled={!unlocked}
-                          className={`
-                            aspect-square flex flex-col justify-center items-center rounded-md border
-                            transition-all duration-300 relative group
-                            ${unlocked 
-                              ? `${catData.color} bg-opacity-10 ${catData.borderColor} hover:scale-125 hover:z-20 hover:bg-opacity-30 cursor-pointer` 
-                              : 'bg-slate-900 border-slate-800 text-slate-700 cursor-not-allowed opacity-40'}
-                            ${isRelevant && currentLevel !== 10 ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900 animate-pulse' : ''}
-                          `}
-                        >
-                          <span className={`text-[10px] absolute top-0.5 left-1 ${unlocked ? 'text-slate-400' : 'text-slate-700'}`}>{el.atomic}</span>
-                          <span className={`font-bold ${unlocked ? 'text-white' : 'text-slate-600'}`}>{el.symbol}</span>
-                          <span className="hidden md:block text-[8px] opacity-70 truncate max-w-full px-0.5">{el.name}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className="text-center text-slate-600 text-xs mt-4">
-                    *Visual representation. Full 118 elements available in Mastery Level.
-                  </p>
-                </div>
-
-              </main>
-
-              {/* Detail Modal */} 
-              {selectedElement && (
-                <div 
-                  className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
-                  onClick={() => setSelectedElement(null)}
-                >
-                  <div 
-                    className="bg-slate-900 border border-slate-700 p-8 rounded-xl max-w-md w-full relative shadow-2xl animate-in zoom-in-95 duration-200"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button 
-                      onClick={() => setSelectedElement(null)}
-                      className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                    
-                    <div className="flex items-start justify-between mb-8">
-                      <div>
-                         <h2 className="text-3xl font-bold text-white tracking-tight">{selectedElement.name}</h2>
-                         <span className={`inline-block px-3 py-1 mt-3 text-xs font-semibold rounded-full bg-opacity-20 border border-opacity-30 ${categories[selectedElement.cat].textColor} ${categories[selectedElement.cat].borderColor}`}>
-                           {categories[selectedElement.cat].name}
-                         </span>
-                      </div>
-                      <div className="text-6xl font-black text-slate-800 select-none border-4 border-slate-800 p-2 rounded-lg bg-slate-950">
-                        {selectedElement.symbol}
-                      </div>
+                    {/* SPECIAL VIEW: LEVEL 9 (CRUDE) */}
+                    {currentLevel === 9 && (
+                    <div className="grid md:grid-cols-3 gap-6 mb-8">
+                        <div className="bg-slate-900 p-6 rounded-xl border border-slate-700">
+                            <Icon name="Droplet" className="w-8 h-8 text-pink-400 mb-4" />
+                            <h3 className="font-bold text-lg mb-2">Perfume</h3>
+                            <p className="text-sm text-slate-400">Crude oil &rarr; Phenols &rarr; Artificial Vanilla. You are wearing fossil fuels.</p>
+                        </div>
+                        <div className="bg-slate-900 p-6 rounded-xl border border-slate-700">
+                            <Icon name="Pill" className="w-8 h-8 text-blue-400 mb-4" />
+                            <h3 className="font-bold text-lg mb-2">Medicine</h3>
+                            <p className="text-sm text-slate-400">Oil provides the Carbon backbone for Aspirin and Antihistamines.</p>
+                        </div>
+                        <div className="bg-slate-900 p-6 rounded-xl border border-slate-700">
+                            <Icon name="Apple" className="w-8 h-8 text-green-400 mb-4" />
+                            <h3 className="font-bold text-lg mb-2">Food</h3>
+                            <p className="text-sm text-slate-400">Food dyes (Red 40) and preservatives are synthesized from petroleum byproducts.</p>
+                        </div>
                     </div>
+                    )}
 
-                    <p className="text-slate-300 text-lg leading-relaxed border-l-2 border-teal-500 pl-4">
-                      {selectedElement.desc || "Standard element description placeholder. In a full version, this would contain specific chemical properties."}
+                    {/* THE TABLE */}
+                    <div className="overflow-x-auto pb-12">
+                    <div className="min-w-[900px] grid grid-cols-18 gap-1 p-4 bg-slate-900 rounded-xl border border-slate-800 relative">
+                        
+                        {/* Legend */}
+                        {currentLevel > 3 && (
+                        <div className="absolute top-4 left-20 md:left-32 grid grid-cols-2 gap-2 text-xs opacity-70 bg-slate-950/80 p-2 rounded border border-slate-800 z-10">
+                            {Object.entries(categories).map(([key, cat]) => (
+                            <div key={key} className="flex items-center gap-2">
+                                <span className={`w-2 h-2 rounded-full ${cat.color}`}></span>
+                                <span>{cat.name}</span>
+                            </div>
+                            ))}
+                        </div>
+                        )}
+
+                        {fullElements.map((el) => {
+                        const unlocked = isUnlocked(el.atomic);
+                        const isRelevant = levelData?.unlocks === 'ALL' || (Array.isArray(levelData?.unlocks) && levelData.unlocks.includes(el.atomic));
+                        
+                        return (
+                            <button
+                            key={el.atomic}
+                            onClick={() => unlocked && setSelectedElement(el)}
+                            style={{ gridColumn: el.col, gridRow: el.row }}
+                            disabled={!unlocked}
+                            className={`
+                                aspect-square flex flex-col justify-center items-center rounded-md border
+                                transition-all duration-300 relative group
+                                ${unlocked 
+                                ? `${categories[el.cat].color} bg-opacity-10 border-${categories[el.cat].color.replace('bg-', '')} hover:scale-125 hover:z-20 hover:bg-opacity-30 cursor-pointer` 
+                                : 'bg-slate-900 border-slate-800 text-slate-700 cursor-not-allowed opacity-40'}
+                                ${isRelevant && currentLevel !== 10 ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900 animate-pulse' : ''}
+                            `}
+                            >
+                            <span className={`text-[10px] absolute top-0.5 left-1 ${unlocked ? 'text-slate-400' : 'text-slate-700'}`}>{el.atomic}</span>
+                            <span className={`font-bold ${unlocked ? 'text-white' : 'text-slate-600'}`}>{el.symbol}</span>
+                            <span className="hidden md:block text-[8px] opacity-70 truncate max-w-full px-0.5">{el.name}</span>
+                            </button>
+                        );
+                        })}
+                    </div>
+                    <p className="text-center text-slate-600 text-xs mt-4">
+                        *Visual representation. Full 118 elements available in Mastery Level.
                     </p>
-
-                    <div className="mt-6 bg-slate-950 p-4 rounded-lg text-sm text-slate-400">
-                      <strong className="text-teal-500 block mb-1">Group Behaviour:</strong>
-                      {categories[selectedElement.cat].desc}
                     </div>
-                  </div>
-                </div>
-              )}
 
-            </div>
-          );
+                </main>
+
+                {/* Detail Modal */}
+                {selectedElement && (
+                    <div 
+                    className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in"
+                    onClick={() => setSelectedElement(null)}
+                    >
+                    <div 
+                        className="bg-slate-900 border border-slate-700 p-8 rounded-xl max-w-md w-full relative shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button 
+                        onClick={() => setSelectedElement(null)}
+                        className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
+                        >
+                        <Icon name="X" className="w-5 h-5" />
+                        </button>
+                        
+                        <div className="flex items-start justify-between mb-8">
+                        <div>
+                            <h2 className="text-3xl font-bold text-white tracking-tight">{selectedElement.name}</h2>
+                            <span className={`inline-block px-3 py-1 mt-3 text-xs font-semibold rounded-full bg-opacity-20 border border-opacity-30 ${categories[selectedElement.cat].color.replace('bg-', 'text-').replace('500', '300')} border-white`}>
+                            {categories[selectedElement.cat].name}
+                            </span>
+                        </div>
+                        <div className="text-6xl font-black text-slate-800 select-none border-4 border-slate-800 p-2 rounded-lg bg-slate-950">
+                            {selectedElement.symbol}
+                        </div>
+                        </div>
+
+                        <p className="text-slate-300 text-lg leading-relaxed border-l-2 border-teal-500 pl-4">
+                        {selectedElement.desc || "Standard element description placeholder. In a full version, this would contain specific chemical properties."}
+                        </p>
+
+                        <div className="mt-6 bg-slate-950 p-4 rounded-lg text-sm text-slate-400">
+                        <strong className="text-teal-500 block mb-1">Group Behaviour:</strong>
+                        {categories[selectedElement.cat].desc}
+                        </div>
+                    </div>
+                    </div>
+                )}
+                
+                {/* BLUES APP LOGO */}
+                <div style={{position: 'fixed', top: '1rem', right: '1rem', zIndex: 9999, fontFamily: 'sans-serif'}}>
+                    <a href="https://blueshub.netlify.app/" style={{display: 'block', width: '200px', opacity: 0.8, transition: 'opacity 0.2s', backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(4px)', borderRadius: '0.5rem', border: '1px solid #334155', padding: '0.5rem', textDecoration: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}}>
+                        <div style={{fontSize: '0.75rem', textAlign: 'center', color: '#94a3b8', marginBottom: '0.25rem'}}>Back to Hub</div>
+                        <img src="logoani.svg" alt="App by Blues" style={{width: '100%', height: 'auto', display: 'block'}} />
+                    </a>
+                </div>
+
+                </div>
+            );
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
-
 </body>
 </html>
