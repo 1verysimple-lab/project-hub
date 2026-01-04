@@ -76,5 +76,11 @@
         "title": "The new laws for smokers in Sitges",
         "description": "its forbidden",
         "type": "HTML/JS"
+    },
+    {
+        "filename": "Periodic.html",
+        "title": "Periodic Table",
+        "description": "An interactive way of learning",
+        "type": "HTML/JS"
     }
 ]
