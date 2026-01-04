@@ -92,10 +92,15 @@ def main():
     
     if choice == 'y':
         print("\nDeploying...")
-        run_command("git add .")
-        run_command('git commit -m "Update project list and content"')
-        run_command("git push")
-        print("\n[DONE] Site updated!")
+        try:
+            run_command("git add .")
+            run_command('git commit -m "Update project list and content"')
+            print("Syncing with GitHub...")
+            run_command("git pull --rebase")
+            run_command("git push")
+            print("\n[DONE] Site updated successfully!")
+        except Exception as e:
+            print(f"\n[ERROR] Deployment failed: {e}")
     else:
         print("\nDone. Run this script again when you want to deploy.")
 
