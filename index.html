@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,12 +20,61 @@
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
             border-color: #6366f1;
         }
+        /* Logo Styles */
+        .logo-container svg {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+        }
     </style>
 </head>
-<body class="min-h-screen p-8">
+<body class="min-h-screen p-8 flex flex-col">
 
     <!-- Header -->
-    <header class="max-w-4xl mx-auto mb-12 text-center pt-10">
+    <header class="max-w-4xl mx-auto mb-12 text-center pt-10 w-full flex flex-col items-center">
+        <!-- Animated Logo -->
+        <div class="logo-container mb-6 text-indigo-400">
+             <svg width="300" height="60" viewBox="0 0 300 60" xmlns="http://www.w3.org/2000/svg" aria-label="app by blues">
+              <style>
+                .base { 
+                  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+                  font-size: 28px;
+                  fill: currentColor; 
+                }
+                .bold { font-weight: 700; }
+                .light { font-weight: 300; opacity: 0.7; }
+            
+                .fade-in {
+                  opacity: 0;
+                  animation: cinematic 1.2s cubic-bezier(0.215, 0.610, 0.355, 1.000) forwards;
+                }
+                
+                .delay {
+                  animation-delay: 0.15s;
+                }
+            
+                @keyframes cinematic {
+                  0% { 
+                    opacity: 0; 
+                    letter-spacing: -1px; 
+                    transform: translateY(5px); 
+                  }
+                  100% { 
+                    opacity: 1; 
+                    letter-spacing: 0px; 
+                    transform: translateY(0); 
+                  }
+                }
+              </style>
+            
+              <text x="50%" y="38" text-anchor="middle" class="base">
+                <tspan class="bold fade-in">app</tspan>
+                <tspan class="light fade-in" dx="5">by</tspan>
+                <tspan class="bold fade-in delay" dx="5">blues</tspan>
+              </text>
+            </svg>
+        </div>
+
         <h1 class="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">
             Project Showcase
         </h1>
@@ -34,336 +82,71 @@
     </header>
 
     <!-- Grid Container -->
-    <main class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-
-        <!-- PROJECT 1: Void Fan -->
-        <!-- COPY FROM HERE TO ADD NEW PROJECT -->
-        <a class='card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-indigo-500 group' href='/fan_sim'>
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-indigo-400 group-hover:text-white transition-colors">
-                    <i data-lucide="wind"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-indigo-400 transition-colors">Void Fan 2.0</h2>
-            <p class="text-zinc-400 text-sm">
-                An interactive fan simulation with realistic physics and sound. Experience the void.
-            </p>
-        </a>
-        <!-- STOP COPYING HERE -->
-
-        <!-- PROJECT 2: CS2 Map Selector -->
-        <!-- Note: This links to an external URL -->
-        <a href="https://1verysimple-lab.github.io/cs2mapselector/" target="_blank" class="card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-orange-500 group">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-orange-400 group-hover:text-white transition-colors">
-                    <i data-lucide="map"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">External</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-orange-400 transition-colors">CS2 Map Selector</h2>
-            <p class="text-zinc-400 text-sm">
-                A tool for selecting maps in Counter-Strike 2.
-            </p>
-        </a>
-
-    
-        <!-- PROJECT: QuizRun: Skill Edition -->
-        <a class='card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500 group' href='/quiz'>
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-emerald-400 group-hover:text-white transition-colors">
-                    <i data-lucide="layout-template"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-emerald-400 transition-colors">QuizRun: Skill Edition</h2>
-            <p class="text-zinc-400 text-sm">
-                A competitive quiz game.
-            </p>
-        </a>
-
-    
-        <!-- PROJECT: Paper Planes -->
-        <a href="paper planes.html" class="card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500 group">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-emerald-400 group-hover:text-white transition-colors">
-                    <i data-lucide="layout-template"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-emerald-400 transition-colors">Paper Planes</h2>
-            <p class="text-zinc-400 text-sm">
-                Short and easy instructions for kids to make 3 easy but very nice paper airplanes.
-            </p>
-        </a>
-
-    
-        <!-- PROJECT: It would be cool if it worked but... -->
-        <a class='card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500 group' href='/cs2bindgenerator'>
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-emerald-400 group-hover:text-white transition-colors">
-                    <i data-lucide="layout-template"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-emerald-400 transition-colors">It would be cool if it worked but...</h2>
-            <p class="text-zinc-400 text-sm">
-                Some parts works others not.
-            </p>
-        </a>
-
-    
-        <!-- PROJECT: Dice Roulette -->
-        <a class='card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500 group' href='/dice_game'>
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-emerald-400 group-hover:text-white transition-colors">
-                    <i data-lucide="layout-template"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-emerald-400 transition-colors">Dice Roulette</h2>
-            <p class="text-zinc-400 text-sm">
-                3 dices and a kind of roulette concept
-            </p>
-        </a>
-
-    
-        <!-- PROJECT: Woot a Memory game -->
-        <a class='card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500 group' href='/woot_x'>
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-emerald-400 group-hover:text-white transition-colors">
-                    <i data-lucide="layout-template"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-emerald-400 transition-colors">Woot a Memory game</h2>
-            <p class="text-zinc-400 text-sm">
-                walk the path -
-            </p>
-        </a>
-
-    
-        <!-- PROJECT: Record and Play audio in reverse -->
-        <a class='card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500 group' href='/record_reverse'>
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-emerald-400 group-hover:text-white transition-colors">
-                    <i data-lucide="layout-template"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-emerald-400 transition-colors">Record and Play audio in reverse</h2>
-            <p class="text-zinc-400 text-sm">
-                Should be a default on all audio apps
-            </p>
-        </a>
-
-    
-        <!-- PROJECT: Learn your iPhoneCamera -->
-        <a href="iPhone camera tutorial.html" class="card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500 group">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-emerald-400 group-hover:text-white transition-colors">
-                    <i data-lucide="layout-template"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-emerald-400 transition-colors">Learn your iPhoneCamera</h2>
-            <p class="text-zinc-400 text-sm">
-                tutorial
-            </p>
-        </a>
-
-        <!-- PROJECT: Vitamin guide -->
-        <a class='card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500 group' href='/vitaminer'>
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-emerald-400 group-hover:text-white transition-colors">
-                    <i data-lucide="layout-template"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-emerald-400 transition-colors">Vitamin guide</h2>
-            <p class="text-zinc-400 text-sm">
-                a idea
-            </p>
-        </a>
-
-    
-        <!-- PROJECT: Magnet Game -->
-        <a class='card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500 group' href='/magne5'>
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-emerald-400 group-hover:text-white transition-colors">
-                    <i data-lucide="layout-template"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-emerald-400 transition-colors">Magnet Game</h2>
-            <p class="text-zinc-400 text-sm">
-                game for 2
-            </p>
-        </a>
-
-    
-        <!-- PROJECT: Nap Noise -->
-        <a href="Nap Noise.html" class="card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500 group">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-emerald-400 group-hover:text-white transition-colors">
-                    <i data-lucide="layout-template"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-emerald-400 transition-colors">Nap Noise</h2>
-            <p class="text-zinc-400 text-sm">
-                A small page to generate white noise for napping
-            </p>
-        </a>
-
-    
-        <!-- PROJECT: CS2 keybind configurator -->
-        <a href="CS2BINDGENERATOR.html" class="card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500 group">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-emerald-400 group-hover:text-white transition-colors">
-                    <i data-lucide="layout-template"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-emerald-400 transition-colors">CS2 keybind configurator</h2>
-            <p class="text-zinc-400 text-sm">
-                it is a bit..
-            </p>
-        </a>
-
-        <!-- PROJECT: 3 dice roulette game -->
-        <a href="dice_game.html" class="card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500 group">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-emerald-400 group-hover:text-white transition-colors">
-                    <i data-lucide="layout-template"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-emerald-400 transition-colors">3 dice roulette game</h2>
-            <p class="text-zinc-400 text-sm">
-                was just for fun
-            </p>
-        </a>
-
-        <!-- PROJECT: ASMR FAN NOISE SIMULATOR -->
-        <a href="FAN_SIM.html" class="card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500 group">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-emerald-400 group-hover:text-white transition-colors">
-                    <i data-lucide="layout-template"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-emerald-400 transition-colors">ASMR FAN NOISE SIMULATOR</h2>
-            <p class="text-zinc-400 text-sm">
-                You can adjust the sound to suit you and set a timer
-            </p>
-        </a>
-
-        <!-- PROJECT: A weird little magnet game to be played on mobile -->
-        <a href="magne5.html" class="card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500 group">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-emerald-400 group-hover:text-white transition-colors">
-                    <i data-lucide="layout-template"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-emerald-400 transition-colors">A weird little magnet game to be played on mobile</h2>
-            <p class="text-zinc-400 text-sm">
-                Only Mobile
-            </p>
-        </a>
-
-        <!-- PROJECT: Generic quiz -->
-        <a href="quiz.html" class="card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500 group">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-emerald-400 group-hover:text-white transition-colors">
-                    <i data-lucide="layout-template"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-emerald-400 transition-colors">Generic quiz</h2>
-            <p class="text-zinc-400 text-sm">
-                You need to generate the questions for the game
-            </p>
-        </a>
-
-        <!-- PROJECT: Wonder how it sound backwards -->
-        <a href="record_reverse.html" class="card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500 group">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-emerald-400 group-hover:text-white transition-colors">
-                    <i data-lucide="layout-template"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-emerald-400 transition-colors">Wonder how it sound backwards</h2>
-            <p class="text-zinc-400 text-sm">
-                Nothing new just easy
-            </p>
-        </a>
-
-        <!-- PROJECT: You cant smoke -->
-        <a href="smoking laws sitges.html" class="card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500 group">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-emerald-400 group-hover:text-white transition-colors">
-                    <i data-lucide="layout-template"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-emerald-400 transition-colors">You cant smoke</h2>
-            <p class="text-zinc-400 text-sm">
-                ohhhillegal
-            </p>
-        </a>
-
-        <!-- PROJECT: You should take these vitamins -->
-        <a href="vitaminer.html" class="card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500 group">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-emerald-400 group-hover:text-white transition-colors">
-                    <i data-lucide="layout-template"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-emerald-400 transition-colors">You should take these vitamins</h2>
-            <p class="text-zinc-400 text-sm">
-                Take them at the optimal hour
-            </p>
-        </a>
-
-        <!-- PROJECT: Could be cute game -->
-        <a href="woot_x.html" class="card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-emerald-500 group">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-zinc-800 rounded-lg text-emerald-400 group-hover:text-white transition-colors">
-                    <i data-lucide="layout-template"></i>
-                </div>
-                <span class="text-xs font-mono text-zinc-500">HTML/JS</span>
-            </div>
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-emerald-400 transition-colors">Could be cute game</h2>
-            <p class="text-zinc-400 text-sm">
-                still cute
-            </p>
-        </a>
-
+    <main id="projects-grid" class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 w-full flex-grow">
+        <!-- Projects will be loaded here -->
+        <div class="col-span-full text-center text-zinc-500 animate-pulse">
+            Loading projects...
+        </div>
     </main>
 
-    <footer class="max-w-4xl mx-auto mt-16 text-center text-zinc-600 text-sm">
+    <footer class="max-w-4xl mx-auto mt-16 text-center text-zinc-600 text-sm w-full">
         <p>Hosted on GitHub Pages</p>
-        <div class="mt-8 flex justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 50" width="240" height="50" role="img" aria-label="{app by blues} logo">
-              <style>
-                text {
-                  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
-                  font-size: 24px;
-                  font-weight: 700;
-                  fill: #2563EB; /* Universal Blue */
-                }
-              </style>
-              <text x="50%" y="33" text-anchor="middle">{app by blues}</text>
-            </svg>
-        </div>
     </footer>
 
     <script>
-        lucide.createIcons();
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('projects.json')
+                .then(response => response.json())
+                .then(projects => {
+                    const grid = document.getElementById('projects-grid');
+                    grid.innerHTML = ''; // Clear loading state
+
+                    projects.forEach(project => {
+                        const isExternal = project.type === 'External' || project.filename.startsWith('http');
+                        const target = isExternal ? 'target="_blank"' : '';
+                        const icon = getIconForType(project.type);
+                        const hoverColor = getHoverColorForType(project.type);
+                        const textColor = getTextColorForType(project.type);
+
+                        const cardHTML = `
+                            <a href="${project.filename}" ${target} class="card block p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:${hoverColor} group">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="p-3 bg-zinc-800 rounded-lg ${textColor} group-hover:text-white transition-colors">
+                                        <i data-lucide="${icon}"></i>
+                                    </div>
+                                    <span class="text-xs font-mono text-zinc-500">${project.type}</span>
+                                </div>
+                                <h2 class="text-xl font-semibold mb-2 group-hover:${textColor} transition-colors">${project.title}</h2>
+                                <p class="text-zinc-400 text-sm">
+                                    ${project.description}
+                                </p>
+                            </a>
+                        `;
+                        grid.insertAdjacentHTML('beforeend', cardHTML);
+                    });
+                    lucide.createIcons();
+                })
+                .catch(error => {
+                    console.error('Error loading projects:', error);
+                    document.getElementById('projects-grid').innerHTML = '<p class="text-red-500 text-center col-span-full">Failed to load projects.</p>';
+                });
+        });
+
+        function getIconForType(type) {
+            if (type === 'External') return 'map';
+            if (type.includes('Audio')) return 'mic'; // Example if we add Audio type
+            return 'layout-template';
+        }
+
+        function getHoverColorForType(type) {
+            if (type === 'External') return 'border-orange-500';
+            return 'border-emerald-500';
+        }
+
+        function getTextColorForType(type) {
+            if (type === 'External') return 'text-orange-400';
+            return 'text-emerald-400';
+        }
     </script>
 </body>
 </html>

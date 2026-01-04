@@ -1,0 +1,42 @@
+<svg width="300" height="60" viewBox="0 0 300 60" xmlns="http://www.w3.org/2000/svg" aria-label="app by blues">
+  <style>
+    /* Font settings */
+    .base { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+      font-size: 28px;
+      fill: currentColor; /* Inherits text color from your app */
+    }
+    .bold { font-weight: 700; }
+    .light { font-weight: 300; opacity: 0.7; }
+
+    /* Animation: Cinematic Fade */
+    .fade-in {
+      opacity: 0;
+      animation: cinematic 1.2s cubic-bezier(0.215, 0.610, 0.355, 1.000) forwards;
+    }
+    
+    /* Slight delay for the name 'blues' to give it rhythm */
+    .delay {
+      animation-delay: 0.15s;
+    }
+
+    @keyframes cinematic {
+      0% { 
+        opacity: 0; 
+        letter-spacing: -1px; 
+        transform: translateY(5px); 
+      }
+      100% { 
+        opacity: 1; 
+        letter-spacing: 0px; 
+        transform: translateY(0); 
+      }
+    }
+  </style>
+
+  <text x="50%" y="38" text-anchor="middle" class="base">
+    <tspan class="bold fade-in">app</tspan>
+    <tspan class="light fade-in" dx="5">by</tspan>
+    <tspan class="bold fade-in delay" dx="5">blues</tspan>
+  </text>
+</svg>
