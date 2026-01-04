@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>GH Tactical Grid v6 (Landmarks)</title>
+    <title>GH Tactical Grid v7 (Distance)</title>
     <style>
         :root {
             --bg: #1a1a1a;
@@ -15,7 +15,7 @@
             --home-color: #4CAF50;
             --marker-color: #e91e63; /* Pink */
             --district-color: #9c27b0; /* Purple */
-            --blueprint-color: #3498db; /* Blue for default loads */
+            --blueprint-color: #3498db;
             --cell-size: 35px;
         }
 
@@ -44,7 +44,7 @@
         h2 { margin-top: 0; color: var(--accent); font-size: 1.2rem; margin-bottom: 20px;}
         h3 { font-size: 0.8rem; text-transform: uppercase; color: #888; margin-bottom: 8px; margin-top: 15px;}
 
-        /* COMPASS WIDGET (Unchanged from v5) */
+        /* COMPASS & DISTANCE WIDGET */
         .compass-wrapper {
             background: #000;
             border: 1px solid #444;
@@ -53,18 +53,20 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
         .compass-face {
             width: 120px; height: 120px;
             border: 2px solid var(--accent); border-radius: 50%;
             position: relative; background: radial-gradient(circle, #222 0%, #000 100%);
+            margin-bottom: 15px;
         }
         .compass-mark { position: absolute; font-weight: bold; font-size: 0.8rem; color: #666; left: 50%; top: 50%; transform: translate(-50%, -50%); }
         .mark-n { transform: translate(-50%, -55px); color: var(--accent); }
         .mark-s { transform: translate(-50%, 35px); }
         .mark-e { transform: translate(35px, -50%); }
         .mark-w { transform: translate(-55px, -50%); }
+        
         .needle {
             position: absolute; top: 50%; left: 50%; width: 4px; height: 45px;
             transform-origin: bottom center; transition: transform 0.5s cubic-bezier(0.4, 2.5, 0.5, 0.9);
@@ -74,9 +76,17 @@
         .needle-home { background: var(--home-color); z-index: 2; box-shadow: 0 0 5px var(--home-color); }
         .needle-target { background: var(--marker-color); z-index: 3; height: 40px; box-shadow: 0 0 5px var(--marker-color); }
         .center-pin { position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; background: #fff; border-radius: 50%; transform: translate(-50%, -50%); z-index: 10; }
-        .compass-legend { display: flex; gap: 15px; margin-top: 10px; font-size: 0.75rem; }
-        .legend-item { display: flex; align-items: center; gap: 5px; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+        /* DISTANCE READOUT */
+        .distance-readout {
+            width: 100%;
+            text-align: center;
+            border-top: 1px dashed #333;
+            padding-top: 10px;
+        }
+        .dist-val { font-size: 1.4rem; font-weight: bold; color: var(--text); }
+        .dist-unit { font-size: 0.8rem; color: #888; text-transform: uppercase; }
+        .dist-detail { font-size: 0.8rem; color: var(--accent); margin-top: 5px; font-family: monospace; }
 
         /* --- CONTROLS --- */
         button.mode-btn {
@@ -87,7 +97,6 @@
         button.mode-btn:hover { background: #444; }
         button.mode-btn span.icon { margin-right: 10px; width: 20px; text-align: center; }
         
-        /* Active States */
         button.mode-btn[data-mode="moveP1"].active { background: var(--p1-color); color: #000; border-color: var(--p1-color); }
         button.mode-btn[data-mode="moveP2"].active { background: var(--p2-color); color: #000; border-color: var(--p2-color); }
         button.mode-btn[data-mode="setHome"].active { background: var(--home-color); color: #000; border-color: var(--home-color); }
@@ -113,7 +122,6 @@
         .icon-marker { z-index: 10; color: var(--marker-color); font-size: 1rem; opacity: 0.9; }
         .icon-district { z-index: 5; color: var(--district-color); font-size: 1.5rem; opacity: 0.6; }
 
-        /* Selection Ring */
         .selected-ring { position: absolute; width: 100%; height: 100%; border: 2px solid white; box-sizing: border-box; z-index: 1; animation: pulse 1.5s infinite; pointer-events: none; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
@@ -123,7 +131,7 @@
 <body>
 
 <div class="sidebar">
-    <h2>> COMMANDER V6</h2>
+    <h2>> COMMANDER V7</h2>
 
     <div class="compass-wrapper">
         <div class="compass-face">
@@ -132,9 +140,11 @@
             <div class="needle needle-home" id="needleHome"></div>
             <div class="needle needle-target" id="needleTarget"></div>
         </div>
-        <div class="compass-legend">
-            <div class="legend-item"><div class="dot" style="background: var(--home-color)"></div> HOME</div>
-            <div class="legend-item"><div class="dot" style="background: var(--marker-color)"></div> TARGET</div>
+        
+        <div class="distance-readout">
+            <div class="dist-unit">DISTANCE TO TARGET</div>
+            <div class="dist-val" id="distValue">--</div>
+            <div class="dist-detail" id="distDetail">SELECT A TARGET</div>
         </div>
     </div>
 
@@ -171,10 +181,7 @@
 
 
 <script>
-    // --- CONFIGURATION ---
     const startW = 54; endW = 35; startS = 15; endS = 34;   
-
-    // --- DATABASE FROM IMAGE ---
     const defaultLandmarks = [
         { w: 46, s: 26, type: 'district', name: 'Abandoned Village' },
         { w: 51, s: 19, type: 'district', name: 'Fishing Docks' },
@@ -182,12 +189,10 @@
         { w: 35, s: 25, type: 'district', name: 'Anaconda Island' }
     ];
 
-    // --- STATE ---
     let gameState = { currentMode: 'moveP1', p1: null, p2: null, home: null, markers: [], selectedTarget: null };
 
     window.onload = function() { createGrid(); loadState(); updateUI(); };
 
-    // --- GRID LOGIC ---
     function createGrid() {
         const gridWrap = document.getElementById('gridWrapper'); gridWrap.innerHTML = ''; 
         gridWrap.appendChild(createEl('div', 'grid-label corner-label', 'W\\S'));
@@ -201,7 +206,6 @@
     }
     function createEl(tag, c, t = '') { const el = document.createElement(tag); if (c) el.className = c; if (t) el.innerText = t; return el; }
 
-    // --- INTERACTION ---
     function setMode(mode) { gameState.currentMode = mode; document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode)); }
 
     function handleCellClick(w, s) {
@@ -219,14 +223,10 @@
         saveState(); updateUI();
     }
 
-    // --- NEW FUNCTION: LOAD DEFAULT LANDMARKS ---
     function loadDefaults() {
         defaultLandmarks.forEach(landmark => {
-            // Check for existing marker of same type at coords to avoid duplicates
             const exists = gameState.markers.some(m => m.w === landmark.w && m.s === landmark.s && m.type === landmark.type);
-            if (!exists) {
-                 gameState.markers.push({ w: landmark.w, s: landmark.s, type: landmark.type });
-            }
+            if (!exists) gameState.markers.push({ w: landmark.w, s: landmark.s, type: landmark.type });
         });
         saveState(); updateUI();
     }
@@ -234,21 +234,39 @@
     function markerExists(w, s) { return gameState.markers.some(m => m.w === w && m.s === s); }
     function clearMarkers() { if(confirm("Clear all placemarks?")) { gameState.markers = []; gameState.selectedTarget = null; saveState(); updateUI(); }}
 
-    // --- COMPASS MATH ---
     function updateCompass(p1, target, needleId) {
         const needle = document.getElementById(needleId);
         if (!p1 || !target) { needle.classList.remove('active'); needle.style.transform = 'translate(-50%, -100%) rotate(0deg)'; return; }
         needle.classList.add('active');
-        // Green Hell Logic: W increases Left, S increases Down.
         const dx = gameState.p1.w - target.w; 
         const dy = target.s - gameState.p1.s;
         const theta = Math.atan2(dy, dx);
         let deg = theta * (180 / Math.PI);
-        const finalRot = deg + 90; // Correction for CSS orientation
+        const finalRot = deg + 90; 
         needle.style.transform = `translate(-50%, -100%) rotate(${finalRot}deg)`;
     }
 
-    // --- RENDERING ---
+    // --- CALCULATION LOGIC ---
+    function updateDistance(p1, target) {
+        const valEl = document.getElementById('distValue');
+        const detEl = document.getElementById('distDetail');
+        
+        if (!p1 || !target) {
+            valEl.innerText = "--";
+            detEl.innerText = "SELECT A TARGET";
+            return;
+        }
+
+        const dW = Math.abs(p1.w - target.w);
+        const dS = Math.abs(p1.s - target.s);
+        
+        // Pythagorean distance
+        const dist = Math.sqrt((dW * dW) + (dS * dS)).toFixed(1);
+        
+        valEl.innerText = dist + " u";
+        detEl.innerText = `DELTA: ${dW}W / ${dS}S`;
+    }
+
     function updateUI() {
         document.querySelectorAll('.map-icon').forEach(el => el.remove()); document.querySelectorAll('.selected-ring').forEach(el => el.remove());
         gameState.markers.forEach(m => placeIcon(m.w, m.s, m.type === 'marker' ? '📍' : '🏢', `icon-${m.type}`));
@@ -259,13 +277,17 @@
 
         updateCompass(gameState.p1, gameState.home, 'needleHome');
         updateCompass(gameState.p1, gameState.selectedTarget, 'needleTarget');
+        
+        // Update Distance Panel
+        updateDistance(gameState.p1, gameState.selectedTarget);
 
         const fmt = (loc) => loc ? `${loc.w}W ${loc.s}S` : '--';
         document.getElementById('infoFooter').innerHTML = `<div>YOU: <span style="color:var(--p1-color)">${fmt(gameState.p1)}</span></div><div>TGT: <span style="color:var(--marker-color)">${fmt(gameState.selectedTarget)}</span></div>`;
     }
+    
     function placeIcon(w, s, emoji, className) { const cell = document.getElementById(`cell-${w}-${s}`); if (cell) cell.appendChild(createEl('div', `map-icon ${className}`, emoji)); }
-    function saveState() { localStorage.setItem('gh_tactical_state_v6', JSON.stringify(gameState)); }
-    function loadState() { const saved = localStorage.getItem('gh_tactical_state_v6'); if(saved) { gameState = { ...gameState, ...JSON.parse(saved) }; gameState.currentMode = 'moveP1'; }}
+    function saveState() { localStorage.setItem('gh_tactical_state_v7', JSON.stringify(gameState)); }
+    function loadState() { const saved = localStorage.getItem('gh_tactical_state_v7'); if(saved) { gameState = { ...gameState, ...JSON.parse(saved) }; gameState.currentMode = 'moveP1'; }}
 </script>
 </body>
 </html>
