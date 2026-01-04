@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GH Tactical Grid v5 (Compass)</title>
+    <style>
+        :root {
+            --bg: #1a1a1a;
+            --panel: #2d2d2d;
+            --grid-line: #444;
+            --accent: #4CAF50; /* Jungle Green */
+            --text: #e0e0e0;
+            --p1-color: #00bcd4; /* Cyan */
+            --p2-color: #ff9800; /* Orange */
+            --home-color: #4CAF50;
+            --marker-color: #e91e63; /* Pink */
+            --district-color: #9c27b0; /* Purple */
+            --cell-size: 35px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, monospace;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: 300px;
+            background: var(--panel);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            border-right: 2px solid var(--grid-line);
+            box-shadow: 5px 0 15px rgba(0,0,0,0.3);
+            z-index: 100;
+        }
+
+        h2 { margin-top: 0; color: var(--accent); font-size: 1.2rem; margin-bottom: 20px;}
+        h3 { font-size: 0.8rem; text-transform: uppercase; color: #888; margin-bottom: 8px; margin-top: 15px;}
+
+        /* --- COMPASS WIDGET --- */
+        .compass-wrapper {
+            background: #000;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .compass-face {
+            width: 120px;
+            height: 120px;
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            position: relative;
+            background: radial-gradient(circle, #222 0%, #000 100%);
+            box-shadow: inset 0 0 10px #000;
+        }
+
+        .compass-mark {
+            position: absolute;
+            font-weight: bold;
+            font-size: 0.8rem;
+            color: #666;
+            left: 50%; top: 50%;
+            transform: translate(-50%, -50%);
+        }
+        /* Cardinal Directions */
+        .mark-n { transform: translate(-50%, -55px); color: var(--accent); }
+        .mark-s { transform: translate(-50%, 35px); }
+        .mark-e { transform: translate(35px, -50%); }
+        .mark-w { transform: translate(-55px, -50%); }
+
+        /* Needles */
+        .needle {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 4px; height: 45px;
+            transform-origin: bottom center;
+            transition: transform 0.5s cubic-bezier(0.4, 2.5, 0.5, 0.9); /* Bouncy physics */
+            border-radius: 2px;
+            opacity: 0.3; /* Dim when inactive */
+        }
+
+        .needle.active { opacity: 1; }
+
+        .needle-home {
+            background: var(--home-color);
+            z-index: 2;
+            box-shadow: 0 0 5px var(--home-color);
+        }
+        
+        .needle-target {
+            background: var(--marker-color);
+            z-index: 3;
+            height: 40px; /* Slightly shorter */
+            box-shadow: 0 0 5px var(--marker-color);
+        }
+
+        .center-pin {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 8px; height: 8px;
+            background: #fff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+
+        .compass-legend {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 0.75rem;
+        }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+        /* --- CONTROLS --- */
+        button.mode-btn {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 6px;
+            background: #383838;
+            border: 1px solid var(--grid-line);
+            color: var(--text);
+            cursor: pointer;
+            text-align: left;
+            transition: 0.2s;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        button.mode-btn:hover { background: #444; }
+        button.mode-btn span.icon { margin-right: 10px; width: 20px; text-align: center; }
+        
+        /* Active States */
+        button.mode-btn[data-mode="moveP1"].active { background: var(--p1-color); color: #000; border-color: var(--p1-color); }
+        button.mode-btn[data-mode="moveP2"].active { background: var(--p2-color); color: #000; border-color: var(--p2-color); }
+        button.mode-btn[data-mode="setHome"].active { background: var(--home-color); color: #000; border-color: var(--home-color); }
+        button.mode-btn[data-mode="addMarker"].active { background: var(--marker-color); color: #fff; border-color: var(--marker-color); }
+        button.mode-btn[data-mode="addDistrict"].active { background: var(--district-color); color: #fff; border-color: var(--district-color); }
+        button.mode-btn[data-mode="selectTarget"].active { background: #fff; color: #000; border-color: #fff; }
+
+        /* --- MAP AREA --- */
+        .map-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow: auto;
+            align-items: center;
+        }
+
+        .grid-wrapper {
+            display: grid;
+            grid-template-columns: 30px repeat(20, var(--cell-size)); 
+            grid-template-rows: 30px repeat(20, var(--cell-size));
+            gap: 1px;
+            background-color: var(--grid-line);
+            border: 2px solid #333;
+        }
+
+        .grid-label {
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: monospace;
+            font-size: 0.7rem;
+            color: #666;
+        }
+        .label-w { font-weight: bold; color: var(--accent); }
+        .label-s { font-weight: bold; color: var(--accent); }
+        .corner-label { background: var(--panel); }
+
+        .cell {
+            background: #222;
+            position: relative;
+            cursor: crosshair;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .cell:hover { background: #2a2a2a; }
+
+        /* Map Icons */
+        .map-icon {
+            position: absolute;
+            font-size: 1.2rem;
+            pointer-events: none; 
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        .icon-p1 { z-index: 20; color: var(--p1-color); transform: translate(-3px, -3px); }
+        .icon-p2 { z-index: 19; color: var(--p2-color); transform: translate(3px, 3px); }
+        .icon-home { z-index: 15; color: var(--home-color); font-size: 1.4rem;}
+        .icon-marker { z-index: 10; color: var(--marker-color); font-size: 1rem; opacity: 0.9; }
+        .icon-district { z-index: 5; color: var(--district-color); font-size: 1.5rem; opacity: 0.6; }
+
+        /* Selection Ring */
+        .selected-ring {
+            position: absolute;
+            width: 100%; height: 100%;
+            border: 2px solid white;
+            box-sizing: border-box;
+            z-index: 1;
+            animation: pulse 1.5s infinite;
+            pointer-events: none;
+        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        .info-footer {
+            margin-top: auto;
+            border-top: 1px solid #444;
+            padding-top: 10px;
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>> COMMANDER V5</h2>
+
+    <div class="compass-wrapper">
+        <div class="compass-face">
+            <div class="compass-mark mark-n">N</div>
+            <div class="compass-mark mark-e">E</div>
+            <div class="compass-mark mark-s">S</div>
+            <div class="compass-mark mark-w">W</div>
+            
+            <div class="center-pin"></div>
+            
+            <div class="needle needle-home" id="needleHome"></div>
+            <div class="needle needle-target" id="needleTarget"></div>
+        </div>
+        
+        <div class="compass-legend">
+            <div class="legend-item">
+                <div class="dot" style="background: var(--home-color)"></div> HOME
+            </div>
+            <div class="legend-item">
+                <div class="dot" style="background: var(--marker-color)"></div> TARGET
+            </div>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <h3>Positioning</h3>
+        <button class="mode-btn active" data-mode="moveP1" onclick="setMode('moveP1')">
+            <span class="icon">👤</span> Move Self (P1)
+        </button>
+        <button class="mode-btn" data-mode="moveP2" onclick="setMode('moveP2')">
+            <span class="icon">👥</span> Move Other Player
+        </button>
+    </div>
+
+    <div class="control-group">
+        <h3>Tactical</h3>
+        <button class="mode-btn" data-mode="selectTarget" onclick="setMode('selectTarget')">
+            <span class="icon">🎯</span> Select Target
+        </button>
+        <button class="mode-btn" data-mode="setHome" onclick="setMode('setHome')">
+            <span class="icon">🏠</span> Set Home Base
+        </button>
+        <button class="mode-btn" data-mode="addMarker" onclick="setMode('addMarker')">
+            <span class="icon">📍</span> Add Placemark
+        </button>
+        <button class="mode-btn" data-mode="addDistrict" onclick="setMode('addDistrict')">
+            <span class="icon">🏢</span> Mark District
+        </button>
+    </div>
+    
+    <div class="control-group" style="margin-top:20px;">
+        <button class="mode-btn" onclick="clearMarkers()" style="background: #331111; border-color: #552222; font-size: 0.8rem;">
+             <span class="icon">❌</span> Clear Markers
+        </button>
+    </div>
+
+    <div class="info-footer" id="infoFooter">
+        </div>
+</div>
+
+<div class="map-container">
+    <div id="gridWrapper" class="grid-wrapper"></div>
+</div>
+
+
+<script>
+    // --- CONFIGURATION ---
+    const startW = 54; 
+    const endW = 35;   
+    const startS = 15; 
+    const endS = 34;   
+
+    // --- STATE MANAGEMENT ---
+    let gameState = {
+        currentMode: 'moveP1',
+        p1: null, // {w, s}
+        p2: null,
+        home: null,
+        markers: [], // {w, s, type}
+        selectedTarget: null // {w, s}
+    };
+
+    // --- INIT ---
+    window.onload = function() {
+        createGrid();
+        loadState();
+        updateUI();
+    };
+
+    // --- GRID LOGIC ---
+    function createGrid() {
+        const gridWrap = document.getElementById('gridWrapper');
+        gridWrap.innerHTML = ''; 
+
+        // Corner
+        gridWrap.appendChild(createEl('div', 'grid-label corner-label', 'W\\S'));
+
+        // Header Row (West decreases Left to Right)
+        for (let w = startW; w >= endW; w--) {
+            gridWrap.appendChild(createEl('div', 'grid-label label-w', w));
+        }
+
+        // Main Loop
+        for (let s = startS; s <= endS; s++) {
+            // Sidebar Column (South increases Top to Bottom)
+            gridWrap.appendChild(createEl('div', 'grid-label label-s', s));
+
+            // Cells
+            for (let w = startW; w >= endW; w--) {
+                const cell = createEl('div', 'cell');
+                cell.id = `cell-${w}-${s}`;
+                cell.onclick = () => handleCellClick(w, s);
+                gridWrap.appendChild(cell);
+            }
+        }
+    }
+
+    function createEl(tag, classes, text = '') {
+        const el = document.createElement(tag);
+        if (classes) el.className = classes;
+        if (text !== '') el.innerText = text;
+        return el;
+    }
+
+    // --- INTERACTION ---
+    function setMode(mode) {
+        gameState.currentMode = mode;
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === mode);
+        });
+    }
+
+    function handleCellClick(w, s) {
+        const coords = { w, s };
+        const mode = gameState.currentMode;
+        
+        switch(mode) {
+            case 'moveP1':
+                gameState.p1 = coords; break;
+            case 'moveP2':
+                gameState.p2 = coords; break;
+            case 'setHome':
+                gameState.home = coords; break;
+            case 'addMarker':
+                if(!markerExists(w,s)) gameState.markers.push({...coords, type: 'marker'}); 
+                gameState.selectedTarget = coords;
+                break;
+             case 'addDistrict':
+                 gameState.markers = gameState.markers.filter(m => !(m.w === w && m.s === s && m.type === 'district'));
+                 gameState.markers.push({...coords, type: 'district'});
+                 gameState.selectedTarget = coords;
+                 break;
+            case 'selectTarget':
+                gameState.selectedTarget = coords;
+                break;
+        }
+        saveState();
+        updateUI();
+    }
+
+    function markerExists(w, s) {
+        return gameState.markers.some(m => m.w === w && m.s === s);
+    }
+
+    function clearMarkers() {
+        if(confirm("Clear all placemarks?")) {
+            gameState.markers = [];
+            gameState.selectedTarget = null;
+            saveState();
+            updateUI();
+        }
+    }
+
+    // --- COMPASS MATH ---
+    function updateCompass(p1, target, needleId) {
+        const needle = document.getElementById(needleId);
+        
+        if (!p1 || !target) {
+            needle.classList.remove('active');
+            needle.style.transform = 'translate(-50%, -100%) rotate(0deg)'; // Reset
+            return;
+        }
+
+        needle.classList.add('active');
+
+        // VISUAL COORDINATE MATH
+        // In Green Hell & Our Grid:
+        // P1 to Target:
+        // If Target W > Player W => Target is VISUALLY LEFT (West)
+        // If Target S > Player S => Target is VISUALLY DOWN (South)
+
+        // Standard Screen Coords (X right, Y down):
+        // X diff: We need positive X to be Right (East).
+        // Since W increases to the Left, we invert W diff.
+        // dx = (PlayerW - TargetW)
+        // Check: P(40) -> T(30). Target is East (Right). 40-30 = +10. Correct (Right).
+        
+        // Y diff: S increases Down.
+        // dy = (TargetS - PlayerS)
+        // Check: P(20) -> T(30). Target is South (Down). 30-20 = +10. Correct (Down).
+
+        const dx = gameState.p1.w - target.w; 
+        const dy = target.s - gameState.p1.s;
+
+        // Calculate Angle (Radians)
+        // atan2(y, x) gives angle from East (0).
+        const theta = Math.atan2(dy, dx);
+        
+        // Convert to Degrees
+        let deg = theta * (180 / Math.PI);
+
+        // CSS Rotation Correction
+        // Our needle image points UP (North) by default.
+        // Math 0deg is East (Right).
+        // We need to rotate 90deg to map Math East to CSS East.
+        // Actually: 
+        // Math 0 (East) -> CSS 90 (Right)
+        // Math 90 (South) -> CSS 180 (Down)
+        // So we add 90 degrees to the result.
+        
+        const finalRot = deg + 90;
+
+        needle.style.transform = `translate(-50%, -100%) rotate(${finalRot}deg)`;
+    }
+
+    // --- RENDERING ---
+    function updateUI() {
+        // 1. Grid Cleanup
+        document.querySelectorAll('.map-icon').forEach(el => el.remove());
+        document.querySelectorAll('.selected-ring').forEach(el => el.remove());
+
+        // 2. Render Markers
+        gameState.markers.forEach(m => placeIcon(m.w, m.s, m.type === 'marker' ? '📍' : '🏢', `icon-${m.type}`));
+
+        // 3. Render Entities
+        if (gameState.home) placeIcon(gameState.home.w, gameState.home.s, '🏠', 'icon-home');
+        if (gameState.p2) placeIcon(gameState.p2.w, gameState.p2.s, '👥', 'icon-p2');
+        if (gameState.p1) placeIcon(gameState.p1.w, gameState.p1.s, '👤', 'icon-p1');
+
+        // 4. Selection Ring
+        if (gameState.selectedTarget) {
+            const cell = document.getElementById(`cell-${gameState.selectedTarget.w}-${gameState.selectedTarget.s}`);
+            if(cell) {
+                const ring = createEl('div', 'selected-ring');
+                cell.appendChild(ring);
+            }
+        }
+
+        // 5. UPDATE COMPASS
+        updateCompass(gameState.p1, gameState.home, 'needleHome');
+        updateCompass(gameState.p1, gameState.selectedTarget, 'needleTarget');
+
+        // 6. Footer Text
+        const fmt = (loc) => loc ? `${loc.w}W ${loc.s}S` : '--';
+        document.getElementById('infoFooter').innerHTML = `
+            <div>YOU: <span style="color:var(--p1-color)">${fmt(gameState.p1)}</span></div>
+            <div>TGT: <span style="color:var(--marker-color)">${fmt(gameState.selectedTarget)}</span></div>
+        `;
+    }
+
+    function placeIcon(w, s, emoji, className) {
+        const cell = document.getElementById(`cell-${w}-${s}`);
+        if (cell) {
+            const icon = createEl('div', `map-icon ${className}`, emoji);
+            cell.appendChild(icon);
+        }
+    }
+
+    function saveState() {
+        localStorage.setItem('gh_tactical_state_v5', JSON.stringify(gameState));
+    }
+
+    function loadState() {
+        const saved = localStorage.getItem('gh_tactical_state_v5');
+        if(saved) {
+            gameState = { ...gameState, ...JSON.parse(saved) };
+            gameState.currentMode = 'moveP1'; 
+        }
+    }
+</script>
+
+</body>
+</html>

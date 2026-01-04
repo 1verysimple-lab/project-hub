@@ -1,5 +1,12 @@
 [
     {
+        "filename": "findway.html",
+        "title": "Navigator",
+        "description": "its for the game green hell",
+        "type": "Tool",
+        "date_added": "2026-01-04"
+    },
+    {
         "filename": "green hell guide.html",
         "title": "A guide",
         "description": "A guide to green hell",
