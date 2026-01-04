@@ -32,6 +32,10 @@ def save_projects(projects):
     print(f"\n[SUCCESS] Saved {len(projects)} projects to {PROJECTS_FILE}")
 
 def main():
+    # Ensure we are working in the script's directory
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(script_dir)
+
     clear()
     print("========================================")
     print("   PROJECT HUB MANAGER (JSON EDITION)")
