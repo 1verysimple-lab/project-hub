@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Spatial Sniper: Final Operation</title>
+    <title>Spatial Sniper XVII</title>
     <style>
         :root {
             --bg: #0f172a;
             --hud: #1e293b;
             --accent: #4ade80; /* Green */
-            --gold: #facc15;   /* Headshot */
+            --gold: #facc15;   /* Bonus */
             --danger: #ef4444; /* Red */
             --enemy: #f43f5e;  /* Rose */
             --timer: #06b6d4;  /* Cyan */
@@ -79,9 +79,18 @@
         #score { color: var(--gold); font-size: 18px; }
         
         .footer-brand {
-            position: absolute; bottom: 2px; right: 8px; font-size: 9px; 
+            position: absolute; bottom: 2px; left: 10px; font-size: 9px; 
             color: #475569; text-transform: uppercase; letter-spacing: 1px;
         }
+
+        /* Restart Button in HUD */
+        #btn-restart {
+            position: absolute; bottom: 5px; right: 5px;
+            background: #334155; border: 1px solid #475569; color: #94a3b8;
+            font-size: 10px; padding: 3px 8px; border-radius: 4px; cursor: pointer;
+            text-transform: uppercase; font-weight: bold;
+        }
+        #btn-restart:active { background: var(--danger); color: white; border-color: var(--danger); }
 
         /* --- MESSAGE & TIMER --- */
         #message {
@@ -124,7 +133,7 @@
             animation: float-up 1s ease-out forwards; pointer-events: none; z-index: 10;
         }
         .dmg-popup.headshot { color: #fff; font-size: 28px; text-shadow: 0 0 10px var(--gold); }
-        .dmg-popup.glance { color: #94a3b8; font-size: 16px; text-shadow: none; }
+        .dmg-popup.weak { color: #94a3b8; font-size: 18px; text-shadow: none; }
         
         @keyframes float-up {
             0% { transform: translateY(0) scale(1); opacity: 1; }
@@ -166,25 +175,42 @@
         h2 { color: var(--accent); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 3px; font-size: 22px;}
         .subtitle { color: #64748b; font-size: 12px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
 
-        .instructions {
-            background: #1e293b; padding: 15px; border-radius: 8px; width: 280px; margin-bottom: 20px;
-            border-left: 3px solid var(--gold);
-        }
-        .inst-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #cbd5e1; }
-        .inst-row span:last-child { font-weight: bold; }
+        .btn-group { display: flex; gap: 10px; margin-top: 15px;}
 
         button {
-            background: var(--accent); color: #000; border: none; padding: 15px 50px;
-            font-size: 18px; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px;
+            background: var(--accent); color: #000; border: none; padding: 15px 30px;
+            font-size: 16px; font-weight: bold; cursor: pointer; text-transform: uppercase;
             border-radius: 6px; box-shadow: 0 4px 0 #059669; transition: transform 0.1s;
         }
         button:active { transform: translateY(4px); box-shadow: none; }
+        button.secondary { background: #334155; color: #cbd5e1; box-shadow: 0 4px 0 #1e293b; }
 
         table { border-collapse: collapse; width: 280px; margin-top: 20px; color: #fff; font-size: 14px;}
         th { text-align: left; color: #94a3b8; border-bottom: 2px solid #334155; padding: 5px; font-size: 10px;}
         td { padding: 8px 5px; border-bottom: 1px solid #334155; }
         .hs-score { text-align: right; font-weight: bold; color: var(--gold);}
 
+        /* --- INFO LAYER --- */
+        #info-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #0f172a; z-index: 200; display: none;
+            flex-direction: column; align-items: center; padding: 20px; overflow-y: auto;
+            box-sizing: border-box;
+        }
+        #info-layer.active { display: flex; }
+        
+        .info-content { max-width: 400px; width: 100%; color: #e2e8f0; font-family: sans-serif; line-height: 1.5; font-size: 14px;}
+        .info-header { text-align: center; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 15px; }
+        .info-header h3 { color: var(--accent); margin: 0; text-transform: uppercase; }
+        
+        .info-section { background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 3px solid var(--gold); }
+        .info-section h4 { margin: 0 0 5px 0; color: #fff; font-size: 15px;}
+        
+        .info-list { list-style: none; padding: 0; margin: 0; font-size: 13px;}
+        .info-list li { margin-bottom: 5px; color: #94a3b8; }
+        .info-list span { color: var(--accent); font-weight: bold; }
+
+        /* --- SHAKE --- */
         .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
         @keyframes shake {
             10%, 90% { transform: translate3d(-3px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); }
@@ -217,6 +243,7 @@
             <span id="score">0</span>
         </div>
         <div class="footer-brand">APP BY BLUES</div>
+        <button id="btn-restart">Restart</button>
     </div>
 
     <div id="message">Standby...</div>
@@ -246,42 +273,65 @@
     </div>
 
     <div id="menu-layer">
-        <h2>Spatial Sniper: Final</h2>
+        <h2>Spatial Sniper XVII</h2>
         <div class="subtitle">App by Blues</div>
         
-        <div class="instructions">
-            <div class="inst-row" style="border-bottom:1px solid #334155; padding-bottom:5px; margin-bottom:10px; color:#94a3b8; font-size:10px;">
-                NEUTRALIZE THE SNIPER (100 HP)
-            </div>
-            <div class="inst-row">
-                <span>HEADSHOT (< 0.5s)</span> <span style="color:#fff; text-shadow:0 0 5px gold;">10 DMG + 5 PTS</span>
-            </div>
-            <div class="inst-row">
-                <span>NORMAL HIT</span> <span style="color:var(--gold)">1-9 DMG</span>
-            </div>
-            <div class="inst-row">
-                <span>GLANCING HIT</span> <span style="color:#94a3b8">+1 PT (0 DMG)</span>
-            </div>
-            <div class="inst-row">
-                <span>HE MOVES ON HIT</span> <span style="color:var(--accent)">HE STAYS ON MISS</span>
-            </div>
-            <div class="inst-row" style="font-size:10px; color:#64748b; text-align:center; display:block; margin-top:5px;">
-                GAME ENDS ON SNIPER DEATH
-            </div>
-        </div>
-
         <div id="hs-container"></div>
-        <button id="btn-start">DEPLOY</button>
+        
+        <div class="btn-group">
+            <button id="btn-info" class="secondary">INTEL / HELP</button>
+            <button id="btn-start">DEPLOY</button>
+        </div>
+    </div>
+
+    <div id="info-layer">
+        <div class="info-content">
+            <div class="info-header">
+                <h3>Tactical Briefing</h3>
+            </div>
+
+            <div class="info-section">
+                <h4>1. Spatial Sound (The Concept)</h4>
+                <p style="color:#94a3b8; margin:0;">
+                    Your brain is a radar. By processing tiny delays and volume changes between your left and right ears, you can pinpoint exactly where a sound is coming from in 3D space. This app simulates that process.
+                </p>
+            </div>
+
+            <div class="info-section">
+                <h4>2. Mission Rules</h4>
+                <ul class="info-list">
+                    <li>- Listen for the sniper shot.</li>
+                    <li>- Tap the grid tile where the sound originated.</li>
+                    <li>- <span>1st Hit (< 0.5s)</span>: 15 Pts + 10 Dmg (Perfect).</li>
+                    <li>- <span>1st Hit (> 0.5s)</span>: 10 Pts + 10 Dmg.</li>
+                    <li>- <span>2nd/3rd Hit</span>: Reduced points & damage.</li>
+                    <li>- If you <span>MISS</span>, you take damage and he stays put.</li>
+                    <li>- If you <span>HIT</span>, he relocates.</li>
+                </ul>
+            </div>
+
+            <div class="info-section" style="border-left-color: var(--timer);">
+                <h4>3. The Science (HRTF)</h4>
+                <p style="color:#94a3b8; margin:0 0 10px 0;">
+                    How do stereo headphones fake "Rear" audio?
+                </p>
+                <p style="color:#94a3b8; margin:0;">
+                    The game uses a <strong>Head-Related Transfer Function</strong>. It applies specific filters to the sound wave to mimic how your outer ear (pinna) muffles sounds coming from behind you. This spectral filtering tricks your brain into perceiving depth on a 2D headset.
+                </p>
+            </div>
+
+            <button id="btn-close-info" style="width:100%;">CLOSE INTEL</button>
+        </div>
     </div>
 
     <script>
         // --- CONFIG ---
-        const HS_KEY = 'sniper_elite_hs_final';
+        const HS_KEY = 'sniper_elite_hs_v17';
         const GAME = {
             hp: 100, score: 0, isPlaying: false, canShoot: false,
             sniperPos: { x: 0, z: -5 }, 
             sniperHp: 100,
-            shotCount: 0, 
+            attempts: 1, 
             hasArmor: true, 
             reactionTimeMs: 2000, 
             timer: null,
@@ -293,9 +343,13 @@
         const TIMER_CONT = document.getElementById('timer-container');
         const SKULL_EL = document.getElementById('kill-skull');
         const MENU = document.getElementById('menu-layer');
+        const INFO = document.getElementById('info-layer');
         const HS_CONT = document.getElementById('hs-container');
         const P_MODEL = document.getElementById('player-model');
         const BTN_START = document.getElementById('btn-start');
+        const BTN_INFO = document.getElementById('btn-info');
+        const BTN_CLOSE_INFO = document.getElementById('btn-close-info');
+        const BTN_RESTART = document.getElementById('btn-restart');
 
         // --- AUDIO ENGINE ---
         let ctx, panner;
@@ -310,6 +364,7 @@
 
         function playSound(type, callback) {
             if(!ctx) return; const t = ctx.currentTime;
+            const osc = ctx.createOscillator(); const g = ctx.createGain();
             
             if (type === 'zip') {
                 setPos(GAME.sniperPos.x, GAME.sniperPos.z);
@@ -325,27 +380,26 @@
                 if(callback) setTimeout(callback, 400);
             }
             else if (type === 'damage') {
-                const osc = ctx.createOscillator(); const g = ctx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(150, t); osc.frequency.exponentialRampToValueAtTime(40, t + 0.3);
-                g.gain.setValueAtTime(1, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
-                osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.4);
+                // Deep Impact Thud
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(120, t); 
+                osc.frequency.exponentialRampToValueAtTime(10, t + 0.2); 
+                g.gain.setValueAtTime(1, t); 
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+                osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.3);
             }
             else if (type === 'headshot') {
-                const osc = ctx.createOscillator(); const g = ctx.createGain();
                 osc.type = 'sine'; osc.frequency.setValueAtTime(800, t);
                 osc.frequency.linearRampToValueAtTime(2000, t + 0.1);
                 g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
                 osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.3);
             }
             else if (type === 'armor') {
-                const osc = ctx.createOscillator(); const g = ctx.createGain();
                 osc.type = 'square'; osc.frequency.setValueAtTime(400, t);
                 g.gain.setValueAtTime(0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
                 osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.2);
             }
             else if (type === 'shot') {
-                const osc = ctx.createOscillator(); const g = ctx.createGain();
                 osc.type = 'square'; osc.frequency.setValueAtTime(220, t);
                 osc.frequency.exponentialRampToValueAtTime(0.01, t + 0.08);
                 g.gain.setValueAtTime(0.4, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
@@ -407,18 +461,10 @@
             }, 400);
         }
 
-        function spawnDmgText(el, dmg, isHeadshot, isGlance) {
+        function spawnScoreText(el, pts, label) {
             const popup = document.createElement('div');
-            if (isHeadshot) {
-                popup.className = 'dmg-popup headshot';
-                popup.innerText = "HEADSHOT +5";
-            } else if (isGlance) {
-                popup.className = 'dmg-popup glance';
-                popup.innerText = "+1";
-            } else {
-                popup.className = 'dmg-popup';
-                popup.innerText = dmg;
-            }
+            popup.className = (pts >= 10) ? 'dmg-popup headshot' : 'dmg-popup weak';
+            popup.innerText = label ? `${label} +${pts}` : `+${pts}`;
             el.appendChild(popup);
             setTimeout(() => popup.remove(), 800);
         }
@@ -455,13 +501,15 @@
         function startGameplay() {
             GAME.hp = 100; GAME.score = 0; GAME.isPlaying = true; GAME.hasArmor = true;
             document.getElementById('score').innerText = 0;
-            // Spawn One Boss for the whole game
+            spawnNewSniper();
+            MSG.innerText = "TARGET LOCATED..."; MSG.style.color = "var(--accent)";
+            setTimeout(startRound, 1500);
+        }
+
+        function spawnNewSniper() {
             GAME.sniperHp = 100;
             relocateSniper();
             updateVisuals();
-            
-            MSG.innerText = "TARGET LOCATED..."; MSG.style.color = "var(--accent)";
-            setTimeout(startRound, 1500);
         }
         
         function relocateSniper() {
@@ -474,7 +522,7 @@
             
             GAME.sniperPos.x = parseFloat(target.dataset.x);
             GAME.sniperPos.z = parseFloat(target.dataset.z);
-            GAME.shotCount = 0; // Reset shot count for new position
+            GAME.attempts = 1; 
         }
 
         function startRound() {
@@ -511,62 +559,55 @@
             const tx = parseFloat(tile.dataset.x); const tz = parseFloat(tile.dataset.z);
             
             if (tx === GAME.sniperPos.x && tz === GAME.sniperPos.z) {
-                // --- DIRECT HIT ---
+                // --- HIT ---
                 tile.classList.add('blood-hit'); 
                 setTimeout(() => tile.classList.remove('blood-hit'), 500);
 
-                let dmg = 0;
-                let bonus = 0;
-                let isHeadshot = false;
+                let scoreAdded = 0;
+                let damageDealt = 0;
+                let label = "";
 
-                // First shot at this position?
-                if (GAME.shotCount === 0) {
-                    if (reactionTime <= 500) { // FAST (Headshot Window)
-                        dmg = 10;
-                        bonus = 5;
-                        isHeadshot = true;
+                // --- SCORING & DAMAGE LOGIC ---
+                if (GAME.attempts === 1) {
+                    if (reactionTime < 500) {
+                        scoreAdded = 15; 
+                        label = "PERFECT";
                         playSound('headshot');
                     } else {
-                        // Scale 9 down to 1 based on rest of time
-                        const timeRatio = Math.min(1, (reactionTime - 500) / (GAME.reactionTimeMs - 500));
-                        dmg = Math.ceil(9 * (1 - timeRatio));
-                        dmg = Math.max(1, dmg);
+                        scoreAdded = 10;
+                        label = "CLEAN HIT";
                     }
+                    damageDealt = 10; 
+                } else if (GAME.attempts === 2) {
+                    scoreAdded = 5;
+                    damageDealt = 7;
+                } else if (GAME.attempts === 3) {
+                    scoreAdded = 3;
+                    damageDealt = 5;
                 } else {
-                    // Second shot (missed first time) -> Max 7
-                    const timeRatio = Math.min(1, reactionTime / GAME.reactionTimeMs);
-                    dmg = Math.ceil(7 * (1 - timeRatio));
-                    dmg = Math.max(1, dmg);
+                    scoreAdded = 1;
+                    damageDealt = 5;
                 }
 
-                GAME.sniperHp -= dmg;
-                GAME.score += (dmg + bonus); // Score = Damage + Bonus
+                GAME.sniperHp -= damageDealt;
+                GAME.score += scoreAdded;
                 
-                spawnDmgText(tile, dmg, isHeadshot, false);
+                spawnScoreText(tile, scoreAdded, label);
                 updateVisuals();
                 document.getElementById('score').innerText = GAME.score;
                 
                 if (GAME.sniperHp <= 0) {
-                    // VICTORY
-                    MSG.innerText = "MISSION ACCOMPLISHED"; MSG.style.color = "#fff"; 
+                    MSG.innerText = "TARGET NEUTRALIZED"; MSG.style.color = "#fff"; 
                     showSkull(); 
-                    // Add Victory Bonus based on Health Remaining? No, keep simple.
                     gameOver(true);
                 } else {
-                    // HIT - MOVE
-                    MSG.innerText = isHeadshot ? "HEADSHOT!" : "HIT - MOVING";
+                    MSG.innerText = (scoreAdded >= 15) ? "HEADSHOT!" : "HIT - RELOCATING";
                     relocateSniper(); 
                     setTimeout(startRound, 1000);
                 }
             } 
-            else if (tx === GAME.sniperPos.x || tz === GAME.sniperPos.z) {
-                // GLANCE (1 Point, 0 Boss Dmg)
-                spawnDmgText(tile, 0, false, true);
-                GAME.score += 1;
-                document.getElementById('score').innerText = GAME.score;
-                takeDamage("GLANCING HIT (MISS)", reactionTime);
-            } 
             else {
+                // ANY MISS
                 takeDamage("MISSED TARGET", reactionTime);
             }
         }
@@ -577,9 +618,8 @@
         }
 
         function takeDamage(reason, reactionTime) {
-            GAME.shotCount++; // Next shot at this loc will be weak
+            GAME.attempts++;
 
-            // Player takes damage based on speed (1-10)
             let dmg = Math.ceil( (reactionTime / GAME.reactionTimeMs) * 10 );
             dmg = Math.max(1, Math.min(10, dmg));
 
@@ -587,7 +627,7 @@
                 GAME.hasArmor = false;
                 dmg = 0;
                 playSound('armor');
-                reason = "ARMOR BROKEN!";
+                reason += " (0 DMG)";
             } else {
                 playSound('damage');
                 triggerDamageAnim();
@@ -601,22 +641,25 @@
         }
 
         function gameOver(victory) {
-            GAME.isPlaying = false; 
+            GAME.isPlaying = false; MSG.innerText = victory ? "MISSION COMPLETE" : "UNIT LOST"; 
             TIMER_CONT.style.visibility = 'hidden';
-            if(victory) {
-                MSG.innerText = "TARGET DOWN";
-            } else {
-                MSG.innerText = "UNIT LOST";
-            }
             setTimeout(checkHighScore, 1000);
+        }
+
+        function abortGame() {
+            if(!GAME.isPlaying) return;
+            GAME.isPlaying = false;
+            TIMER_CONT.style.visibility = 'hidden';
+            MENU.classList.remove('hidden');
+            renderHighScores();
         }
 
         function checkHighScore() {
             const s = getHighScores();
-            const min = s.length < 10 ? 0 : s[s.length-1].score; // Keep top 10
+            const min = s.length < 10 ? 0 : s[s.length-1].score;
             
             if (GAME.score > 0 && (GAME.score > min || s.length < 10)) {
-                const tag = prompt(`MISSION END: ${GAME.score} Pts.\nEnter Callsign (3 chars):`, "UNK");
+                const tag = prompt(`REPORT: ${GAME.score} Pts.\nEnter Callsign (3 chars):`, "UNK");
                 if(tag) saveHighScore(tag.substring(0,3).toUpperCase(), GAME.score);
             }
             renderHighScores();
@@ -624,7 +667,12 @@
             BTN_START.innerText = "REDEPLOY";
         }
 
+        // --- EVENTS ---
         BTN_START.addEventListener('click', startGame);
+        BTN_INFO.addEventListener('click', () => INFO.classList.add('active'));
+        BTN_CLOSE_INFO.addEventListener('click', () => INFO.classList.remove('active'));
+        BTN_RESTART.addEventListener('click', abortGame);
+
         document.querySelectorAll('.tile[data-x]').forEach(t => {
             t.addEventListener('pointerdown', (e) => { e.preventDefault(); handleInput(e.currentTarget); });
         });
