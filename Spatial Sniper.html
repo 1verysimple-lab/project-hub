@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Spatial Sniper: Echo X</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Spatial Sniper: Echo XI</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        /* ECHO X PALETTE */
+        /* ECHO XI PALETTE */
         :root {
             --bg: #0b1120;       
             --panel: #1e293b;    
@@ -17,19 +17,25 @@
         }
 
         body {
-            margin: 0; height: 100vh;
+            margin: 0; 
+            /* Dynamic height handles mobile browser bars better */
+            height: 100dvh; 
+            width: 100vw;
             background-color: var(--bg);
             color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             overflow: hidden; user-select: none; -webkit-user-select: none;
         }
 
-        /* --- SIGNATURE --- */
+        /* --- SIGNATURE (Updated Placement) --- */
         .credits {
-            position: absolute; bottom: 15px; right: 20px;
-            font-size: 10px; color: rgba(255, 255, 255, 0.1);
+            position: fixed; 
+            bottom: max(10px, env(safe-area-inset-bottom)); /* Respects iPhone home bar */
+            width: 100%;
+            text-align: center;
+            font-size: 10px; color: rgba(255, 255, 255, 0.15);
             font-weight: 900; letter-spacing: 2px; text-transform: uppercase;
-            pointer-events: none; z-index: 999; font-family: monospace;
+            pointer-events: none; z-index: 1000; font-family: monospace;
         }
 
         /* --- INTRO SCREEN --- */
@@ -38,6 +44,7 @@
             background: var(--bg); z-index: 500;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             transition: opacity 0.8s ease-out;
+            padding: 20px; box-sizing: border-box;
         }
         #intro-screen.hidden { opacity: 0; pointer-events: none; }
         
@@ -69,7 +76,9 @@
 
         /* --- 3D VIEWPORT --- */
         #viewport {
-            position: relative; flex: 1; min-height: 50%;
+            position: relative; flex: 1; 
+            /* Takes remaining space, but ensures HUD fits below */
+            min-height: 40%; 
             background: linear-gradient(180deg, #0b1120 0%, #1e293b 100%);
             overflow: hidden;
             transition: box-shadow 0.2s;
@@ -117,7 +126,10 @@
 
         /* --- HUD --- */
         #hud-panel {
-            background: var(--panel); padding: 15px;
+            background: var(--panel); 
+            padding: 15px;
+            /* Added Padding Bottom for Mobile Safety */
+            padding-bottom: max(30px, env(safe-area-inset-bottom)); 
             display: flex; flex-direction: column; gap: 10px;
             box-shadow: 0 -10px 30px rgba(0,0,0,0.5); z-index: 20;
         }
@@ -200,7 +212,7 @@
 <div id="intro-screen">
     <div class="logo-box">
         <h1>Spatial Sniper</h1>
-        <span class="sub">ECHO X // HYBRID AUDIO</span>
+        <span class="sub">ECHO XI // MOBILE READY</span>
     </div>
     <div style="font-size: 11px; color: #64748b; margin-bottom: 20px; max-width: 300px; text-align: center;">
         WARNING: Stereo Headphones Required.<br>
@@ -208,8 +220,6 @@
     </div>
     <button class="start-btn" id="init-btn" onclick="UI.startExperience()">INITIALIZE SYSTEM</button>
 </div>
-
-<div class="credits">APP BY BLUES</div>
 
 <div id="game-layout">
     
@@ -271,10 +281,12 @@
 
 </div>
 
+<div class="credits">APP BY BLUES</div>
+
 <div id="modal-help" class="modal">
     <div class="modal-content">
         <h2>Tactical Briefing</h2>
-        <p>You are operating the Echo X Adaptive Grid.</p>
+        <p>You are operating the Echo XI Adaptive Grid.</p>
         
         <h3>Survival Mechanics</h3>
         <ul>
@@ -308,9 +320,9 @@
 
 <script>
 /**
- * SPATIAL SNIPER: ECHO X
+ * SPATIAL SNIPER: ECHO XI
  * Dev: Blues
- * Logic: Hybrid Audio (WebAudio for SFX, HTML5 Audio for BGM)
+ * Logic: Mobile Responsive Fixes (Safe Area Insets)
  */
 
 const CONST = {
@@ -319,14 +331,13 @@ const CONST = {
         {x:-5, z:0},  {x:0, z:0},  {x:5, z:0},  
         {x:-5, z:5},  {x:0, z:5},  {x:5, z:5}   
     ],
-    STORAGE_KEY: 'spatial_sniper_echo_x_lb',
+    STORAGE_KEY: 'spatial_sniper_echo_xi_lb',
     START_DURATION: 3000,
     MIN_DURATION: 1200,
     MAX_HEALTH: 100,
     DAMAGE_MISS: 25,
     DAMAGE_DECAY: 5,
     HEAL_HIT: 15,
-    // Filenames - Assumed in local folder
     BGM_FILES: ['spatial amber.mp3', 'spatial amber (1).mp3']
 };
 
@@ -347,7 +358,6 @@ const AudioEngine = {
     async init() {
         if (this.ctx) return;
         
-        // 1. Setup Web Audio API (For Spatial SFX)
         const AC = window.AudioContext || window.webkitAudioContext;
         this.ctx = new AC();
         this.master = this.ctx.createGain();
@@ -363,7 +373,6 @@ const AudioEngine = {
             this.panners.push(p);
         });
 
-        // 2. Generate Procedural SFX
         this.buffers.ping = await this.synth('ping');
         this.buffers.miss = await this.synth('miss'); 
         this.buffers.success = await this.synth('success');
@@ -371,14 +380,10 @@ const AudioEngine = {
         this.buffers.fail = await this.synth('fail'); 
         this.buffers.targetBase = await this.synth('targetBase'); 
 
-        // 3. Setup HTML5 Audio (For BGM)
         this.initBGM();
     },
 
     initBGM() {
-        // Create standard HTML5 Audio objects
-        // These don't suffer from the same strict CORS "Tainted" issues as fetch()
-        // when running locally on some browsers.
         this.bgmElements = CONST.BGM_FILES.map(file => {
             const audio = new Audio(file);
             audio.loop = true;
@@ -389,18 +394,17 @@ const AudioEngine = {
     },
 
     playTrack(index) {
-        // Stop all
         this.bgmElements.forEach(el => {
             el.pause();
             el.currentTime = 0;
         });
 
-        if (index >= this.bgmElements.length) return; // Mute state
+        if (index >= this.bgmElements.length) return; 
 
         try {
             const audio = this.bgmElements[index];
             audio.volume = this.bgmVolume;
-            audio.play().catch(e => console.warn("Autoplay blocked or file not found:", e));
+            audio.play().catch(e => console.warn("Autoplay blocked:", e));
         } catch (e) {
             console.error("Audio playback error", e);
         }
@@ -408,7 +412,6 @@ const AudioEngine = {
 
     setVolume(val) {
         this.bgmVolume = parseFloat(val);
-        // Update current playing track immediately
         if (this.bgmIndex < this.bgmElements.length) {
             this.bgmElements[this.bgmIndex].volume = this.bgmVolume;
         }
@@ -416,22 +419,18 @@ const AudioEngine = {
 
     toggleTrack() {
         this.bgmIndex = (this.bgmIndex + 1) % (this.bgmElements.length + 1);
-        
         const btn = document.getElementById('track-btn');
-        
         if (this.bgmIndex < this.bgmElements.length) {
             this.playTrack(this.bgmIndex);
             btn.innerText = `TRK ${this.bgmIndex + 1}`;
             btn.style.color = "#cbd5e1";
         } else {
-            // Mute State
-            this.playTrack(999); // Invalid index stops all
+            this.playTrack(999); 
             btn.innerText = "MUTE";
             btn.style.color = "var(--danger)";
         }
     },
 
-    // --- SFX SYNTHESIS (Unchanged) ---
     async synth(type) {
         const sr = 44100;
         let dur = 0.3; 
@@ -790,7 +789,7 @@ const UI = {
         if (AudioEngine.ctx.state === 'suspended') AudioEngine.ctx.resume();
         
         AudioEngine.playStereoTest();
-        AudioEngine.playTrack(0); // Attempt BGM start
+        AudioEngine.playTrack(0); 
 
         const intro = document.getElementById('intro-screen');
         intro.classList.add('hidden');
