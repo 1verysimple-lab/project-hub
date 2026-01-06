@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase & .NET Developer Companion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fcfaf9; color: #1f2937; }
+        .code-font { font-family: 'Fira Code', monospace; }
+        .chart-container { position: relative; width: 100%; max-width: 300px; margin: 0 auto; height: 300px; }
+        /* Custom Scrollbar for code blocks */
+        .code-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .code-scroll::-webkit-scrollbar-track { background: #2d2d2d; }
+        .code-scroll::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        .code-scroll::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        
+        .step-card { transition: all 0.3s ease; border-left: 4px solid transparent; }
+        .step-card.active { border-left-color: #f97316; background-color: #fff7ed; }
+        .step-card:hover { transform: translateX(4px); }
+        
+        /* Architecture Diagram Styles */
+        .arch-box { transition: all 0.3s ease; }
+        .arch-box:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .arrow-down { width: 2px; height: 20px; background-color: #cbd5e1; margin: 0 auto; }
+        .arrow-right { height: 2px; width: 20px; background-color: #cbd5e1; display: inline-block; vertical-align: middle; }
+
+        .hidden-section { display: none; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* VS Code / Solution Explorer Mock */
+        .vs-tree { font-family: 'Segoe UI', sans-serif; font-size: 13px; line-height: 1.5; color: #d4d4d4; background: #252526; padding: 10px; border-radius: 6px; }
+        .vs-row { display: flex; align-items: center; padding: 2px 0; }
+        .vs-icon { width: 16px; height: 16px; margin-right: 6px; display: inline-block; text-align: center; }
+        .vs-folder { color: #dcb67a; }
+        .vs-file { color: #569cd6; }
+        .vs-json { color: #f1e05a; }
+        .vs-sln { color: #b4b4b4; }
+        .vs-proj { font-weight: bold; color: #d4d4d4; }
+        .highlight-zone { background: rgba(249, 115, 22, 0.2); border: 1px dashed #f97316; border-radius: 4px; }
+    </style>
+    <!-- Chosen Palette: Warm Neutrals (Stone/Orange) - "Chef's Kitchen" Theme -->
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-stone-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl mr-2">‍</span>
+                    <h1 class="text-xl font-bold text-stone-800 tracking-tight">Firebase & .NET <span class="text-orange-500">Companion</span></h1>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="navTo('dashboard')" class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-stone-600 hover:text-orange-600 hover:bg-orange-50 transition-colors" id="nav-dashboard">Overview</button>
+                    <button onclick="navTo('phase1')" class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-stone-600 hover:text-orange-600 hover:bg-orange-50 transition-colors" id="nav-phase1">1. Setup</button>
+                    <button onclick="navTo('phase2')" class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-stone-600 hover:text-orange-600 hover:bg-orange-50 transition-colors" id="nav-phase2">2. Code</button>
+                    <button onclick="navTo('phase3')" class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-stone-600 hover:text-orange-600 hover:bg-orange-50 transition-colors" id="nav-phase3">3. JSON & Run</button>
+                    <button onclick="navTo('phase4')" class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-stone-600 hover:text-orange-600 hover:bg-orange-50 transition-colors" id="nav-phase4">4. Fixes</button>
+                    <button onclick="navTo('phase5')" class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-stone-600 hover:text-orange-600 hover:bg-orange-50 transition-colors" id="nav-phase5">5. Transform</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+        <!-- VIEW: DASHBOARD -->
+        <div id="view-dashboard" class="fade-in">
+            <div class="mb-10 text-center">
+                <h2 class="text-3xl font-bold text-stone-800 mb-4">The Chef's Plan</h2>
+                <p class="text-stone-600 max-w-2xl mx-auto text-lg">
+                    Welcome to your interactive guide. Follow the recipe to build your Scrabble Game foundation.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                <!-- Progress Chart -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-100 flex flex-col items-center">
+                    <h3 class="text-lg font-semibold text-stone-700 mb-4">Recipe Completion</h3>
+                    <div class="chart-container">
+                        <canvas id="progressChart"></canvas>
+                    </div>
+                    <p id="progress-text" class="mt-4 text-stone-500 font-medium">0% Cooked</p>
+                </div>
+
+                <!-- Navigation Grid -->
+                <div class="grid grid-cols-2 gap-4 w-full">
+                    <div onclick="navTo('phase1')" class="cursor-pointer bg-white p-4 rounded-xl border border-stone-200 hover:border-orange-300 hover:shadow-md transition-all">
+                        <div class="text-2xl mb-2"></div>
+                        <h3 class="font-bold text-stone-800">1. Mise en Place</h3>
+                        <p class="text-xs text-stone-500">Create Project & NuGets</p>
+                    </div>
+                    <div onclick="navTo('phase2')" class="cursor-pointer bg-white p-4 rounded-xl border border-stone-200 hover:border-orange-300 hover:shadow-md transition-all">
+                        <div class="text-2xl mb-2"></div>
+                        <h3 class="font-bold text-stone-800">2. Test Code</h3>
+                        <p class="text-xs text-stone-500">Verify Connection</p>
+                    </div>
+                    <div onclick="navTo('phase3')" class="cursor-pointer bg-white p-4 rounded-xl border border-stone-200 hover:border-orange-300 hover:shadow-md transition-all">
+                        <div class="text-2xl mb-2"></div>
+                        <h3 class="font-bold text-stone-800">3. JSON & Run</h3>
+                        <p class="text-xs text-stone-500">File Setup</p>
+                    </div>
+                    <div onclick="navTo('phase4')" class="cursor-pointer bg-white p-4 rounded-xl border border-stone-200 hover:border-orange-300 hover:shadow-md transition-all">
+                        <div class="text-2xl mb-2"></div>
+                        <h3 class="font-bold text-stone-800">4. Fixes</h3>
+                        <p class="text-xs text-stone-500">Troubleshooting</p>
+                    </div>
+                    <div onclick="navTo('phase5')" class="col-span-2 cursor-pointer bg-gradient-to-r from-stone-800 to-stone-900 p-4 rounded-xl shadow-lg transform transition hover:-translate-y-1">
+                        <div class="flex items-center justify-between text-white">
+                            <div>
+                                <h3 class="font-bold text-lg">5. The Transformation</h3>
+                                <p class="text-xs text-stone-300">Scaffold Scrabble Architecture</p>
+                            </div>
+                            <span class="text-2xl"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: PHASE 1 (SETUP) -->
+        <div id="view-phase1" class="hidden-section fade-in">
+            <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+                <div class="p-8 border-b border-stone-100">
+                    <h2 class="text-2xl font-bold text-stone-800">Phase 1: The Mise en place</h2>
+                    <p class="text-stone-600 mt-2">Get your ingredients ready. We start from zero.</p>
+                </div>
+                
+                <div class="p-8 space-y-6">
+                    <div class="space-y-2 bg-orange-50 p-4 rounded-lg border border-orange-200">
+                        <h4 class="font-bold text-orange-900">Step 0: Create the Project</h4>
+                        <ol class="list-decimal list-inside text-sm text-stone-700 space-y-1">
+                            <li>Open <strong>Visual Studio 2022</strong>.</li>
+                            <li>Click <strong>Create a new project</strong>.</li>
+                            <li>Search for <strong>"WPF Application"</strong>. <span class="text-red-500 font-bold">(NOT "WPF App (.NET Framework)")</span>.</li>
+                            <li>Select the one with the C# icon. Click Next.</li>
+                            <li><strong>Project Name:</strong> <code class="bg-white px-1 font-bold">FirebaseTutorApp</code> (Must match exactly).</li>
+                            <li><strong>Framework:</strong> .NET 6.0, 7.0, or 8.0.</li>
+                            <li>Click <strong>Create</strong>.</li>
+                        </ol>
+                    </div>
+
+                    <div class="space-y-2">
+                        <h4 class="font-bold text-stone-800">1. Install NuGets</h4>
+                        <p class="text-sm text-stone-600">Right-click Project > Manage NuGet Packages > <strong>Browse</strong> Tab.</p>
+                        <div class="bg-stone-100 p-3 rounded text-sm font-mono text-stone-700">
+                            Google.Apis.Auth<br>
+                            Google.Cloud.Firestore
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <h4 class="font-bold text-stone-800">2. Create OAuth Client</h4>
+                        <p class="text-sm text-stone-600">Google Cloud Console > Credentials > Create OAuth Client ID > <strong>Desktop App</strong>.</p>
+                        <p class="text-sm text-stone-600">Download the JSON file.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: PHASE 2 (CODE) -->
+        <div id="view-phase2" class="hidden-section fade-in">
+            <div class="mb-4">
+                <h2 class="text-2xl font-bold text-stone-800">Phase 2: The Test Code</h2>
+                <p class="text-stone-600">Paste this into your project to verify the connection works.</p>
+            </div>
+
+            <div class="bg-stone-900 rounded-xl overflow-hidden shadow-2xl border border-stone-700">
+                <div class="flex bg-stone-800 border-b border-stone-700">
+                    <button onclick="switchTab('xaml')" id="tab-xaml" class="px-6 py-3 text-sm font-medium text-white border-b-2 border-orange-500 bg-stone-700 focus:outline-none">MainWindow.xaml</button>
+                    <button onclick="switchTab('csharp')" id="tab-csharp" class="px-6 py-3 text-sm font-medium text-stone-400 hover:text-white focus:outline-none transition-colors">MainWindow.xaml.cs</button>
+                    <div class="flex-grow flex items-center justify-end px-4">
+                        <button onclick="copyCode()" class="text-xs bg-stone-700 hover:bg-stone-600 text-white px-3 py-1 rounded transition-colors flex items-center">
+                            <span class="mr-1"></span> Copy Code
+                        </button>
+                    </div>
+                </div>
+
+                <div class="relative group">
+                    <!-- XAML Block -->
+                    <pre id="code-xaml" class="code-font text-sm text-stone-300 p-6 overflow-auto h-[600px] code-scroll block bg-[#1e1e1e]"><code>&lt;Window x:Class="FirebaseTutorApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Firebase Companion - JSON Edition" Height="800" Width="1000"
+        FontFamily="Segoe UI" FontSize="14"&gt;
+    
+    &lt;Grid Margin="20"&gt;
+        &lt;Grid.ColumnDefinitions&gt;
+            &lt;ColumnDefinition Width="*"/&gt;
+            &lt;ColumnDefinition Width="1.3*"/&gt;
+        &lt;/Grid.ColumnDefinitions&gt;
+
+        &lt;!-- LEFT PANEL: Instructions --&gt;
+        &lt;Border Grid.Column="0" BorderBrush="#DDDDDD" BorderThickness="0,0,1,0" Padding="0,0,20,0"&gt;
+            &lt;StackPanel&gt;
+                &lt;TextBlock Text="Step 1: Setup" FontWeight="Bold" FontSize="18" Margin="0,0,0,10" Foreground="#333"/&gt;
+                &lt;TextBlock TextWrapping="Wrap" Margin="0,0,0,15"&gt;
+                    Download 'client_secret.json' from Google Cloud Console.
+                    &lt;LineBreak/&gt;Add it to your Visual Studio project root.
+                    &lt;LineBreak/&gt;Right-click file &gt; Properties &gt; &lt;Bold&gt;Copy to Output Directory: Copy if newer&lt;/Bold&gt;.
+                &lt;/TextBlock&gt;
+
+                &lt;TextBlock Text="Step 2: Authenticate" FontWeight="Bold" FontSize="18" Margin="0,10,0,10" Foreground="#333"/&gt;
+                &lt;TextBlock TextWrapping="Wrap" Margin="0,0,0,15"&gt;
+                    Click 'Log In' to launch the browser flow.
+                    &lt;LineBreak/&gt;Once authenticated, the app will guide you to choose your database path.
+                &lt;/TextBlock&gt;
+            &lt;/StackPanel&gt;
+        &lt;/Border&gt;
+
+        &lt;!-- RIGHT PANEL: Actions --&gt;
+        &lt;ScrollViewer Grid.Column="1" Padding="20,0,0,0" VerticalScrollBarVisibility="Auto"&gt;
+            &lt;StackPanel&gt;
+                &lt;TextBlock Text="App Actions" FontWeight="Bold" FontSize="18" Margin="0,0,0,20" Foreground="#333"/&gt;
+
+                &lt;!-- Auth Section --&gt;
+                &lt;TextBlock Text="Credential File:" FontWeight="Bold" Margin="0,0,0,5"/&gt;
+                &lt;TextBlock Text="Looking for 'client_secret.json'..." FontStyle="Italic" Foreground="Gray" Margin="0,0,0,15"/&gt;
+
+                &lt;Button x:Name="LoginButton" Content="Log In with Google" Click="LoginButton_Click" 
+                        Padding="10" Background="#007ACC" Foreground="White" FontWeight="Bold" Cursor="Hand" Margin="0,0,0,20"/&gt;
+
+                &lt;!-- Step 3: Choose Path (Visible after Login) --&gt;
+                &lt;Border x:Name="PathSelectionPanel" Visibility="Collapsed" Background="#F0F8FF" Padding="15" CornerRadius="5" Margin="0,0,0,20"&gt;
+                    &lt;StackPanel&gt;
+                        &lt;TextBlock Text="✅ Logged In! Now, choose your database:" FontWeight="Bold" Foreground="#333" Margin="0,0,0,10"/&gt;
+                        &lt;Grid&gt;
+                            &lt;Grid.ColumnDefinitions&gt;
+                                &lt;ColumnDefinition Width="*"/&gt;
+                                &lt;ColumnDefinition Width="*"/&gt;
+                            &lt;/Grid.ColumnDefinitions&gt;
+                            &lt;Button Content="Cloud (Firebase)" Click="ChooseFirebase_Click" Grid.Column="0" Margin="0,0,5,0" Padding="10" Background="#FFA000" Foreground="White" FontWeight="Bold"/&gt;
+                            &lt;Button Content="Local (SQLite)" Click="ChooseLocal_Click" Grid.Column="1" Margin="5,0,0,0" Padding="10" Background="#607D8B" Foreground="White" FontWeight="Bold"/&gt;
+                        &lt;/Grid&gt;
+                    &lt;/StackPanel&gt;
+                &lt;/Border&gt;
+
+                &lt;!-- Option A: Firebase Setup Panel --&gt;
+                &lt;Border x:Name="FirebaseSetupPanel" Visibility="Collapsed" BorderBrush="#FFA000" BorderThickness="2" Padding="15" CornerRadius="5" Background="White"&gt;
+                    &lt;StackPanel&gt;
+                        &lt;TextBlock Text=" Cloud Setup Instructions" FontWeight="Bold" FontSize="16" Foreground="#E65100" Margin="0,0,0,10"/&gt;
+                        &lt;TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,10"&gt;
+                            1. Go to Project Settings &gt; Copy &lt;Bold&gt;Project ID&lt;/Bold&gt;.
+                            &lt;LineBreak/&gt;2. Check Database Name (e.g. (default) or named).
+                        &lt;/TextBlock&gt;
+                        
+                        &lt;Label Content="Enter Project ID:"/&gt;
+                        &lt;TextBox x:Name="ProjectIdInput" Padding="5" Margin="0,0,0,5" Background="#F5F5F5" Text="oauth-client-id-..."/&gt;
+
+                        &lt;Label Content="Database ID (Optional):"/&gt;
+                        &lt;TextBlock Text="Leave as '(default)' unless you named it (e.g. 'mytestdb')" FontSize="10" Foreground="Gray"/&gt;
+                        &lt;TextBox x:Name="DatabaseIdInput" Padding="5" Margin="0,0,0,10" Background="#F5F5F5" Text="(default)"/&gt;
+                        
+                        &lt;Button Content="Verify: Write to Cloud" Click="WriteDbButton_Click" Padding="8" Background="#28A745" Foreground="White"/&gt;
+                    &lt;/StackPanel&gt;
+                &lt;/Border&gt;
+
+                &lt;!-- Integration Guide (Visible after Success) --&gt;
+                &lt;Border x:Name="IntegrationPanel" Visibility="Collapsed" Background="#E8F5E9" Padding="20" CornerRadius="8" Margin="0,20,0,0" BorderBrush="#2E7D32" BorderThickness="2"&gt;
+                    &lt;StackPanel&gt;
+                        &lt;TextBlock Text=" Verification Complete! How to Integrate:" FontWeight="Bold" FontSize="18" Foreground="#1B5E20" Margin="0,0,0,15"/&gt;
+                        
+                        &lt;TextBlock Text="Step 1: Install Packages (Crucial Step!)" FontWeight="Bold" Foreground="#333" Margin="0,0,0,5"/&gt;
+                        &lt;TextBlock TextWrapping="Wrap" FontSize="13" Margin="10,0,0,10"&gt;
+                            1. Right-click your Project in Solution Explorer.
+                            &lt;LineBreak/&gt;2. Select &lt;Bold&gt;Manage NuGet Packages...&lt;/Bold&gt;
+                            &lt;LineBreak/&gt;3. Click the &lt;Bold&gt;Browse&lt;/Bold&gt; tab (Top left).
+                            &lt;LineBreak/&gt;4. Search for: &lt;Bold&gt;Google.Cloud.Firestore&lt;/Bold&gt;
+                            &lt;LineBreak/&gt;5. Click &lt;Bold&gt;Install&lt;/Bold&gt; on the right.
+                        &lt;/TextBlock&gt;
+
+                        &lt;TextBlock Text="Step 2: Move the Key" FontWeight="Bold" Foreground="#333" Margin="0,0,0,5"/&gt;
+                        &lt;TextBlock TextWrapping="Wrap" FontSize="13" Margin="10,0,0,10"&gt;
+                            Copy your &lt;Run FontFamily="Consolas" FontWeight="Bold"&gt;client_secret.json&lt;/Run&gt; into the root of your main project.
+                            &lt;LineBreak/&gt;&lt;Italic&gt;Remember: Right-click > Properties > Copy to Output Directory: Copy if newer&lt;/Italic&gt;
+                        &lt;/TextBlock&gt;
+
+                        &lt;TextBlock Text="Step 3: Create a Service Class" FontWeight="Bold" Foreground="#333" Margin="0,0,0,5"/&gt;
+                        &lt;TextBlock TextWrapping="Wrap" FontSize="13" Margin="10,0,0,5"&gt;
+                            Create a new file &lt;Run FontFamily="Consolas" FontWeight="Bold"&gt;FirestoreService.cs&lt;/Run&gt;. Paste the logic from &lt;Run FontFamily="Consolas" FontWeight="Bold"&gt;WriteDbButton_Click&lt;/Run&gt; into it, but make it reusable (e.g., &lt;Run FontFamily="Consolas" FontWeight="Bold"&gt;public async Task AddScore...&lt;/Run&gt;).
+                        &lt;/TextBlock&gt;
+                    &lt;/StackPanel&gt;
+                &lt;/Border&gt;
+
+                &lt;!-- Option B: Local Setup Panel --&gt;
+                &lt;Border x:Name="LocalSetupPanel" Visibility="Collapsed" BorderBrush="#607D8B" BorderThickness="2" Padding="15" CornerRadius="5" Background="White"&gt;
+                    &lt;StackPanel&gt;
+                        &lt;TextBlock Text=" Local Setup Instructions" FontWeight="Bold" FontSize="16" Foreground="#455A64" Margin="0,0,0,10"/&gt;
+                        &lt;TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,10"&gt;
+                            Best for single-player or offline. No cloud sync.
+                            &lt;LineBreak/&gt;1. Install NuGet: &lt;Italic&gt;Microsoft.Data.Sqlite&lt;/Italic&gt;.
+                            &lt;LineBreak/&gt;2. This test will just create a local file to prove access.
+                        &lt;/TextBlock&gt;
+                        
+                        &lt;Button Content="Verify: Create Local File" Click="CreateLocalFile_Click" Padding="8" Background="#28A745" Foreground="White"/&gt;
+                    &lt;/StackPanel&gt;
+                &lt;/Border&gt;
+
+                &lt;TextBlock Text="Status Log:" Margin="0,20,0,5" FontWeight="Bold"/&gt;
+                &lt;TextBox x:Name="LogOutput" Height="100" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" IsReadOnly="True" Background="#FAFAFA" BorderBrush="#EEEEEE"/&gt;
+            &lt;/StackPanel&gt;
+        &lt;/ScrollViewer&gt;
+    &lt;/Grid&gt;
+&lt;/Window&gt;</code></pre>
+
+                    <!-- C# Block -->
+                    <pre id="code-csharp" class="code-font text-sm text-stone-300 p-6 overflow-auto h-[600px] code-scroll hidden bg-[#1e1e1e]"><code>using System;
+using System.Collections.Generic;
+using System.IO; 
+using System.Threading;
+using System.Windows;
+using Google.Apis.Auth.OAuth2;
+using Google.Cloud.Firestore;
+using Google.Cloud.Firestore.V1;
+using Google.Apis.Util;
+
+namespace FirebaseTutorApp
+{
+    public partial class MainWindow : Window
+    {
+        private UserCredential _credential;
+        private const string CredentialsPath = "client_secret.json";
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            Log("App started. Waiting for 'client_secret.json'...");
+        }
+
+        private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = e.Uri.AbsoluteUri, UseShellExecute = true });
+            e.Handled = true;
+        }
+
+        private void Log(string message)
+        {
+            LogOutput.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}\n");
+            LogOutput.ScrollToEnd();
+        }
+
+        // --- STEP 1: AUTHENTICATION ---
+        private async void LoginButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!File.Exists(CredentialsPath))
+            {
+                MessageBox.Show($"Could not find {CredentialsPath}.\n\nDid you set 'Copy to Output Directory' to 'Copy if newer'?", "Missing Ingredients");
+                return;
+            }
+
+            try
+            {
+                Log("Reading client_secret.json...");
+                string[] scopes = { "https://www.googleapis.com/auth/datastore" };
+
+                using (var stream = new FileStream(CredentialsPath, FileMode.Open, FileAccess.Read))
+                {
+                    _credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
+                        GoogleClientSecrets.FromStream(stream).Secrets,
+                        scopes,
+                        "user",
+                        CancellationToken.None
+                    );
+                }
+
+                if (_credential.Token.IsExpired(SystemClock.Default))
+                {
+                    await _credential.RefreshTokenAsync(CancellationToken.None);
+                }
+
+                Log("Authentication successful!");
+                LoginButton.IsEnabled = false;
+                LoginButton.Content = "Logged In";
+                PathSelectionPanel.Visibility = Visibility.Visible; // Show the fork in the road
+            }
+            catch (Exception ex)
+            {
+                Log($"Error: {ex.Message}");
+                MessageBox.Show($"Login Failed: {ex.Message}");
+            }
+        }
+
+        // --- STEP 2: CHOOSE PATH ---
+        private void ChooseFirebase_Click(object sender, RoutedEventArgs e)
+        {
+            FirebaseSetupPanel.Visibility = Visibility.Visible;
+            LocalSetupPanel.Visibility = Visibility.Collapsed;
+            Log("Selected: Cloud (Firebase). Follow the instructions above.");
+        }
+
+        private void ChooseLocal_Click(object sender, RoutedEventArgs e)
+        {
+            LocalSetupPanel.Visibility = Visibility.Visible;
+            FirebaseSetupPanel.Visibility = Visibility.Collapsed;
+            Log("Selected: Local. Great for offline apps.");
+        }
+
+        // --- STEP 3A: FIREBASE VERIFICATION ---
+        private async void WriteDbButton_Click(object sender, RoutedEventArgs e)
+        {
+            string projectId = ProjectIdInput.Text.Trim();
+            string dbId = DatabaseIdInput.Text.Trim();
+
+            if (string.IsNullOrEmpty(projectId))
+            {
+                MessageBox.Show("Please enter your actual Project ID.", "Missing ID");
+                return;
+            }
+
+            try
+            {
+                Log($"Connecting to Project: {projectId}, DB: {dbId}...");
+                
+                // CRITICAL FIX: Use FirestoreDbBuilder to avoid overload issues
+                var dbBuilder = new FirestoreDbBuilder
+                {
+                    ProjectId = projectId,
+                    Credential = _credential,
+                    DatabaseId = string.IsNullOrEmpty(dbId) ? "(default)" : dbId
+                };
+
+                FirestoreDb db = await dbBuilder.BuildAsync();
+
+                Dictionary&lt;string, object&gt; data = new Dictionary&lt;string, object&gt;
+                {
+                    { "Message", "Hello from WPF!" },
+                    { "Chef", "Blues" },
+                    { "Timestamp", DateTime.UtcNow }
+                };
+
+                await db.Collection("ChefTests").AddAsync(data);
+                Log("Success! Data written to Cloud Firestore.");
+                MessageBox.Show("Success! Check your Firebase Console > Firestore Data.");
+
+                // Show the Integration Guide
+                IntegrationPanel.Visibility = Visibility.Visible;
+            }
+            catch (Exception ex)
+            {
+                Log($"DB Error: {ex.Message}");
+                MessageBox.Show($"DB Error: {ex.Message}");
+            }
+        }
+
+        // --- STEP 3B: LOCAL VERIFICATION ---
+        private void CreateLocalFile_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string localPath = "local_db_test.txt";
+                File.WriteAllText(localPath, $"Local DB Test Entry at {DateTime.Now}");
+                Log($"Success! Created local file at: {Path.GetFullPath(localPath)}");
+                MessageBox.Show("Local file created successfully! This simulates a local DB write.");
+            }
+            catch (Exception ex)
+            {
+                Log($"Local Error: {ex.Message}");
+            }
+        }
+    }
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: PHASE 3 (JSON) -->
+        <div id="view-phase3" class="hidden-section fade-in">
+            <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-8 space-y-6">
+                <h2 class="text-2xl font-bold text-stone-800">Phase 3: The Secret Ingredient</h2>
+                <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
+                    <div class="flex items-center mb-4">
+                        <span class="text-xl bg-orange-100 p-2 rounded mr-3"></span>
+                        <h3 class="text-lg font-bold text-stone-800">1. Adding the JSON File</h3>
+                    </div>
+                    
+                    <p class="text-stone-600 text-sm mb-4">You need to add the <code class="bg-stone-100 px-1 font-mono text-xs">client_secret.json</code> inside the Project folder.</p>
+
+                    <!-- Visual Mock of Solution Explorer -->
+                    <div class="vs-tree mb-6">
+                        <div class="vs-row"><span class="vs-icon"></span><span class="vs-sln">Solution 'FirebaseTutorApp' (1 of 1 project)</span></div>
+                        <div class="vs-row highlight-zone"><span class="vs-icon"></span><span class="vs-proj">FirebaseTutorApp</span> <span class="ml-2 text-orange-400 text-xs font-mono">&lt;-- DROP HERE</span></div>
+                        <div class="vs-row pl-6"><span class="vs-icon">⚙️</span><span>Properties</span></div>
+                        <div class="vs-row pl-6"><span class="vs-icon"></span><span>Dependencies</span></div>
+                        <div class="vs-row pl-6"><span class="vs-icon"></span><span>App.xaml</span></div>
+                        <div class="vs-row pl-6"><span class="vs-icon"></span><span>MainWindow.xaml</span></div>
+                        <div class="vs-row pl-6"><span class="vs-icon vs-json">{}</span><span class="vs-json">client_secret.json</span></div>
+                    </div>
+
+                    <h4 class="font-bold text-stone-700 text-sm mb-2">Method A: Drag & Drop</h4>
+                    <p class="text-sm text-stone-600 mb-4">Drag the file from your Downloads folder onto the <strong class="text-stone-900">bold "FirebaseTutorApp"</strong> name in Solution Explorer. Rename it to exactly <code class="bg-stone-100 px-1">client_secret.json</code>.</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl border-l-4 border-orange-500 shadow-sm">
+                    <div class="flex items-center mb-4">
+                        <span class="text-xl bg-orange-100 p-2 rounded mr-3">⚙️</span>
+                        <h3 class="text-lg font-bold text-stone-800">2. The Crucial Step</h3>
+                    </div>
+                    <p class="text-sm text-stone-600 mb-2">If you skip this, the app will crash saying "File not found".</p>
+                    <ol class="list-decimal list-inside space-y-3 text-sm text-stone-700 font-medium">
+                        <li>Right-click <code class="bg-stone-100 px-1">client_secret.json</code> in Visual Studio.</li>
+                        <li>Select <strong>Properties</strong>.</li>
+                        <li>Look for <strong>Copy to Output Directory</strong>.</li>
+                        <li>Change it to <span class="bg-green-100 text-green-800 px-2 rounded">Copy if newer</span>.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: PHASE 4 (TROUBLESHOOTING) -->
+        <div id="view-phase4" class="hidden-section fade-in">
+            <div class="mb-10 text-center">
+                <h2 class="text-2xl font-bold text-stone-800">Kitchen Nightmares (Troubleshooting)</h2>
+                <p class="text-stone-600">If your soufflé collapses, check these common issues.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                <!-- Card 1 -->
+                <div class="bg-white p-6 rounded-xl border border-red-100 shadow-sm">
+                    <div class="flex items-center mb-4">
+                        <span class="text-2xl mr-3"></span>
+                        <h3 class="text-lg font-bold text-stone-800">Permission Denied</h3>
+                    </div>
+                    <p class="text-sm text-stone-600 mb-3">Does the log say "Permission Denied" when writing?</p>
+                    <div class="bg-red-50 p-3 rounded text-sm text-red-800">
+                        <strong>Fix:</strong> Check your <strong>Firestore Security Rules</strong> in the Firebase Console. Set them to test mode: <code class="bg-white px-1">allow read, write: if true;</code>.
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="bg-white p-6 rounded-xl border border-yellow-100 shadow-sm">
+                    <div class="flex items-center mb-4">
+                        <span class="text-2xl mr-3">✋</span>
+                        <h3 class="text-lg font-bold text-stone-800">Access Blocked (403)</h3>
+                    </div>
+                    <p class="text-sm text-stone-600 mb-3">Google says "App has not completed verification".</p>
+                    <div class="bg-yellow-50 p-3 rounded text-sm text-yellow-800">
+                        <strong>Fix:</strong> You MUST add your email to the <strong>Test Users</strong> list in <a href="https://console.cloud.google.com/apis/credentials/consent" target="_blank" class="underline font-bold">OAuth Consent Screen</a>.
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="bg-white p-6 rounded-xl border border-blue-100 shadow-sm">
+                    <div class="flex items-center mb-4">
+                        <span class="text-2xl mr-3">❌</span>
+                        <h3 class="text-lg font-bold text-stone-800">Database Not Found</h3>
+                    </div>
+                    <p class="text-sm text-stone-600 mb-3">"The database (default) does not exist..."</p>
+                    <div class="bg-blue-50 p-3 rounded text-sm text-blue-800">
+                        <strong>Fix:</strong> Enter your <strong>Database ID</strong> in the app input (e.g., <code class="bg-white px-1">mytestdb</code>) instead of leaving it as "(default)".
+                    </div>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
+                    <div class="flex items-center mb-4">
+                        <span class="text-2xl mr-3"></span>
+                        <h3 class="text-lg font-bold text-stone-800">File Not Found</h3>
+                    </div>
+                    <p class="text-sm text-stone-600 mb-3">App crashes saying it can't find 'client_secret.json'.</p>
+                    <div class="bg-stone-50 p-3 rounded text-sm text-stone-700">
+                        <strong>Fix:</strong> Rename your file to exactly <code>client_secret.json</code> and set <strong>Copy to Output Directory</strong> to <em>Copy if newer</em>.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: PHASE 5 (TRANSFORM) -->
+        <div id="view-phase5" class="hidden-section fade-in">
+            <div class="mb-10 text-center">
+                <h2 class="text-3xl font-bold text-stone-800">Phase 5: The Transformation</h2>
+                <p class="text-stone-600 max-w-2xl mx-auto mt-2">
+                    We verified the plumbing. Now let's build the house.
+                    Run this script to auto-generate your folders, classes, and the <code class="font-bold">gemini.md</code> context file.
+                </p>
+            </div>
+
+            <div class="bg-stone-900 rounded-xl overflow-hidden shadow-2xl border border-stone-700">
+                <div class="flex bg-stone-800 border-b border-stone-700 justify-between items-center px-6 py-3">
+                    <span class="text-white font-mono text-sm">scaffold_project.ps1</span>
+                    <button onclick="copyScript()" class="text-xs bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded transition-colors flex items-center font-bold">
+                         Copy PowerShell Script
+                    </button>
+                </div>
+
+                <pre id="code-script" class="code-font text-sm text-green-400 p-6 overflow-auto h-[500px] code-scroll bg-[#1e1e1e]"><code># === SCRABBLE GAME SCAFFOLDER ===
+# Run this in the Package Manager Console or PowerShell inside your Project Folder
+
+$projectName = "FirebaseTutorApp" # Change if your project name is different
+
+# 1. Create Folder Structure
+Write-Host "Creating Directories..." -ForegroundColor Cyan
+New-Item -ItemType Directory -Force -Path "Models" | Out-Null
+New-Item -ItemType Directory -Force -Path "ViewModels" | Out-Null
+New-Item -ItemType Directory -Force -Path "Services" | Out-Null
+New-Item -ItemType Directory -Force -Path "Views" | Out-Null
+
+# 2. Create Model Shells
+Write-Host "Creating Models..." -ForegroundColor Cyan
+Set-Content -Path "Models\Tile.cs" -Value "namespace $projectName.Models { public class Tile { public char Letter { get; set; } public int Score { get; set; } } }"
+Set-Content -Path "Models\Board.cs" -Value "namespace $projectName.Models { public class Board { /* 15x15 Grid Logic Here */ } }"
+Set-Content -Path "Models\Player.cs" -Value "namespace $projectName.Models { public class Player { public string Id { get; set; } public string Name { get; set; } } }"
+Set-Content -Path "Models\Move.cs" -Value "namespace $projectName.Models { public class Move { /* Coordinates and Word */ } }"
+
+# 3. Create Service Shells
+Write-Host "Creating Services..." -ForegroundColor Cyan
+Set-Content -Path "Services\FirestoreService.cs" -Value "using Google.Cloud.Firestore; namespace $projectName.Services { public class FirestoreService { /* Auth and DB Logic moved here */ } }"
+Set-Content -Path "Services\GameRulesService.cs" -Value "namespace $projectName.Services { public class GameRulesService { /* Scrabble Dictionary Logic */ } }"
+
+# 4. Create ViewModel Shells
+Write-Host "Creating ViewModels..." -ForegroundColor Cyan
+Set-Content -Path "ViewModels\MainViewModel.cs" -Value "namespace $projectName.ViewModels { public class MainViewModel { /* Orchestrates the views */ } }"
+
+# 5. Overwrite MainWindow.xaml with Login-Only Logic
+Write-Host "Updating MainWindow..." -ForegroundColor Cyan
+$xamlContent = @"
+<Window x:Class=""$projectName.MainWindow""
+        xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""
+        xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml""
+        Title=""Scrabble Game - Login"" Height=""450"" Width=""800""
+        WindowStartupLocation=""CenterScreen"">
+    <Grid>
+        <StackPanel VerticalAlignment=""Center"" HorizontalAlignment=""Center"">
+            <TextBlock Text=""Welcome to Scrabble"" FontSize=""32"" FontWeight=""Bold"" HorizontalAlignment=""Center"" Margin=""0,0,0,20""/>
+            <Button x:Name=""LoginBtn"" Content=""Login with Google"" Padding=""15,10"" Background=""#4285F4"" Foreground=""White"" Click=""LoginBtn_Click""/>
+            <TextBlock x:Name=""StatusText"" Text=""Waiting for login..."" Margin=""0,20,0,0"" HorizontalAlignment=""Center"" Foreground=""Gray""/>
+        </StackPanel>
+    </Grid>
+</Window>
+"@
+Set-Content -Path "MainWindow.xaml" -Value $xamlContent
+
+# 6. Overwrite MainWindow.xaml.cs with Auth Logic
+$csContent = @"
+using System;
+using System.IO;
+using System.Threading;
+using System.Windows;
+using Google.Apis.Auth.OAuth2;
+using Google.Apis.Util;
+
+namespace $projectName
+{
+    public partial class MainWindow : Window
+    {
+        private const string CredentialsPath = ""client_secret.json"";
+
+        public MainWindow()
+        {
+            InitializeComponent();
+        }
+
+        private async void LoginBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (!File.Exists(CredentialsPath))
+            {
+                MessageBox.Show(""client_secret.json not found!"");
+                return;
+            }
+
+            try
+            {
+                StatusText.Text = ""Authenticating..."";
+                string[] scopes = { ""https://www.googleapis.com/auth/datastore"" };
+
+                using (var stream = new FileStream(CredentialsPath, FileMode.Open, FileAccess.Read))
+                {
+                    var credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
+                        GoogleClientSecrets.FromStream(stream).Secrets,
+                        scopes,
+                        ""user"",
+                        CancellationToken.None
+                    );
+                    
+                    if (credential.Token.IsExpired(SystemClock.Default))
+                        await credential.RefreshTokenAsync(CancellationToken.None);
+                }
+
+                StatusText.Text = ""Authentication Successful! Ready to load Game View."";
+                LoginBtn.Visibility = Visibility.Collapsed;
+                // TODO: Navigate to GameView
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = ""Error: "" + ex.Message;
+            }
+        }
+    }
+}
+"@
+Set-Content -Path "MainWindow.xaml.cs" -Value $csContent
+
+# 7. Generate gemini.md
+Write-Host "Generating gemini.md context file..." -ForegroundColor Cyan
+$geminiContent = @"
+# Project Context: Scrabble Game (WPF + Firebase)
+
+## Current Status
+- **Framework:** .NET 6/7/8 WPF.
+- **Authentication:** Google OAuth 2.0 (Verified & Working).
+- **Database:** Google Cloud Firestore (Verified & Working).
+- **Dependencies:** Google.Apis.Auth, Google.Cloud.Firestore.
+- **Structure:** MVVM (Folders: Models, ViewModels, Views, Services created).
+
+## File Structure
+- /Models: Tile.cs, Board.cs, Player.cs, Move.cs (Empty shells)
+- /Services: FirestoreService.cs (Needs implementation)
+- /Views: MainWindow is currently the Login screen.
+
+## The Goal
+I want to build a turn-based Scrabble game. 
+1. Users log in (Done).
+2. They see a list of active games or create a new one.
+3. The Game Board is a 15x15 grid.
+4. Moves are validated locally then sent to Firestore.
+
+## Immediate Task
+Please analyze this structure and provide the implementation for **FirestoreService.cs** to handle creating a new game session in the database.
+"@
+Set-Content -Path "gemini.md" -Value $geminiContent
+
+Write-Host "Transformation Complete! Check your Solution Explorer." -ForegroundColor Green
+</code></pre>
+            </div>
+
+            <div class="mt-8 bg-orange-50 border-l-4 border-orange-500 p-6 rounded-r-lg">
+                <h4 class="font-bold text-orange-800 text-lg mb-2">How to use this:</h4>
+                <ol class="list-decimal list-inside text-stone-700 space-y-2">
+                    <li>Copy the script above.</li>
+                    <li>In Visual Studio, go to <strong>Tools</strong> > <strong>NuGet Package Manager</strong> > <strong>Package Manager Console</strong>.</li>
+                    <li>Paste the script and press <strong>Enter</strong>.</li>
+                    <li><strong>Boom.</strong> Your files are created, your MainWindow is cleaned up, and <code class="font-bold">gemini.md</code> is ready in your project root.</li>
+                </ol>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-stone-200 mt-auto py-6">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm text-stone-500">
+            <p>Generated from "Firebase_DotNet_Companion.md" | Use this guide to build your C# Tutor App.</p>
+        </div>
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+        // State
+        let currentTab = 'xaml';
+        const tasks = [false, false, false, false, false];
+        let chartInstance = null;
+
+        // --- Navigation ---
+        function navTo(viewId) {
+            // Hide all views
+            ['dashboard', 'phase1', 'phase2', 'phase3', 'phase4', 'phase5'].forEach(id => {
+                const el = document.getElementById('view-' + id);
+                if(el) el.classList.add('hidden-section');
+                
+                const btn = document.getElementById('nav-' + id);
+                if(btn) btn.classList.remove('bg-orange-50', 'text-orange-600');
+            });
+
+            // Show selected
+            const target = document.getElementById('view-' + viewId);
+            if(target) {
+                target.classList.remove('hidden-section');
+                target.classList.add('fade-in');
+            }
+
+            // Update Nav
+            const navBtn = document.getElementById('nav-' + viewId);
+            if(navBtn) navBtn.classList.add('bg-orange-50', 'text-orange-600');
+
+            // Refresh chart if dashboard
+            if (viewId === 'dashboard') {
+                updateChart();
+            }
+        }
+
+        // --- Phase 2: Code Tabs ---
+        function switchTab(tab) {
+            currentTab = tab;
+            const xamlBtn = document.getElementById('tab-xaml');
+            const csharpBtn = document.getElementById('tab-csharp');
+            
+            if (tab === 'xaml') {
+                xamlBtn.classList.add('border-b-2', 'border-orange-500', 'bg-stone-700', 'text-white');
+                xamlBtn.classList.remove('text-stone-400');
+                csharpBtn.classList.remove('border-b-2', 'border-orange-500', 'bg-stone-700', 'text-white');
+                csharpBtn.classList.add('text-stone-400');
+                
+                document.getElementById('code-xaml').classList.remove('hidden');
+                document.getElementById('code-csharp').classList.add('hidden');
+            } else {
+                csharpBtn.classList.add('border-b-2', 'border-orange-500', 'bg-stone-700', 'text-white');
+                csharpBtn.classList.remove('text-stone-400');
+                xamlBtn.classList.remove('border-b-2', 'border-orange-500', 'bg-stone-700', 'text-white');
+                xamlBtn.classList.add('text-stone-400');
+
+                document.getElementById('code-csharp').classList.remove('hidden');
+                document.getElementById('code-xaml').classList.add('hidden');
+            }
+        }
+
+        function copyCode() {
+            const code = currentTab === 'xaml' 
+                ? document.getElementById('code-xaml').innerText 
+                : document.getElementById('code-csharp').innerText;
+            fallbackCopy(code);
+        }
+
+        function copyScript() {
+            const code = document.getElementById('code-script').innerText;
+            fallbackCopy(code);
+        }
+
+        function fallbackCopy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                alert('Copied to clipboard!');
+            } catch (err) {
+                console.error('Fallback copy failed', err);
+                alert('Manual copy required.');
+            }
+            document.body.removeChild(textarea);
+        }
+
+        // --- Phase 1: Checklist & Chart ---
+        function toggleTask(index) {
+            tasks[index] = !tasks[index];
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const completedCount = tasks.filter(t => t).length;
+            const percentage = Math.round((completedCount / tasks.length) * 100);
+            
+            if (chartInstance) {
+                chartInstance.data.datasets[0].data = [completedCount, tasks.length - completedCount];
+                chartInstance.update();
+            }
+            
+            const textEl = document.getElementById('progress-text');
+            if(textEl) textEl.innerText = `${percentage}% Cooked`;
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('progressChart');
+            if (!ctx) return;
+
+            const completedCount = tasks.filter(t => t).length;
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'Remaining'],
+                    datasets: [{
+                        data: [completedCount, tasks.length - completedCount],
+                        backgroundColor: ['#f97316', '#e7e5e4'], // Orange-500, Stone-200
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    },
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true
+                    }
+                }
+            });
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            navTo('dashboard');
+        });
+
+    </script>
+
+<!-- BLUES APP LOGO -->
+<div style="position: fixed; top: 1rem; right: 1rem; z-index: 9999; font-family: sans-serif;">
+    <a href="https://blueshub.netlify.app/" style="display: block; width: 200px; opacity: 0.8; transition: opacity 0.2s; background-color: rgba(15, 23, 42, 0.9); backdrop-filter: blur(4px); border-radius: 0.5rem; border: 1px solid #334155; padding: 0.5rem; text-decoration: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+        <div style="font-size: 0.75rem; text-align: center; color: #94a3b8; margin-bottom: 0.25rem;">Back to Hub</div>
+        <img src="logoani.svg" alt="App by Blues" style="width: 100%; height: auto; display: block;">
+    </a>
+</div>
+<!-- END BLUES APP LOGO -->
+
+</body>
+</html>

@@ -1,683 +1,908 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Spatial Sniper XVII</title>
+    <title>Spatial Sniper: Echo VIII</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
+        /* ECHO VIII ATMOSPHERIC PALETTE */
         :root {
-            --bg: #0f172a;
-            --hud: #1e293b;
-            --accent: #4ade80; /* Green */
-            --gold: #facc15;   /* Bonus */
-            --danger: #ef4444; /* Red */
-            --enemy: #f43f5e;  /* Rose */
-            --timer: #06b6d4;  /* Cyan */
-            --text: #e5e5e5;
-            --player-hue: 150; 
+            --bg: #0b1120;       
+            --panel: #1e293b;    
+            --accent: #10b981;   /* Emerald */
+            --gold: #f59e0b;     
+            --danger: #ef4444;   
+            --text: #e2e8f0;     
         }
 
         body {
+            margin: 0; height: 100vh;
             background-color: var(--bg);
-            color: var(--text);
-            font-family: 'Segoe UI', monospace;
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            overflow: hidden; user-select: none; -webkit-user-select: none;
+        }
+
+        /* --- SIGNATURE --- */
+        .credits {
+            position: absolute; bottom: 15px; right: 20px;
+            font-size: 10px; color: rgba(255, 255, 255, 0.1);
+            font-weight: 900; letter-spacing: 2px; text-transform: uppercase;
+            pointer-events: none; z-index: 999; font-family: monospace;
+        }
+
+        /* --- INTRO SCREEN --- */
+        #intro-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg); z-index: 500;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.8s ease-out;
+        }
+        #intro-screen.hidden { opacity: 0; pointer-events: none; }
+        
+        .logo-box {
+            border: 2px solid var(--accent); padding: 40px;
+            text-align: center; position: relative;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.2);
+            margin-bottom: 40px;
+            background: rgba(16, 185, 129, 0.05);
+        }
+        
+        h1 { margin: 0; font-size: 32px; letter-spacing: 4px; text-transform: uppercase; color: var(--text); }
+        .sub { display: block; margin-top: 10px; font-size: 12px; letter-spacing: 6px; color: var(--accent); }
+        
+        .start-btn {
+            background: transparent; border: 1px solid var(--accent); color: var(--accent);
+            padding: 15px 40px; font-size: 16px; letter-spacing: 2px;
+            cursor: pointer; transition: all 0.3s; text-transform: uppercase; font-weight: bold;
+        }
+        .start-btn:hover { background: var(--accent); color: var(--bg); box-shadow: 0 0 20px var(--accent); }
+
+        /* --- GAME LAYOUT --- */
+        #game-layout {
+            position: relative; width: 100%; max-width: 600px; height: 100%;
+            display: flex; flex-direction: column;
+            opacity: 0; transition: opacity 1s ease-in; 
+        }
+        #game-layout.visible { opacity: 1; }
+
+        /* --- 3D VIEWPORT --- */
+        #viewport {
+            position: relative; flex: 1; min-height: 50%;
+            background: linear-gradient(180deg, #0b1120 0%, #1e293b 100%);
             overflow: hidden;
-            touch-action: manipulation;
-            user-select: none;
+            transition: box-shadow 0.2s;
+        }
+        #viewport.damage { box-shadow: inset 0 0 50px var(--danger); }
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* --- VISUAL TIMERS --- */
+        .bar-container { width: 100%; height: 6px; background-color: #0f172a; position: relative; z-index: 10; border-bottom: 1px solid #334155; }
+        
+        #timer-bar {
+            width: 100%; height: 100%; background-color: #3b82f6;
+            transform-origin: left; transform: scaleX(0);
         }
 
-        /* --- OVERLAYS --- */
-        #damage-overlay {
+        #health-track {
+            width: 100%; height: 12px; background-color: #334155; 
+            border-bottom: 1px solid #000; position: relative;
+        }
+        #health-bar {
+            width: 100%; height: 100%; background-color: var(--accent);
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s;
+        }
+        .health-text {
+            position: absolute; top: 0; left: 10px; font-size: 9px; line-height: 12px;
+            font-weight: bold; color: rgba(0,0,0,0.5); letter-spacing: 1px;
+        }
+
+        /* --- GRID OVERLAY --- */
+        #grid-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, transparent 40%, rgba(239, 68, 68, 0.8) 100%);
-            opacity: 0; pointer-events: none; z-index: 50; transition: opacity 0.2s;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+            transform: perspective(800px) rotateX(25deg) scale(0.85);
+            pointer-events: none;
         }
-
-        #kill-skull {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%) scale(0.5) rotate(-20deg);
-            font-size: 100px; opacity: 0; pointer-events: none; z-index: 60;
-            text-shadow: 0 0 30px var(--danger);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        .grid-btn {
+            pointer-events: auto; border: 1px solid rgba(255,255,255,0.05);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 900; color: rgba(255,255,255,0.2);
+            cursor: pointer; transition: background 0.1s;
         }
-        .skull-pop { opacity: 1 !important; transform: translate(-50%, -50%) scale(1) rotate(0deg) !important; }
+        .grid-btn:active { background: rgba(16, 185, 129, 0.2); }
+        .grid-btn.center { border: none; cursor: default; }
 
         /* --- HUD --- */
-        #hud {
-            width: 340px; margin-bottom: 10px; padding: 15px; background: var(--hud); 
-            border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            border-bottom: 3px solid var(--accent); position: relative;
+        #hud-panel {
+            background: var(--panel); padding: 15px;
+            display: flex; flex-direction: column; gap: 10px;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5); z-index: 20;
         }
+
+        .stat-row { display: flex; justify-content: space-between; align-items: flex-end; }
+        .stat-box { 
+            text-align: center; width: 32%; background: rgba(0,0,0,0.3); 
+            padding: 8px 0; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); 
+        }
+        .stat-label { font-size: 10px; color: #94a3b8; letter-spacing: 1px; text-transform: uppercase; display: block; margin-bottom: 2px; }
+        .stat-val { font-size: 20px; font-weight: 800; color: #fff; font-family: monospace; }
         
-        .hud-row { 
-            display: flex; justify-content: space-between; align-items: center; 
-            margin-bottom: 8px; font-size: 12px; font-weight: bold; letter-spacing: 1px;
-        }
+        #score-val { color: var(--gold); }
         
-        .bar-container { 
-            width: 140px; height: 14px; background: #000; border-radius: 7px; 
-            overflow: hidden; position: relative; flex-shrink: 0; 
-            border: 1px solid #334155;
-        }
+        .controls { display: flex; gap: 10px; margin-top: 5px; }
         
-        .bar-fill { height: 100%; width: 100%; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        #health-fill { background-color: var(--accent); }
-        #enemy-fill { background-color: var(--enemy); }
-
-        .hp-text {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 9px; color: #fff; text-shadow: 0 0 2px #000;
-        }
-
-        #score { color: var(--gold); font-size: 18px; }
-        
-        .footer-brand {
-            position: absolute; bottom: 2px; left: 10px; font-size: 9px; 
-            color: #475569; text-transform: uppercase; letter-spacing: 1px;
-        }
-
-        /* Restart Button in HUD */
-        #btn-restart {
-            position: absolute; bottom: 5px; right: 5px;
-            background: #334155; border: 1px solid #475569; color: #94a3b8;
-            font-size: 10px; padding: 3px 8px; border-radius: 4px; cursor: pointer;
-            text-transform: uppercase; font-weight: bold;
-        }
-        #btn-restart:active { background: var(--danger); color: white; border-color: var(--danger); }
-
-        /* --- MESSAGE & TIMER --- */
-        #message {
-            height: 24px; color: var(--accent); font-family: monospace; font-size: 16px;
-            font-weight: bold; margin-bottom: 5px; text-transform: uppercase; text-align: center; letter-spacing: 1px;
-        }
-        #timer-container {
-            width: 340px; height: 8px; background: #333; margin-bottom: 20px;
-            border-radius: 4px; overflow: hidden; visibility: hidden;
-        }
-        #timer-fill { width: 100%; height: 100%; background-color: var(--timer); transform-origin: left; }
-
-        /* --- GRID --- */
-        #grid {
-            display: grid; grid-template-columns: repeat(3, 1fr);
-            gap: 15px; width: 350px; height: 350px; position: relative;
-        }
-        .tile {
-            background: #334155; border-radius: 12px; display: flex; align-items: center; justify-content: center;
-            font-size: 12px; color: #94a3b8; cursor: pointer; border: 2px solid #475569; transition: all 0.1s;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.2); position: relative;
-        }
-        .tile:active { transform: scale(0.95); background: #475569; border-color: #94a3b8; }
-        .muzzle-flash { background-color: #fff !important; box-shadow: 0 0 30px #fff; transition: background-color 0.1s; }
-        
-        .blood-hit {
-            animation: blood-pulse 0.4s ease-out;
-            background-color: #b91c1c !important; 
-            border-color: #ef4444 !important;
-            color: #fff !important;
-            box-shadow: 0 0 20px #ef4444;
-        }
-        @keyframes blood-pulse {
-            0% { transform: scale(1); } 50% { transform: scale(1.1); background-color: #dc2626; } 100% { transform: scale(1); }
-        }
-
-        .dmg-popup {
-            position: absolute; color: var(--gold); font-weight: bold; font-size: 24px;
-            text-shadow: 0 2px 4px #000;
-            animation: float-up 1s ease-out forwards; pointer-events: none; z-index: 10;
-        }
-        .dmg-popup.headshot { color: #fff; font-size: 28px; text-shadow: 0 0 10px var(--gold); }
-        .dmg-popup.weak { color: #94a3b8; font-size: 18px; text-shadow: none; }
-        
-        @keyframes float-up {
-            0% { transform: translateY(0) scale(1); opacity: 1; }
-            100% { transform: translateY(-40px) scale(1.2); opacity: 0; }
-        }
-        
-        .demo-highlight { 
-            background-color: var(--gold) !important; color: #000 !important; border-color: #fff !important;
-            box-shadow: 0 0 15px var(--gold);
-        }
-
-        /* --- PLAYER MODEL --- */
-        .tile.player-center { background: transparent; border: none; box-shadow: none; cursor: default; overflow: visible; }
-        .tile.player-center:active { transform: none; }
-
-        #player-model {
-            width: 60px; height: 60px; position: relative; display: flex; flex-direction: column; align-items: center;
-            transition: transform 0.1s;
-        }
-        .p-color { background-color: hsl(var(--player-hue), 70%, 45%); transition: background-color 0.5s; }
-        .p-head { width: 24px; height: 24px; border-radius: 50%; margin-bottom: -4px; z-index: 2; border: 2px solid rgba(0,0,0,0.3);}
-        .p-body { width: 40px; height: 36px; border-radius: 8px 8px 4px 4px; z-index: 1; border: 2px solid rgba(0,0,0,0.3); }
-        .p-shdr { position: absolute; width: 54px; height: 16px; top: 22px; border-radius: 8px; z-index: 0; }
-        
-        .model-hit { animation: hit-recoil 0.3s ease-out; }
-        @keyframes hit-recoil {
-            0% { transform: scale(1); } 20% { transform: scale(0.9) translateY(5px); }
-            40% { transform: scale(1.1) translateY(-2px); filter: brightness(1.5); } 100% { transform: scale(1); }
-        }
-
-        /* --- MENUS --- */
-        #menu-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.98); display: flex;
-            flex-direction: column; align-items: center; justify-content: center; z-index: 100;
-        }
-        .hidden { display: none !important; }
-        
-        h2 { color: var(--accent); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 3px; font-size: 22px;}
-        .subtitle { color: #64748b; font-size: 12px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
-
-        .btn-group { display: flex; gap: 10px; margin-top: 15px;}
-
         button {
-            background: var(--accent); color: #000; border: none; padding: 15px 30px;
-            font-size: 16px; font-weight: bold; cursor: pointer; text-transform: uppercase;
-            border-radius: 6px; box-shadow: 0 4px 0 #059669; transition: transform 0.1s;
+            flex: 1; padding: 14px; border: none; border-radius: 2px;
+            font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;
+            cursor: pointer; transition: transform 0.1s;
         }
-        button:active { transform: translateY(4px); box-shadow: none; }
-        button.secondary { background: #334155; color: #cbd5e1; box-shadow: 0 4px 0 #1e293b; }
+        button:active { transform: translateY(2px); }
+        
+        .btn-primary { background: var(--accent); color: #0b1120; }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-ghost { background: #334155; color: #cbd5e1; }
+        .btn-small { padding: 8px; font-size: 11px; flex: 0 0 auto; width: 80px;}
 
-        table { border-collapse: collapse; width: 280px; margin-top: 20px; color: #fff; font-size: 14px;}
-        th { text-align: left; color: #94a3b8; border-bottom: 2px solid #334155; padding: 5px; font-size: 10px;}
-        td { padding: 8px 5px; border-bottom: 1px solid #334155; }
-        .hs-score { text-align: right; font-weight: bold; color: var(--gold);}
+        /* --- AUDIO CONTROLS --- */
+        .audio-row {
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px;
+            margin-top: 5px; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .audio-label { font-size: 10px; color: #64748b; font-weight: bold; width: 40px; }
+        
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none; width: 100%; background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 12px; width: 12px;
+            border-radius: 50%; background: var(--accent);
+            cursor: pointer; margin-top: -5px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 2px; cursor: pointer; background: #334155;
+        }
 
-        /* --- INFO LAYER --- */
-        #info-layer {
+        #msg-overlay {
+            position: absolute; top: 20px; width: 100%; text-align: center;
+            font-weight: bold; color: var(--accent); text-transform: uppercase;
+            letter-spacing: 2px; pointer-events: none; text-shadow: 0 1px 4px #000;
+        }
+
+        /* --- POPUPS & MODALS --- */
+        .score-popup {
+            position: absolute; pointer-events: none; z-index: 100;
+            font-weight: 900; font-size: 24px; color: var(--gold);
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+            animation: flyUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes flyUp { 0%{transform:translate(-50%,0) scale(0.5); opacity:0} 20%{transform:translate(-50%,-20px) scale(1.2); opacity:1} 100%{transform:translate(-50%,-80px) scale(1); opacity:0} }
+
+        .modal {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #0f172a; z-index: 200; display: none;
-            flex-direction: column; align-items: center; padding: 20px; overflow-y: auto;
-            box-sizing: border-box;
+            background: rgba(11, 17, 32, 0.98); z-index: 200;
+            display: none; flex-direction: column; padding: 20px; box-sizing: border-box;
         }
-        #info-layer.active { display: flex; }
+        .modal.active { display: flex; }
+        .modal-content { flex: 1; overflow-y: auto; text-align: left; }
         
-        .info-content { max-width: 400px; width: 100%; color: #e2e8f0; font-family: sans-serif; line-height: 1.5; font-size: 14px;}
-        .info-header { text-align: center; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 15px; }
-        .info-header h3 { color: var(--accent); margin: 0; text-transform: uppercase; }
-        
-        .info-section { background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 3px solid var(--gold); }
-        .info-section h4 { margin: 0 0 5px 0; color: #fff; font-size: 15px;}
-        
-        .info-list { list-style: none; padding: 0; margin: 0; font-size: 13px;}
-        .info-list li { margin-bottom: 5px; color: #94a3b8; }
-        .info-list span { color: var(--accent); font-weight: bold; }
+        h2 { color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 10px; font-size: 18px; margin-top: 0;}
+        h3 { color: var(--gold); font-size: 14px; margin-top: 20px; margin-bottom: 5px; text-transform: uppercase; }
+        p, li { font-size: 13px; color: #94a3b8; line-height: 1.5; margin-bottom: 8px; }
 
-        /* --- SHAKE --- */
-        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
-        @keyframes shake {
-            10%, 90% { transform: translate3d(-3px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); } 40%, 60% { transform: translate3d(6px, 0, 0); }
-        }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+        th { text-align: left; color: #64748b; padding: 5px; border-bottom: 1px solid #334155; }
+        td { padding: 8px 5px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #fff; font-family: monospace; }
+
     </style>
 </head>
 <body>
 
-    <div id="damage-overlay"></div>
-    <div id="kill-skull">💀</div>
+<div id="intro-screen">
+    <div class="logo-box">
+        <h1>Spatial Sniper</h1>
+        <span class="sub">ECHO VIII // AUDIO LINK</span>
+    </div>
+    <div style="font-size: 11px; color: #64748b; margin-bottom: 20px; max-width: 300px; text-align: center;">
+        WARNING: Stereo Headphones Required.<br>Loading Ambient Tracks...
+    </div>
+    <button class="start-btn" id="init-btn" onclick="UI.startExperience()" disabled>LOADING...</button>
+</div>
 
-    <div id="hud">
-        <div class="hud-row">
-            <span style="color:var(--accent)">YOU</span>
-            <div class="bar-container">
-                <div id="health-fill" class="bar-fill"></div>
-                <div class="hp-text"><span id="hp-val">100</span>%</div>
-            </div>
+<div class="credits">APP BY BLUES</div>
+
+<div id="game-layout">
+    
+    <div id="viewport">
+        <canvas id="three-canvas"></canvas>
+        <div id="grid-overlay">
+            <div class="grid-btn" data-idx="0">NW</div>
+            <div class="grid-btn" data-idx="1">N</div>
+            <div class="grid-btn" data-idx="2">NE</div>
+            <div class="grid-btn" data-idx="3">W</div>
+            <div class="grid-btn center"></div>
+            <div class="grid-btn" data-idx="5">E</div>
+            <div class="grid-btn" data-idx="6">SW</div>
+            <div class="grid-btn" data-idx="7">S</div>
+            <div class="grid-btn" data-idx="8">SE</div>
         </div>
-        <div class="hud-row">
-            <span style="color:var(--enemy)">SNIPER</span>
-            <div class="bar-container">
-                <div id="enemy-fill" class="bar-fill"></div>
-                <div class="hp-text"><span id="enemy-val">100</span>%</div>
-            </div>
-        </div>
-        <div class="hud-row" style="margin-top:10px; border-top:1px solid #334155; padding-top:5px;">
-            <span style="color:#94a3b8">SCORE</span>
-            <span id="score">0</span>
-        </div>
-        <div class="footer-brand">APP BY BLUES</div>
-        <button id="btn-restart">Restart</button>
+        <div id="msg-overlay">System Offline</div>
     </div>
 
-    <div id="message">Standby...</div>
-
-    <div id="timer-container">
-        <div id="timer-fill"></div>
+    <div id="health-track">
+        <div class="health-text">SYSTEM INTEGRITY</div>
+        <div id="health-bar"></div>
     </div>
 
-    <div id="grid">
-        <div class="tile" data-x="-5" data-z="-5" id="tile-n"></div>
-        <div class="tile" data-x="0"  data-z="-5" id="tile-c-n">FRONT</div>
-        <div class="tile" data-x="5"  data-z="-5" id="tile-ne"></div>
-        
-        <div class="tile" data-x="-5" data-z="0" id="tile-w">LEFT</div>
-        <div class="tile player-center">
-            <div id="player-model">
-                <div class="p-head p-color"></div>
-                <div class="p-shdr p-color"></div>
-                <div class="p-body p-color"></div>
+    <div class="bar-container">
+        <div id="timer-bar"></div>
+    </div>
+
+    <div id="hud-panel">
+        <div class="stat-row">
+            <div class="stat-box">
+                <span class="stat-label">SCORE</span>
+                <div class="stat-val" id="ui-score">0</div>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">STREAK</span>
+                <div class="stat-val" id="ui-streak">0</div>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">LEVEL</span>
+                <div class="stat-val" id="ui-level">1</div>
             </div>
         </div>
-        <div class="tile" data-x="5"  data-z="0" id="tile-e">RIGHT</div>
         
-        <div class="tile" data-x="-5" data-z="5" id="tile-sw"></div>
-        <div class="tile" data-x="0"  data-z="5" id="tile-c-s">REAR</div>
-        <div class="tile" data-x="5"  data-z="5" id="tile-se"></div>
-    </div>
-
-    <div id="menu-layer">
-        <h2>Spatial Sniper XVII</h2>
-        <div class="subtitle">App by Blues</div>
-        
-        <div id="hs-container"></div>
-        
-        <div class="btn-group">
-            <button id="btn-info" class="secondary">INTEL / HELP</button>
-            <button id="btn-start">DEPLOY</button>
+        <div class="audio-row">
+            <div class="audio-label">BGM</div>
+            <input type="range" min="0" max="1" step="0.01" value="0.5" oninput="AudioEngine.setVolume(this.value)">
+            <button class="btn-ghost btn-small" id="track-btn" onclick="AudioEngine.toggleTrack()">TRK 1</button>
         </div>
-    </div>
 
-    <div id="info-layer">
-        <div class="info-content">
-            <div class="info-header">
-                <h3>Tactical Briefing</h3>
-            </div>
-
-            <div class="info-section">
-                <h4>1. Spatial Sound (The Concept)</h4>
-                <p style="color:#94a3b8; margin:0;">
-                    Your brain is a radar. By processing tiny delays and volume changes between your left and right ears, you can pinpoint exactly where a sound is coming from in 3D space. This app simulates that process.
-                </p>
-            </div>
-
-            <div class="info-section">
-                <h4>2. Mission Rules</h4>
-                <ul class="info-list">
-                    <li>- Listen for the sniper shot.</li>
-                    <li>- Tap the grid tile where the sound originated.</li>
-                    <li>- <span>1st Hit (< 0.5s)</span>: 15 Pts + 10 Dmg (Perfect).</li>
-                    <li>- <span>1st Hit (> 0.5s)</span>: 10 Pts + 10 Dmg.</li>
-                    <li>- <span>2nd/3rd Hit</span>: Reduced points & damage.</li>
-                    <li>- If you <span>MISS</span>, you take damage and he stays put.</li>
-                    <li>- If you <span>HIT</span>, he relocates.</li>
-                </ul>
-            </div>
-
-            <div class="info-section" style="border-left-color: var(--timer);">
-                <h4>3. The Science (HRTF)</h4>
-                <p style="color:#94a3b8; margin:0 0 10px 0;">
-                    How do stereo headphones fake "Rear" audio?
-                </p>
-                <p style="color:#94a3b8; margin:0;">
-                    The game uses a <strong>Head-Related Transfer Function</strong>. It applies specific filters to the sound wave to mimic how your outer ear (pinna) muffles sounds coming from behind you. This spectral filtering tricks your brain into perceiving depth on a 2D headset.
-                </p>
-            </div>
-
-            <button id="btn-close-info" style="width:100%;">CLOSE INTEL</button>
+        <div class="controls" id="menu-controls">
+            <button class="btn-ghost" onclick="UI.openModal('help')">INTEL</button>
+            <button class="btn-primary" id="btn-deploy" onclick="Game.start()">DEPLOY</button>
+        </div>
+        <div class="controls" id="game-controls" style="display:none;">
+            <button class="btn-danger" onclick="Game.gameOver()">ABORT MISSION</button>
         </div>
     </div>
 
-    <script>
-        // --- CONFIG ---
-        const HS_KEY = 'sniper_elite_hs_v17';
-        const GAME = {
-            hp: 100, score: 0, isPlaying: false, canShoot: false,
-            sniperPos: { x: 0, z: -5 }, 
-            sniperHp: 100,
-            attempts: 1, 
-            hasArmor: true, 
-            reactionTimeMs: 2000, 
-            timer: null,
-            roundStartTime: 0
-        };
+</div>
 
-        const MSG = document.getElementById('message');
-        const TIMER_BAR = document.getElementById('timer-fill');
-        const TIMER_CONT = document.getElementById('timer-container');
-        const SKULL_EL = document.getElementById('kill-skull');
-        const MENU = document.getElementById('menu-layer');
-        const INFO = document.getElementById('info-layer');
-        const HS_CONT = document.getElementById('hs-container');
-        const P_MODEL = document.getElementById('player-model');
-        const BTN_START = document.getElementById('btn-start');
-        const BTN_INFO = document.getElementById('btn-info');
-        const BTN_CLOSE_INFO = document.getElementById('btn-close-info');
-        const BTN_RESTART = document.getElementById('btn-restart');
-
-        // --- AUDIO ENGINE ---
-        let ctx, panner;
-        function initAudio() {
-            if (ctx) return;
-            const AC = window.AudioContext || window.webkitAudioContext;
-            ctx = new AC();
-            panner = ctx.createPanner();
-            panner.panningModel = 'HRTF'; panner.distanceModel = 'inverse';
-            panner.refDistance = 1; panner.connect(ctx.destination);
-        }
-
-        function playSound(type, callback) {
-            if(!ctx) return; const t = ctx.currentTime;
-            const osc = ctx.createOscillator(); const g = ctx.createGain();
-            
-            if (type === 'zip') {
-                setPos(GAME.sniperPos.x, GAME.sniperPos.z);
-                for(let i=0; i<3; i++) {
-                    const st = t + (i * 0.11);
-                    const so = ctx.createOscillator(); const sg = ctx.createGain();
-                    so.type = 'sawtooth'; so.frequency.setValueAtTime(1200, st);
-                    so.frequency.exponentialRampToValueAtTime(200, st + 0.08);
-                    sg.gain.setValueAtTime(0, st); sg.gain.linearRampToValueAtTime(0.4, st + 0.01);
-                    sg.gain.exponentialRampToValueAtTime(0.001, st + 0.1);
-                    so.connect(sg); sg.connect(panner); so.start(st); so.stop(st + 0.15);
-                }
-                if(callback) setTimeout(callback, 400);
-            }
-            else if (type === 'damage') {
-                // Deep Impact Thud
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(120, t); 
-                osc.frequency.exponentialRampToValueAtTime(10, t + 0.2); 
-                g.gain.setValueAtTime(1, t); 
-                g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-                osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.3);
-            }
-            else if (type === 'headshot') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(800, t);
-                osc.frequency.linearRampToValueAtTime(2000, t + 0.1);
-                g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
-                osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.3);
-            }
-            else if (type === 'armor') {
-                osc.type = 'square'; osc.frequency.setValueAtTime(400, t);
-                g.gain.setValueAtTime(0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
-                osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.2);
-            }
-            else if (type === 'shot') {
-                osc.type = 'square'; osc.frequency.setValueAtTime(220, t);
-                osc.frequency.exponentialRampToValueAtTime(0.01, t + 0.08);
-                g.gain.setValueAtTime(0.4, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
-                osc.connect(g); g.connect(ctx.destination); osc.start(t); osc.stop(t + 0.1);
-            }
-        }
-
-        function setPos(x, z) {
-            if(panner.positionX) { panner.positionX.value = x; panner.positionZ.value = z; panner.positionY.value = 0; } 
-            else { panner.setPosition(x, 0, z); }
-        }
-
-        // --- HIGH SCORES ---
-        function getHighScores() { const d = localStorage.getItem(HS_KEY); return d ? JSON.parse(d) : []; }
-        function saveHighScore(tag, score) {
-            let s = getHighScores(); s.push({tag, score});
-            s.sort((a,b) => b.score - a.score); s = s.slice(0, 10); 
-            localStorage.setItem(HS_KEY, JSON.stringify(s)); renderHighScores();
-        }
-        function renderHighScores() {
-            const s = getHighScores();
-            let h = '<table><tr><th>RNK</th><th>OPERATOR</th><th>PTS</th></tr>';
-            if(s.length===0) h+= '<tr><td colspan="3" style="text-align:center; padding:10px;">NO DATA</td></tr>';
-            s.forEach((r, i) => {
-                h += `<tr><td style="color:var(--accent)">#${i+1}</td><td>${r.tag}</td><td class="hs-score">${r.score}</td></tr>`;
-            });
-            h += '</table>'; HS_CONT.innerHTML = h;
-        }
-
-        // --- VISUALS ---
-        function updateVisuals() {
-            // Player
-            const bar = document.getElementById('health-fill');
-            const hpVal = document.getElementById('hp-val');
-            bar.style.width = GAME.hp + "%";
-            hpVal.innerText = Math.ceil(GAME.hp);
-
-            if (GAME.hp > 60) bar.style.backgroundColor = "var(--accent)";
-            else if (GAME.hp > 30) bar.style.backgroundColor = "#facc15";
-            else bar.style.backgroundColor = "var(--danger)";
-            
-            document.documentElement.style.setProperty('--player-hue', (GAME.hp / 100) * 150);
-
-            // Enemy
-            const eBar = document.getElementById('enemy-fill');
-            const eVal = document.getElementById('enemy-val');
-            eBar.style.width = GAME.sniperHp + "%";
-            eVal.innerText = Math.ceil(GAME.sniperHp);
-        }
-
-        function triggerDamageAnim() {
-            document.body.classList.add('shake');
-            document.getElementById('damage-overlay').style.opacity = 1;
-            P_MODEL.classList.add('model-hit');
-            setTimeout(() => {
-                document.body.classList.remove('shake');
-                document.getElementById('damage-overlay').style.opacity = 0;
-                P_MODEL.classList.remove('model-hit');
-            }, 400);
-        }
-
-        function spawnScoreText(el, pts, label) {
-            const popup = document.createElement('div');
-            popup.className = (pts >= 10) ? 'dmg-popup headshot' : 'dmg-popup weak';
-            popup.innerText = label ? `${label} +${pts}` : `+${pts}`;
-            el.appendChild(popup);
-            setTimeout(() => popup.remove(), 800);
-        }
-
-        // --- CALIBRATION ---
-        async function runCalibration() {
-            MENU.classList.add('hidden');
-            MSG.innerText = "CALIBRATING...";
-            GAME.isPlaying = false;
-            
-            const sequence = [
-                {x: 0, z:-5, id: 'tile-c-n'}, {x: 5, z: 0, id: 'tile-e'},
-                {x: 0, z: 5, id: 'tile-c-s'}, {x: -5, z: 0, id: 'tile-w'}
-            ];
-
-            for (const step of sequence) {
-                GAME.sniperPos.x = step.x; GAME.sniperPos.z = step.z;
-                const el = document.getElementById(step.id);
-                el.classList.add('demo-highlight');
-                playSound('zip');
-                await new Promise(r => setTimeout(r, 600)); 
-                el.classList.remove('demo-highlight');
-                await new Promise(r => setTimeout(r, 200)); 
-            }
-            startGameplay();
-        }
-
-        // --- GAMEPLAY ---
-        function startGame() {
-            initAudio(); if (ctx.state === 'suspended') ctx.resume();
-            runCalibration();
-        }
-
-        function startGameplay() {
-            GAME.hp = 100; GAME.score = 0; GAME.isPlaying = true; GAME.hasArmor = true;
-            document.getElementById('score').innerText = 0;
-            spawnNewSniper();
-            MSG.innerText = "TARGET LOCATED..."; MSG.style.color = "var(--accent)";
-            setTimeout(startRound, 1500);
-        }
-
-        function spawnNewSniper() {
-            GAME.sniperHp = 100;
-            relocateSniper();
-            updateVisuals();
-        }
+<div id="modal-help" class="modal">
+    <div class="modal-content">
+        <h2>Tactical Briefing</h2>
+        <p>You are operating the Echo VIII Adaptive Grid.</p>
         
-        function relocateSniper() {
-            const targets = Array.from(document.querySelectorAll('.tile[data-x]'));
-            let rnd, target;
-            do {
-                rnd = Math.floor(Math.random() * targets.length);
-                target = targets[rnd];
-            } while (parseFloat(target.dataset.x) === GAME.sniperPos.x && parseFloat(target.dataset.z) === GAME.sniperPos.z && targets.length > 1);
-            
-            GAME.sniperPos.x = parseFloat(target.dataset.x);
-            GAME.sniperPos.z = parseFloat(target.dataset.z);
-            GAME.attempts = 1; 
-        }
+        <h3>Survival Mechanics</h3>
+        <ul>
+            <li><strong>Integrity (Health):</strong> Hitting 0% results in Mission Failure.</li>
+            <li><strong>Decay:</strong> Health drops every time the timer loops.</li>
+            <li><strong>Damage:</strong> Wrong guesses cause massive system damage.</li>
+        </ul>
+        
+        <h3>Audio Comms</h3>
+        <p>Background ambience can be adjusted via the BGM slider. Toggle TRK to switch frequencies or Mute.</p>
+    </div>
+    <button class="btn-primary" onclick="UI.closeModals()">CLOSE</button>
+</div>
 
-        function startRound() {
-            if (!GAME.isPlaying) return;
-            TIMER_CONT.style.visibility = 'hidden'; TIMER_BAR.style.transition = 'none'; TIMER_BAR.style.width = '100%';
-            MSG.innerText = "INCOMING!"; MSG.style.color = "var(--danger)"; GAME.canShoot = false;
-            
-            playSound('zip', () => {
-                if (!GAME.isPlaying) return;
-                GAME.canShoot = true; MSG.innerText = "FIRE!"; MSG.style.color = "var(--accent)";
-                GAME.roundStartTime = Date.now();
-                startVisualTimer();
-                GAME.timer = setTimeout(() => { takeDamage("TOO SLOW", 2000); }, GAME.reactionTimeMs);
-            });
-        }
+<div id="modal-lb" class="modal">
+    <div class="modal-content">
+        <h2>Mission Terminated</h2>
+        <div style="text-align:center; padding:10px; background:rgba(255,255,255,0.05); margin-bottom:15px; border-radius:4px;">
+            <span style="color:#94a3b8; font-size:10px;">FINAL SCORE</span><br>
+            <span id="lb-final-score" style="font-size:32px; font-weight:900; color:var(--gold);">0</span>
+        </div>
+        
+        <h3>Top Operatives</h3>
+        <table id="lb-table"></table>
+    </div>
+    <div class="controls">
+        <button class="btn-primary" onclick="UI.closeModals(); Game.start()">REDEPLOY</button>
+        <button class="btn-ghost" onclick="UI.closeModals()">MENU</button>
+    </div>
+</div>
 
-        function startVisualTimer() {
-            TIMER_CONT.style.visibility = 'visible'; void TIMER_BAR.offsetWidth; 
-            TIMER_BAR.style.transition = `width ${GAME.reactionTimeMs}ms linear`; TIMER_BAR.style.width = '0%';
-        }
+<script>
+/**
+ * SPATIAL SNIPER: ECHO VIII
+ * Dev: Blues
+ * Logic: Adaptive Difficulty + BGM Loader
+ */
 
-        function handleInput(tile) {
-            if (!GAME.isPlaying || !GAME.canShoot) return;
-            GAME.canShoot = false; clearTimeout(GAME.timer); 
-            
-            const reactionTime = Date.now() - GAME.roundStartTime;
-            
-            const width = TIMER_BAR.getBoundingClientRect().width;
-            TIMER_BAR.style.transition = 'none'; TIMER_BAR.style.width = width + 'px'; 
+const CONST = {
+    TILES: [
+        {x:-5, z:-5}, {x:0, z:-5}, {x:5, z:-5}, 
+        {x:-5, z:0},  {x:0, z:0},  {x:5, z:0},  
+        {x:-5, z:5},  {x:0, z:5},  {x:5, z:5}   
+    ],
+    STORAGE_KEY: 'spatial_sniper_echo_viii_lb',
+    START_DURATION: 3000,
+    MIN_DURATION: 1200,
+    MAX_HEALTH: 100,
+    DAMAGE_MISS: 25,
+    DAMAGE_DECAY: 5,
+    HEAL_HIT: 15,
+    // EXACT FILENAMES AS PROVIDED
+    BGM_FILES: ['spatial amber.mp3', 'spatial amber (1).mp3']
+};
 
-            playSound('shot');
-            tile.classList.add('muzzle-flash'); setTimeout(() => tile.classList.remove('muzzle-flash'), 100);
+// --- AUDIO ENGINE ---
+const AudioEngine = {
+    ctx: null, 
+    master: null, 
+    bgmGain: null,
+    bgmSource: null,
+    bgmBuffers: [],
+    bgmIndex: 0, // 0 = Track 1, 1 = Track 2, 2 = Muted
+    buffers: {}, 
+    panners: [], 
 
-            const tx = parseFloat(tile.dataset.x); const tz = parseFloat(tile.dataset.z);
-            
-            if (tx === GAME.sniperPos.x && tz === GAME.sniperPos.z) {
-                // --- HIT ---
-                tile.classList.add('blood-hit'); 
-                setTimeout(() => tile.classList.remove('blood-hit'), 500);
+    async init() {
+        if (this.ctx) return;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AC();
+        
+        // SFX Master Gain
+        this.master = this.ctx.createGain();
+        this.master.gain.value = 0.8;
+        this.master.connect(this.ctx.destination);
 
-                let scoreAdded = 0;
-                let damageDealt = 0;
-                let label = "";
+        // BGM Gain (Independent)
+        this.bgmGain = this.ctx.createGain();
+        this.bgmGain.gain.value = 0.5; // Default half volume
+        this.bgmGain.connect(this.ctx.destination);
 
-                // --- SCORING & DAMAGE LOGIC ---
-                if (GAME.attempts === 1) {
-                    if (reactionTime < 500) {
-                        scoreAdded = 15; 
-                        label = "PERFECT";
-                        playSound('headshot');
-                    } else {
-                        scoreAdded = 10;
-                        label = "CLEAN HIT";
-                    }
-                    damageDealt = 10; 
-                } else if (GAME.attempts === 2) {
-                    scoreAdded = 5;
-                    damageDealt = 7;
-                } else if (GAME.attempts === 3) {
-                    scoreAdded = 3;
-                    damageDealt = 5;
-                } else {
-                    scoreAdded = 1;
-                    damageDealt = 5;
-                }
-
-                GAME.sniperHp -= damageDealt;
-                GAME.score += scoreAdded;
-                
-                spawnScoreText(tile, scoreAdded, label);
-                updateVisuals();
-                document.getElementById('score').innerText = GAME.score;
-                
-                if (GAME.sniperHp <= 0) {
-                    MSG.innerText = "TARGET NEUTRALIZED"; MSG.style.color = "#fff"; 
-                    showSkull(); 
-                    gameOver(true);
-                } else {
-                    MSG.innerText = (scoreAdded >= 15) ? "HEADSHOT!" : "HIT - RELOCATING";
-                    relocateSniper(); 
-                    setTimeout(startRound, 1000);
-                }
-            } 
-            else {
-                // ANY MISS
-                takeDamage("MISSED TARGET", reactionTime);
-            }
-        }
-
-        function showSkull() {
-            SKULL_EL.classList.add('skull-pop');
-            setTimeout(() => { SKULL_EL.classList.remove('skull-pop'); }, 1200);
-        }
-
-        function takeDamage(reason, reactionTime) {
-            GAME.attempts++;
-
-            let dmg = Math.ceil( (reactionTime / GAME.reactionTimeMs) * 10 );
-            dmg = Math.max(1, Math.min(10, dmg));
-
-            if (GAME.hasArmor) {
-                GAME.hasArmor = false;
-                dmg = 0;
-                playSound('armor');
-                reason += " (0 DMG)";
-            } else {
-                playSound('damage');
-                triggerDamageAnim();
-                GAME.hp = Math.max(0, GAME.hp - dmg);
-                updateVisuals();
-            }
-
-            MSG.innerText = reason; MSG.style.color = "var(--danger)";
-            
-            if (GAME.hp <= 0) gameOver(false); else setTimeout(startRound, 1500);
-        }
-
-        function gameOver(victory) {
-            GAME.isPlaying = false; MSG.innerText = victory ? "MISSION COMPLETE" : "UNIT LOST"; 
-            TIMER_CONT.style.visibility = 'hidden';
-            setTimeout(checkHighScore, 1000);
-        }
-
-        function abortGame() {
-            if(!GAME.isPlaying) return;
-            GAME.isPlaying = false;
-            TIMER_CONT.style.visibility = 'hidden';
-            MENU.classList.remove('hidden');
-            renderHighScores();
-        }
-
-        function checkHighScore() {
-            const s = getHighScores();
-            const min = s.length < 10 ? 0 : s[s.length-1].score;
-            
-            if (GAME.score > 0 && (GAME.score > min || s.length < 10)) {
-                const tag = prompt(`REPORT: ${GAME.score} Pts.\nEnter Callsign (3 chars):`, "UNK");
-                if(tag) saveHighScore(tag.substring(0,3).toUpperCase(), GAME.score);
-            }
-            renderHighScores();
-            MENU.classList.remove('hidden');
-            BTN_START.innerText = "REDEPLOY";
-        }
-
-        // --- EVENTS ---
-        BTN_START.addEventListener('click', startGame);
-        BTN_INFO.addEventListener('click', () => INFO.classList.add('active'));
-        BTN_CLOSE_INFO.addEventListener('click', () => INFO.classList.remove('active'));
-        BTN_RESTART.addEventListener('click', abortGame);
-
-        document.querySelectorAll('.tile[data-x]').forEach(t => {
-            t.addEventListener('pointerdown', (e) => { e.preventDefault(); handleInput(e.currentTarget); });
+        // Grid Panners
+        CONST.TILES.forEach(pos => {
+            const p = this.ctx.createPanner();
+            p.panningModel = 'HRTF'; p.distanceModel = 'inverse';
+            p.refDistance = 1; p.maxDistance = 10000;
+            p.positionX.value = pos.x; p.positionY.value = 0; p.positionZ.value = pos.z;
+            p.connect(this.master);
+            this.panners.push(p);
         });
+
+        // Load SFX (Procedural)
+        this.buffers.ping = await this.synth('ping');
+        this.buffers.miss = await this.synth('miss'); 
+        this.buffers.success = await this.synth('success');
+        this.buffers.sweep = await this.synth('sweep');
+        this.buffers.fail = await this.synth('fail'); 
+        this.buffers.targetBase = await this.synth('targetBase'); 
+
+        // Load BGM (External Files)
+        await this.loadMusic();
+    },
+
+    async loadMusic() {
+        try {
+            for (let file of CONST.BGM_FILES) {
+                const response = await fetch(file);
+                const arrayBuffer = await response.arrayBuffer();
+                const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+                this.bgmBuffers.push(audioBuffer);
+            }
+            console.log("Music Loaded");
+            // Enable start button
+            const btn = document.getElementById('init-btn');
+            btn.disabled = false;
+            btn.innerText = "INITIALIZE";
+            btn.style.borderColor = "var(--accent)";
+        } catch (e) {
+            console.error("Failed to load BGM", e);
+            document.getElementById('init-btn').innerText = "AUDIO ERROR (CHECK CONSOLE)";
+        }
+    },
+
+    playTrack(index) {
+        // Stop current
+        if (this.bgmSource) {
+            try { this.bgmSource.stop(); } catch(e){}
+        }
+
+        if (index >= this.bgmBuffers.length) return; // Mute state
+
+        const source = this.ctx.createBufferSource();
+        source.buffer = this.bgmBuffers[index];
+        source.loop = true; // LOOPING ENABLED
+        source.connect(this.bgmGain);
+        source.start(0);
+        this.bgmSource = source;
+    },
+
+    setVolume(val) {
+        if(this.bgmGain) this.bgmGain.gain.value = val;
+    },
+
+    toggleTrack() {
+        this.bgmIndex = (this.bgmIndex + 1) % (this.bgmBuffers.length + 1);
         
-        renderHighScores();
-    </script>
+        const btn = document.getElementById('track-btn');
+        
+        if (this.bgmIndex < this.bgmBuffers.length) {
+            this.playTrack(this.bgmIndex);
+            btn.innerText = `TRK ${this.bgmIndex + 1}`;
+            btn.style.color = "#cbd5e1";
+        } else {
+            // Mute State
+            if (this.bgmSource) try { this.bgmSource.stop(); } catch(e){}
+            btn.innerText = "MUTE";
+            btn.style.color = "var(--danger)";
+        }
+    },
+
+    // --- SFX SYNTHESIS ---
+    async synth(type) {
+        const sr = 44100;
+        let dur = 0.3; 
+        if (type === 'targetBase') dur = 1.0; 
+        if (type === 'sweep') dur = 1.5;
+        if (type === 'fail') dur = 1.0;
+
+        const off = new OfflineAudioContext(1, sr * dur, sr);
+        const osc = off.createOscillator();
+        const g = off.createGain();
+        osc.connect(g);
+        g.connect(off.destination);
+
+        const now = 0;
+
+        if (type === 'sweep') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(100, now);
+            osc.frequency.exponentialRampToValueAtTime(800, dur);
+            g.gain.setValueAtTime(0, now);
+            g.gain.linearRampToValueAtTime(0.5, dur/2);
+            g.gain.linearRampToValueAtTime(0, dur);
+        } else if (type === 'targetBase') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(1200, now);
+            osc.frequency.exponentialRampToValueAtTime(200, 0.5); 
+            g.gain.setValueAtTime(0, 0);
+            for(let i=0; i<5; i++) {
+                let t = i * 0.2;
+                g.gain.linearRampToValueAtTime(1, t + 0.05);
+                g.gain.linearRampToValueAtTime(0, t + 0.15);
+            }
+        } else if (type === 'success') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, now);
+            osc.frequency.exponentialRampToValueAtTime(1760, 0.1);
+            g.gain.setValueAtTime(0, now);
+            g.gain.linearRampToValueAtTime(0.5, 0.02);
+            g.gain.exponentialRampToValueAtTime(0.01, 0.3);
+        } else if (type === 'fail') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(100, now);
+            osc.frequency.linearRampToValueAtTime(50, dur);
+            g.gain.setValueAtTime(0.5, now);
+            g.gain.linearRampToValueAtTime(0, dur);
+        } else {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(100, now);
+            g.gain.setValueAtTime(0.3, now);
+            g.gain.exponentialRampToValueAtTime(0.01, 0.1);
+            dur = 0.1;
+        }
+
+        osc.start();
+        osc.stop(dur);
+        return await off.startRendering();
+    },
+
+    play(name, locIndex) {
+        if (!this.ctx) return;
+        const src = this.ctx.createBufferSource();
+        src.buffer = this.buffers[name];
+        if (locIndex !== null && this.panners[locIndex]) {
+            src.connect(this.panners[locIndex]);
+        } else {
+            src.connect(this.master);
+        }
+        src.start(this.ctx.currentTime);
+    },
+
+    playTarget(locIndex, difficultyLevel) {
+        if (!this.ctx) return;
+        let duration = Math.max(0.2, 0.7 - (difficultyLevel * 0.05));
+        const src = this.ctx.createBufferSource();
+        src.buffer = this.buffers.targetBase;
+        const env = this.ctx.createGain();
+        env.gain.setValueAtTime(1, this.ctx.currentTime);
+        env.gain.setValueAtTime(1, this.ctx.currentTime + duration - 0.05);
+        env.gain.linearRampToValueAtTime(0, this.ctx.currentTime + duration);
+        src.connect(env);
+        if (locIndex !== null && this.panners[locIndex]) {
+            env.connect(this.panners[locIndex]);
+        } else {
+            env.connect(this.master);
+        }
+        src.start(this.ctx.currentTime);
+        src.stop(this.ctx.currentTime + duration + 0.1);
+    },
+
+    playStereoTest() {
+        if (!this.ctx) return;
+        const src = this.ctx.createBufferSource();
+        src.buffer = this.buffers['sweep'];
+        const pan = this.ctx.createStereoPanner();
+        pan.pan.setValueAtTime(-1, this.ctx.currentTime);
+        pan.pan.linearRampToValueAtTime(1, this.ctx.currentTime + 1.5);
+        src.connect(pan);
+        pan.connect(this.master);
+        src.start(this.ctx.currentTime);
+    }
+};
+
+// --- VISUAL ENGINE (Three.js) ---
+const Visuals = {
+    scene: null, camera: null, renderer: null, meshes: [],
+    
+    init() {
+        const wrap = document.getElementById('viewport');
+        this.scene = new THREE.Scene();
+        this.scene.fog = new THREE.FogExp2(0x0b1120, 0.05);
+
+        this.camera = new THREE.PerspectiveCamera(60, wrap.clientWidth / wrap.clientHeight, 0.1, 100);
+        this.camera.position.set(0, 10, 14);
+        this.camera.lookAt(0, 0, 0);
+
+        this.renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('three-canvas'), alpha: true });
+        this.renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+
+        const amb = new THREE.AmbientLight(0xffffff, 0.3);
+        this.scene.add(amb);
+        const dir = new THREE.DirectionalLight(0x10b981, 0.6); 
+        dir.position.set(10, 20, 10);
+        this.scene.add(dir);
+
+        const grid = new THREE.GridHelper(30, 30, 0x1e293b, 0x0b1120);
+        this.scene.add(grid);
+
+        const geo = new THREE.BoxGeometry(2.8, 0.2, 2.8);
+        const mat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.2, metalness: 0.5, emissive: 0x000000 });
+        const pMat = new THREE.MeshStandardMaterial({ color: 0x10b981, emissive: 0x064e3b });
+
+        CONST.TILES.forEach((pos, i) => {
+            const isP = i === 4;
+            const m = new THREE.Mesh(geo, isP ? pMat : mat.clone());
+            m.position.set(pos.x, 0, pos.z);
+            this.scene.add(m);
+            this.meshes.push(m);
+        });
+
+        this.animate();
+        window.addEventListener('resize', () => {
+            this.camera.aspect = wrap.clientWidth / wrap.clientHeight;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+        });
+    },
+
+    animate() {
+        requestAnimationFrame(() => Visuals.animate());
+        const t = Date.now() * 0.0002;
+        Visuals.camera.position.x = Math.sin(t) * 2;
+        Visuals.camera.lookAt(0, 0, 0);
+        Visuals.renderer.render(Visuals.scene, Visuals.camera);
+    },
+
+    flash(idx, colorHex) {
+        if(!this.meshes[idx]) return;
+        const m = this.meshes[idx];
+        const old = m.material.color.getHex();
+        const oldE = m.material.emissive.getHex();
+        
+        m.material.color.setHex(colorHex);
+        m.material.emissive.setHex(colorHex);
+        m.scale.y = 3;
+
+        setTimeout(() => {
+            m.material.color.setHex(old);
+            m.material.emissive.setHex(oldE);
+            m.scale.y = 1;
+        }, 150);
+    },
+
+    shake() {
+        const v = document.getElementById('viewport');
+        v.classList.add('damage');
+        setTimeout(() => v.classList.remove('damage'), 200);
+    }
+};
+
+// --- GAME LOGIC ---
+const Game = {
+    active: false,
+    score: 0,
+    streak: 0,
+    correctCount: 0,
+    level: 1,
+    targetIdx: -1,
+    health: 100,
+    startTime: 0,
+    
+    async start() {
+        this.reset();
+        this.active = true;
+        
+        UI.switchScreen('game');
+        UI.updateStats();
+        UI.updateHealth(this.health);
+        
+        UI.msg("CALIBRATING...");
+        await this.runDemo();
+        
+        setTimeout(() => this.nextRound(), 500);
+    },
+
+    async runDemo() {
+        const seq = [1,5,7,3];
+        for(let s of seq) {
+            Visuals.flash(s, 0xf59e0b);
+            AudioEngine.play('miss', 4); 
+            await new Promise(r => setTimeout(r, 200));
+        }
+    },
+
+    reset() {
+        this.score = 0;
+        this.streak = 0;
+        this.correctCount = 0;
+        this.level = 1;
+        this.targetIdx = -1;
+        this.health = CONST.MAX_HEALTH;
+    },
+
+    // --- DIFFICULTY CALCULATOR ---
+    getDifficultyParams() {
+        const rawDur = CONST.START_DURATION * Math.pow(0.95, this.level - 1);
+        const loopDuration = Math.max(CONST.MIN_DURATION, Math.floor(rawDur));
+        return { loopDuration };
+    },
+
+    nextRound() {
+        if (!this.active) return;
+        this.stopLoop();
+
+        let next;
+        do {
+            next = [0,1,2,3,5,6,7,8][Math.floor(Math.random()*8)];
+        } while(next === this.targetIdx);
+        
+        this.targetIdx = next;
+        this.startTime = 0;
+
+        UI.msg(`LEVEL ${this.level} // SCANNING`);
+        this.runLoop();
+    },
+
+    runLoop() {
+        if (!this.active) return;
+
+        const { loopDuration } = this.getDifficultyParams();
+
+        UI.startTimer(loopDuration, () => {
+            if (!this.active) return;
+            
+            this.takeDamage(CONST.DAMAGE_DECAY);
+            if (!this.active) return; 
+
+            UI.msg(`DECAY DETECTED // SIGNAL RESET`);
+            AudioEngine.playTarget(this.targetIdx, this.level);
+            
+            this.startTime = Date.now();
+            this.runLoop(); 
+        });
+    },
+
+    stopLoop() {
+        UI.stopTimer();
+    },
+
+    takeDamage(amount) {
+        this.health -= amount;
+        if (this.health <= 0) {
+            this.health = 0;
+            this.gameOver();
+        } else {
+            if (amount > 10) Visuals.shake(); 
+            UI.updateHealth(this.health);
+        }
+    },
+
+    heal(amount) {
+        this.health = Math.min(CONST.MAX_HEALTH, this.health + amount);
+        UI.updateHealth(this.health);
+    },
+
+    handleInput(idx) {
+        if (!this.active || this.targetIdx === -1) return;
+        this.stopLoop();
+
+        let timeSec = (this.startTime === 0) ? 0 : (Date.now() - this.startTime) / 1000;
+
+        if (idx === this.targetIdx) {
+            // CORRECT
+            Visuals.flash(idx, 0x10b981); 
+            AudioEngine.play('success', 4);
+            
+            this.heal(CONST.HEAL_HIT);
+            const speedBonus = Math.max(0, 100 - (timeSec * 20));
+            this.streak++;
+            const roundScore = Math.floor((100 + speedBonus) * this.streak * this.level);
+            this.score += roundScore;
+            this.correctCount++;
+            this.level = 1 + Math.floor(this.correctCount / 5);
+
+            UI.spawnPopup(idx, `+${roundScore.toLocaleString()}`);
+            UI.updateStats();
+            setTimeout(() => this.nextRound(), 800);
+
+        } else {
+            // WRONG
+            Visuals.flash(idx, 0xef4444); 
+            AudioEngine.play('miss', 4); 
+            
+            this.streak = 0;
+            UI.updateStats();
+            UI.spawnPopup(idx, `-${CONST.DAMAGE_MISS}%`, "#ef4444");
+            this.takeDamage(CONST.DAMAGE_MISS);
+            
+            if (this.active) {
+                UI.msg("DAMAGE CRITICAL // RETRY");
+                setTimeout(() => this.runLoop(), 500);
+            }
+        }
+    },
+
+    gameOver() {
+        this.active = false;
+        this.stopLoop();
+        AudioEngine.play('fail', 4);
+        UI.updateHealth(0);
+        UI.msg("SYSTEM FAILURE");
+        setTimeout(() => this.checkLeaderboard(), 1500);
+    },
+
+    checkLeaderboard() {
+        if (this.score > 0) {
+            let name = prompt(`SYSTEM FAILURE\nScore: ${this.score}\nEnter Callsign (3 chars):`, "AAA");
+            if (!name) name = "UNK";
+            name = name.substring(0, 3).toUpperCase();
+            
+            const entry = {
+                name: name, score: this.score, level: this.level,
+                streak: this.streak, date: new Date().toISOString().split('T')[0]
+            };
+            Leaderboard.save(entry);
+        }
+        Leaderboard.show();
+    }
+};
+
+// --- LEADERBOARD ---
+const Leaderboard = {
+    get() { return JSON.parse(localStorage.getItem(CONST.STORAGE_KEY) || "[]"); },
+    save(entry) {
+        const data = this.get();
+        data.push(entry);
+        data.sort((a, b) => b.score - a.score);
+        localStorage.setItem(CONST.STORAGE_KEY, JSON.stringify(data.slice(0, 10)));
+    },
+    show() {
+        const data = this.get();
+        const table = document.getElementById('lb-table');
+        table.innerHTML = `<tr><th>RNK</th><th>SCORE</th><th>LVL</th><th>ID</th></tr>`;
+        data.forEach((r, i) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>#${i+1}</td><td>${r.score.toLocaleString()}</td><td>${r.level}</td><td>${r.name}</td>`;
+            table.appendChild(row);
+        });
+        document.getElementById('lb-final-score').innerText = Game.score.toLocaleString();
+        UI.openModal('lb');
+    }
+};
+
+// --- UI CONTROLLER ---
+const UI = {
+    msgEl: document.getElementById('msg-overlay'),
+    timerBar: document.getElementById('timer-bar'),
+    healthBar: document.getElementById('health-bar'),
+    currentTimerId: null,
+
+    async startExperience() {
+        // Start Audio Context & Play Stereo Test
+        await AudioEngine.init();
+        if (AudioEngine.ctx.state === 'suspended') AudioEngine.ctx.resume();
+        
+        AudioEngine.playStereoTest();
+        AudioEngine.playTrack(0); // Start BGM Track 1
+
+        const intro = document.getElementById('intro-screen');
+        intro.classList.add('hidden');
+        setTimeout(() => {
+            intro.style.display = 'none';
+            document.getElementById('game-layout').classList.add('visible');
+            Visuals.init();
+        }, 1000);
+    },
+    
+    switchScreen(state) {
+        document.getElementById('menu-controls').style.display = state === 'menu' ? 'flex' : 'none';
+        document.getElementById('game-controls').style.display = state === 'game' ? 'flex' : 'none';
+        if (state === 'game') this.msg("");
+    },
+
+    msg(txt) { this.msgEl.innerText = txt; },
+
+    updateHealth(pct) {
+        this.healthBar.style.width = pct + '%';
+        if (pct > 50) this.healthBar.style.backgroundColor = 'var(--accent)';
+        else if (pct > 25) this.healthBar.style.backgroundColor = '#facc15'; 
+        else this.healthBar.style.backgroundColor = '#ef4444'; 
+    },
+
+    startTimer(duration, callback) {
+        if(this.currentTimerId) clearTimeout(this.currentTimerId);
+        this.timerBar.style.transition = 'none';
+        this.timerBar.style.transform = 'scaleX(1)';
+        void this.timerBar.offsetWidth;
+        this.timerBar.style.transition = `transform ${duration}ms linear`;
+        this.timerBar.style.transform = 'scaleX(0)';
+        this.currentTimerId = setTimeout(callback, duration);
+    },
+
+    stopTimer() {
+        if(this.currentTimerId) clearTimeout(this.currentTimerId);
+        this.timerBar.style.transition = 'none';
+        this.timerBar.style.transform = 'scaleX(0)';
+    },
+
+    updateStats() {
+        document.getElementById('ui-score').innerText = Game.score.toLocaleString();
+        document.getElementById('ui-streak').innerText = Game.streak;
+        document.getElementById('ui-level').innerText = Game.level;
+    },
+
+    spawnPopup(idx, text, colorOverride) {
+        const btns = document.querySelectorAll('.grid-btn');
+        const rect = btns[idx].getBoundingClientRect();
+        const el = document.createElement('div');
+        el.className = 'score-popup';
+        el.innerText = text;
+        if(colorOverride) el.style.color = colorOverride;
+        el.style.left = (rect.left + rect.width/2) + 'px';
+        el.style.top = (rect.top + rect.height/2) + 'px';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 1000);
+    },
+
+    openModal(id) { document.getElementById(`modal-${id}`).classList.add('active'); },
+    closeModals() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); }
+};
+
+window.onload = () => {
+    // Start loading BGM immediately, but require user click to start audio context
+    AudioEngine.init();
+
+    document.querySelectorAll('.grid-btn').forEach(btn => {
+        btn.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            const idx = parseInt(e.target.dataset.idx);
+            if (!isNaN(idx)) Game.handleInput(idx);
+        });
+    });
+};
+
+</script>
 </body>
 </html>
