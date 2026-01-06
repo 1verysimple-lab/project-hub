@@ -3,10 +3,10 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Spatial Sniper: Echo VIII</title>
+    <title>Spatial Sniper: Echo X</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        /* ECHO VIII ATMOSPHERIC PALETTE */
+        /* ECHO X PALETTE */
         :root {
             --bg: #0b1120;       
             --panel: #1e293b;    
@@ -154,18 +154,13 @@
         }
         .audio-label { font-size: 10px; color: #64748b; font-weight: bold; width: 40px; }
         
-        /* Custom Range Slider */
-        input[type=range] {
-            -webkit-appearance: none; width: 100%; background: transparent;
-        }
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none; height: 12px; width: 12px;
             border-radius: 50%; background: var(--accent);
             cursor: pointer; margin-top: -5px;
         }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%; height: 2px; cursor: pointer; background: #334155;
-        }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 2px; cursor: pointer; background: #334155; }
 
         #msg-overlay {
             position: absolute; top: 20px; width: 100%; text-align: center;
@@ -205,12 +200,13 @@
 <div id="intro-screen">
     <div class="logo-box">
         <h1>Spatial Sniper</h1>
-        <span class="sub">ECHO VIII // AUDIO LINK</span>
+        <span class="sub">ECHO X // HYBRID AUDIO</span>
     </div>
     <div style="font-size: 11px; color: #64748b; margin-bottom: 20px; max-width: 300px; text-align: center;">
-        WARNING: Stereo Headphones Required.<br>Loading Ambient Tracks...
+        WARNING: Stereo Headphones Required.<br>
+        Click INITIALIZE to activate Audio Engine.
     </div>
-    <button class="start-btn" id="init-btn" onclick="UI.startExperience()" disabled>LOADING...</button>
+    <button class="start-btn" id="init-btn" onclick="UI.startExperience()">INITIALIZE SYSTEM</button>
 </div>
 
 <div class="credits">APP BY BLUES</div>
@@ -278,7 +274,7 @@
 <div id="modal-help" class="modal">
     <div class="modal-content">
         <h2>Tactical Briefing</h2>
-        <p>You are operating the Echo VIII Adaptive Grid.</p>
+        <p>You are operating the Echo X Adaptive Grid.</p>
         
         <h3>Survival Mechanics</h3>
         <ul>
@@ -288,7 +284,7 @@
         </ul>
         
         <h3>Audio Comms</h3>
-        <p>Background ambience can be adjusted via the BGM slider. Toggle TRK to switch frequencies or Mute.</p>
+        <p>BGM is loaded from local files. SFX are generated procedurally.</p>
     </div>
     <button class="btn-primary" onclick="UI.closeModals()">CLOSE</button>
 </div>
@@ -312,9 +308,9 @@
 
 <script>
 /**
- * SPATIAL SNIPER: ECHO VIII
+ * SPATIAL SNIPER: ECHO X
  * Dev: Blues
- * Logic: Adaptive Difficulty + BGM Loader
+ * Logic: Hybrid Audio (WebAudio for SFX, HTML5 Audio for BGM)
  */
 
 const CONST = {
@@ -323,44 +319,41 @@ const CONST = {
         {x:-5, z:0},  {x:0, z:0},  {x:5, z:0},  
         {x:-5, z:5},  {x:0, z:5},  {x:5, z:5}   
     ],
-    STORAGE_KEY: 'spatial_sniper_echo_viii_lb',
+    STORAGE_KEY: 'spatial_sniper_echo_x_lb',
     START_DURATION: 3000,
     MIN_DURATION: 1200,
     MAX_HEALTH: 100,
     DAMAGE_MISS: 25,
     DAMAGE_DECAY: 5,
     HEAL_HIT: 15,
-    // EXACT FILENAMES AS PROVIDED
+    // Filenames - Assumed in local folder
     BGM_FILES: ['spatial amber.mp3', 'spatial amber (1).mp3']
 };
 
 // --- AUDIO ENGINE ---
 const AudioEngine = {
     ctx: null, 
-    master: null, 
-    bgmGain: null,
-    bgmSource: null,
-    bgmBuffers: [],
-    bgmIndex: 0, // 0 = Track 1, 1 = Track 2, 2 = Muted
+    master: null,
+    
+    // SFX (Web Audio API)
     buffers: {}, 
     panners: [], 
 
+    // BGM (HTML5 Audio)
+    bgmElements: [],
+    bgmIndex: 0, 
+    bgmVolume: 0.5,
+
     async init() {
         if (this.ctx) return;
+        
+        // 1. Setup Web Audio API (For Spatial SFX)
         const AC = window.AudioContext || window.webkitAudioContext;
         this.ctx = new AC();
-        
-        // SFX Master Gain
         this.master = this.ctx.createGain();
         this.master.gain.value = 0.8;
         this.master.connect(this.ctx.destination);
 
-        // BGM Gain (Independent)
-        this.bgmGain = this.ctx.createGain();
-        this.bgmGain.gain.value = 0.5; // Default half volume
-        this.bgmGain.connect(this.ctx.destination);
-
-        // Grid Panners
         CONST.TILES.forEach(pos => {
             const p = this.ctx.createPanner();
             p.panningModel = 'HRTF'; p.distanceModel = 'inverse';
@@ -370,7 +363,7 @@ const AudioEngine = {
             this.panners.push(p);
         });
 
-        // Load SFX (Procedural)
+        // 2. Generate Procedural SFX
         this.buffers.ping = await this.synth('ping');
         this.buffers.miss = await this.synth('miss'); 
         this.buffers.success = await this.synth('success');
@@ -378,68 +371,67 @@ const AudioEngine = {
         this.buffers.fail = await this.synth('fail'); 
         this.buffers.targetBase = await this.synth('targetBase'); 
 
-        // Load BGM (External Files)
-        await this.loadMusic();
+        // 3. Setup HTML5 Audio (For BGM)
+        this.initBGM();
     },
 
-    async loadMusic() {
-        try {
-            for (let file of CONST.BGM_FILES) {
-                const response = await fetch(file);
-                const arrayBuffer = await response.arrayBuffer();
-                const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
-                this.bgmBuffers.push(audioBuffer);
-            }
-            console.log("Music Loaded");
-            // Enable start button
-            const btn = document.getElementById('init-btn');
-            btn.disabled = false;
-            btn.innerText = "INITIALIZE";
-            btn.style.borderColor = "var(--accent)";
-        } catch (e) {
-            console.error("Failed to load BGM", e);
-            document.getElementById('init-btn').innerText = "AUDIO ERROR (CHECK CONSOLE)";
-        }
+    initBGM() {
+        // Create standard HTML5 Audio objects
+        // These don't suffer from the same strict CORS "Tainted" issues as fetch()
+        // when running locally on some browsers.
+        this.bgmElements = CONST.BGM_FILES.map(file => {
+            const audio = new Audio(file);
+            audio.loop = true;
+            audio.volume = this.bgmVolume;
+            return audio;
+        });
+        console.log("BGM Objects Created");
     },
 
     playTrack(index) {
-        // Stop current
-        if (this.bgmSource) {
-            try { this.bgmSource.stop(); } catch(e){}
+        // Stop all
+        this.bgmElements.forEach(el => {
+            el.pause();
+            el.currentTime = 0;
+        });
+
+        if (index >= this.bgmElements.length) return; // Mute state
+
+        try {
+            const audio = this.bgmElements[index];
+            audio.volume = this.bgmVolume;
+            audio.play().catch(e => console.warn("Autoplay blocked or file not found:", e));
+        } catch (e) {
+            console.error("Audio playback error", e);
         }
-
-        if (index >= this.bgmBuffers.length) return; // Mute state
-
-        const source = this.ctx.createBufferSource();
-        source.buffer = this.bgmBuffers[index];
-        source.loop = true; // LOOPING ENABLED
-        source.connect(this.bgmGain);
-        source.start(0);
-        this.bgmSource = source;
     },
 
     setVolume(val) {
-        if(this.bgmGain) this.bgmGain.gain.value = val;
+        this.bgmVolume = parseFloat(val);
+        // Update current playing track immediately
+        if (this.bgmIndex < this.bgmElements.length) {
+            this.bgmElements[this.bgmIndex].volume = this.bgmVolume;
+        }
     },
 
     toggleTrack() {
-        this.bgmIndex = (this.bgmIndex + 1) % (this.bgmBuffers.length + 1);
+        this.bgmIndex = (this.bgmIndex + 1) % (this.bgmElements.length + 1);
         
         const btn = document.getElementById('track-btn');
         
-        if (this.bgmIndex < this.bgmBuffers.length) {
+        if (this.bgmIndex < this.bgmElements.length) {
             this.playTrack(this.bgmIndex);
             btn.innerText = `TRK ${this.bgmIndex + 1}`;
             btn.style.color = "#cbd5e1";
         } else {
             // Mute State
-            if (this.bgmSource) try { this.bgmSource.stop(); } catch(e){}
+            this.playTrack(999); // Invalid index stops all
             btn.innerText = "MUTE";
             btn.style.color = "var(--danger)";
         }
     },
 
-    // --- SFX SYNTHESIS ---
+    // --- SFX SYNTHESIS (Unchanged) ---
     async synth(type) {
         const sr = 44100;
         let dur = 0.3; 
@@ -662,7 +654,6 @@ const Game = {
         this.health = CONST.MAX_HEALTH;
     },
 
-    // --- DIFFICULTY CALCULATOR ---
     getDifficultyParams() {
         const rawDur = CONST.START_DURATION * Math.pow(0.95, this.level - 1);
         const loopDuration = Math.max(CONST.MIN_DURATION, Math.floor(rawDur));
@@ -731,7 +722,6 @@ const Game = {
         let timeSec = (this.startTime === 0) ? 0 : (Date.now() - this.startTime) / 1000;
 
         if (idx === this.targetIdx) {
-            // CORRECT
             Visuals.flash(idx, 0x10b981); 
             AudioEngine.play('success', 4);
             
@@ -748,7 +738,6 @@ const Game = {
             setTimeout(() => this.nextRound(), 800);
 
         } else {
-            // WRONG
             Visuals.flash(idx, 0xef4444); 
             AudioEngine.play('miss', 4); 
             
@@ -789,29 +778,6 @@ const Game = {
     }
 };
 
-// --- LEADERBOARD ---
-const Leaderboard = {
-    get() { return JSON.parse(localStorage.getItem(CONST.STORAGE_KEY) || "[]"); },
-    save(entry) {
-        const data = this.get();
-        data.push(entry);
-        data.sort((a, b) => b.score - a.score);
-        localStorage.setItem(CONST.STORAGE_KEY, JSON.stringify(data.slice(0, 10)));
-    },
-    show() {
-        const data = this.get();
-        const table = document.getElementById('lb-table');
-        table.innerHTML = `<tr><th>RNK</th><th>SCORE</th><th>LVL</th><th>ID</th></tr>`;
-        data.forEach((r, i) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `<td>#${i+1}</td><td>${r.score.toLocaleString()}</td><td>${r.level}</td><td>${r.name}</td>`;
-            table.appendChild(row);
-        });
-        document.getElementById('lb-final-score').innerText = Game.score.toLocaleString();
-        UI.openModal('lb');
-    }
-};
-
 // --- UI CONTROLLER ---
 const UI = {
     msgEl: document.getElementById('msg-overlay'),
@@ -820,12 +786,11 @@ const UI = {
     currentTimerId: null,
 
     async startExperience() {
-        // Start Audio Context & Play Stereo Test
         await AudioEngine.init();
         if (AudioEngine.ctx.state === 'suspended') AudioEngine.ctx.resume();
         
         AudioEngine.playStereoTest();
-        AudioEngine.playTrack(0); // Start BGM Track 1
+        AudioEngine.playTrack(0); // Attempt BGM start
 
         const intro = document.getElementById('intro-screen');
         intro.classList.add('hidden');
@@ -891,9 +856,6 @@ const UI = {
 };
 
 window.onload = () => {
-    // Start loading BGM immediately, but require user click to start audio context
-    AudioEngine.init();
-
     document.querySelectorAll('.grid-btn').forEach(btn => {
         btn.addEventListener('pointerdown', (e) => {
             e.preventDefault();
