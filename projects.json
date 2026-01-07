@@ -36,21 +36,21 @@
     },
     {
         "filename": "FAN_SIM.html",
-        "title": "Void Fan 2.0",
+        "title": "Void Fan",
         "description": "An interactive fan simulation with realistic physics and sound. Experience the void.",
-        "type": "HTML/JS"
+        "type": "Tool"
     },
     {
         "filename": "https://1verysimple-lab.github.io/cs2mapselector/",
-        "title": "CS2 Map Selector",
-        "description": "A tool for selecting maps in Counter-Strike 2.",
-        "type": "External"
+        "title": "Counter Strike Random Map Selector",
+        "description": "A tool to pick a random map when you cant decide",
+        "type": "Tool"
     },
     {
         "filename": "quiz.html",
-        "title": "QuizRun: Skill Edition",
-        "description": "A competitive quiz game.",
-        "type": "HTML/JS"
+        "title": "Quiz Game",
+        "description": "A 2 player quiz with loadable questions",
+        "type": "Game"
     },
     {
         "filename": "paper planes.html",

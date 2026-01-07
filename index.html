@@ -71,7 +71,14 @@
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            border: 1px solid transparent;
         }
+
+        /* Category Colors */
+        .badge-game { background: rgba(239, 68, 68, 0.1); color: #f87171; border-color: rgba(239, 68, 68, 0.2); }
+        .badge-tool { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border-color: rgba(59, 130, 246, 0.2); }
+        .badge-guide { background: rgba(234, 179, 8, 0.1); color: #facc15; border-color: rgba(234, 179, 8, 0.2); }
+        .badge-other { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border-color: rgba(148, 163, 184, 0.2); }
 
         /* Search Bar */
         .search-input {
@@ -111,6 +118,7 @@
                 <button class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-400 hover:text-white transition-all" data-filter="Game">Games</button>
                 <button class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-400 hover:text-white transition-all" data-filter="Tool">Tools</button>
                 <button class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-400 hover:text-white transition-all" data-filter="Guide">Guides</button>
+                <button class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-400 hover:text-white transition-all" data-filter="Other">Other</button>
             </div>
 
             <!-- Search -->
@@ -132,7 +140,7 @@
     </main>
 
     <footer class="mt-16 text-center text-xs text-gray-600 font-mono">
-        <p>SYSTEM.VERSION: 2.1.0 // SYNCED_VIA_PUBLISH_PY</p>
+        <p>SYSTEM.VERSION: 2.2.0 // SYNCED_VIA_PUBLISH_PY</p>
     </footer>
 
     <script>
@@ -164,8 +172,9 @@
 
             projects.forEach((p, index) => {
                 const delay = index * 50; // Stagger animation
-                const type = p.type || 'Experiment';
+                const type = p.type || 'Other';
                 const icon = getIcon(type);
+                const colorClass = getColorClass(type);
                 
                 const card = `
                     <a href="${p.filename}" class="card group fade-in" style="animation-delay: ${delay}ms">
@@ -174,7 +183,7 @@
                                 <div class="p-2 bg-[#252932] rounded-lg text-indigo-400 group-hover:text-white transition-colors">
                                     <i data-lucide="${icon}" width="20"></i>
                                 </div>
-                                <span class="type-badge">${type}</span>
+                                <span class="type-badge ${colorClass}">${type}</span>
                             </div>
                             <h2 class="text-lg font-bold mb-2 group-hover:text-indigo-400 transition-colors">${p.title}</h2>
                             <p class="text-sm text-gray-400 leading-relaxed line-clamp-3">${p.description}</p>
@@ -190,13 +199,20 @@
             lucide.createIcons();
         }
 
+        function getColorClass(type) {
+            const map = {
+                'Game': 'badge-game',
+                'Tool': 'badge-tool',
+                'Guide': 'badge-guide'
+            };
+            return map[type] || 'badge-other';
+        }
+
         function getIcon(type) {
             const map = {
                 'Game': 'gamepad-2',
                 'Tool': 'wrench',
-                'Guide': 'book-open',
-                'Art': 'palette',
-                'External': 'link'
+                'Guide': 'book-open'
             };
             return map[type] || 'flask-conical';
         }
@@ -217,7 +233,14 @@
                     const filter = btn.dataset.filter;
                     const filtered = filter === 'all' 
                         ? allProjects 
-                        : allProjects.filter(p => (p.type || 'Experiment') === filter);
+                        : allProjects.filter(p => {
+                            const pType = p.type || 'Other';
+                            if (filter === 'Other') {
+                                // Match anything that isn't Game, Tool, or Guide
+                                return !['Game', 'Tool', 'Guide'].includes(pType);
+                            }
+                            return pType === filter;
+                        });
                     
                     renderProjects(filtered);
                 });
