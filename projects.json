@@ -54,9 +54,9 @@
     },
     {
         "filename": "paper planes.html",
-        "title": "Paper Planes",
+        "title": "Fold Planes like a Pro",
         "description": "Short and easy instructions for kids to make 3 easy but very nice paper airplanes.",
-        "type": "HTML/JS"
+        "type": "Guide"
     },
     {
         "filename": "CS2BINDGENERATOR.html",
@@ -74,7 +74,7 @@
         "filename": "woot_x.html",
         "title": "Woot a Memory game",
         "description": "walk the path -",
-        "type": "HTML/JS"
+        "type": "Game"
     },
     {
         "filename": "record_reverse.html",
@@ -109,13 +109,13 @@
     {
         "filename": "smoking laws sitges.html",
         "title": "The new laws for smokers in Sitges",
-        "description": "its forbidden",
-        "type": "HTML/JS"
+        "description": "laws for smoking",
+        "type": "Guide"
     },
     {
         "filename": "Periodic.html",
         "title": "Periodic Table",
-        "description": "An interactive way of learning",
-        "type": "HTML/JS"
+        "description": "An interactive way of learning the peridic table",
+        "type": "Guide"
     }
 ]
