@@ -62,13 +62,13 @@
         "filename": "CS2BINDGENERATOR.html",
         "title": "It would be cool if it worked but...",
         "description": "Some parts works others not.",
-        "type": "HTML/JS"
+        "type": "Tool"
     },
     {
         "filename": "dice_game.html",
         "title": "Dice Roulette",
         "description": "3 dices and a kind of roulette concept",
-        "type": "HTML/JS"
+        "type": "Game"
     },
     {
         "filename": "woot_x.html",
@@ -80,31 +80,31 @@
         "filename": "record_reverse.html",
         "title": "Record and Play audio in reverse",
         "description": "Should be a default on all audio apps",
-        "type": "HTML/JS"
+        "type": "Tool"
     },
     {
         "filename": "iPhone camera tutorial.html",
         "title": "Learn your iPhoneCamera",
         "description": "tutorial",
-        "type": "HTML/JS"
+        "type": "Guide"
     },
     {
         "filename": "vitaminer.html",
         "title": "Vitamin guide",
         "description": "a idea",
-        "type": "HTML/JS"
+        "type": "Guide"
     },
     {
         "filename": "magne5.html",
         "title": "Magnet Game",
         "description": "game for 2",
-        "type": "HTML/JS"
+        "type": "Game"
     },
     {
         "filename": "Nap Noise.html",
         "title": "Nap Noise",
         "description": "A small page to generate white noise for napping",
-        "type": "HTML/JS"
+        "type": "Tool"
     },
     {
         "filename": "smoking laws sitges.html",
