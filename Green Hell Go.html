@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Hell Tactical Map</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #1a1a1a; color: #e5e5e5; font-family: 'Courier New', Courier, monospace; }
+        canvas { display: block; touch-action: none; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+
+        .hud-panel {
+            background: rgba(20, 20, 20, 0.95);
+            border: 1px solid #444;
+            backdrop-filter: blur(4px);
+        }
+        
+        .btn-tool {
+            transition: all 0.2s;
+            border: 1px solid #333;
+        }
+        .btn-tool:hover { background: #333; border-color: #666; }
+        .btn-tool.active { background: #2f4f2f; border-color: #4ade80; color: #4ade80; }
+
+        /* --- COMPASS STYLES --- */
+        .radar-circle {
+            width: 100px;
+            height: 100px;
+            border: 2px solid #555;
+            border-radius: 50%;
+            position: relative;
+            background: radial-gradient(circle, #222 0%, #000 100%);
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+        }
+        
+        /* Cardinal Directions */
+        .compass-label {
+            position: absolute;
+            font-size: 10px;
+            font-weight: bold;
+            color: #666;
+            transform: translate(-50%, -50%);
+        }
+        .compass-n { top: 8px; left: 50%; color: #ef4444; } /* Red North */
+        .compass-s { bottom: -6px; left: 50%; }
+        .compass-e { right: -6px; top: 50%; }
+        .compass-w { left: 8px; top: 50%; }
+
+        /* The Needle */
+        .compass-needle-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            /* Will rotate this container */
+            transition: transform 0.1s linear; 
+        }
+
+        .compass-needle {
+            position: absolute;
+            top: -35px; /* Half of height */
+            left: -3px; /* Half of width */
+            width: 6px;
+            height: 70px;
+            /* No background, we use pseudo elements for tips */
+        }
+        
+        /* Red Tip (Points to Target) */
+        .compass-needle::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0; 
+            height: 0; 
+            border-left: 3px solid transparent;
+            border-right: 3px solid transparent;
+            border-bottom: 35px solid #4ade80; /* Green tip points to target */
+        }
+        /* White Tail */
+        .compass-needle::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0; 
+            height: 0; 
+            border-left: 3px solid transparent;
+            border-right: 3px solid transparent;
+            border-top: 35px solid #444; /* Grey tail */
+        }
+        
+        /* Center Pin */
+        .compass-pin {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 8px;
+            height: 8px;
+            background: #silver;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            background: #e5e5e5;
+            border: 1px solid #000;
+            z-index: 10;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #4ade80;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col">
+
+    <!-- Top Bar -->
+    <div class="hud-panel p-2 flex items-center justify-between z-20 shadow-md border-b border-gray-800">
+        <div class="flex items-center gap-4">
+            <h1 class="text-sm font-bold text-green-500 uppercase tracking-widest flex items-center gap-2">
+                <i class="fa-solid fa-compass"></i> GH-NAV <span class="text-xs text-gray-500">// v2.3</span>
+            </h1>
+            <div id="loadingIndicator" class="hidden flex items-center gap-2 text-xs text-yellow-400">
+                <div class="spinner w-4 h-4 border-2"></div> Fetching Map...
+            </div>
+            <label class="cursor-pointer btn-tool px-3 py-1 text-xs rounded flex items-center gap-2 opacity-50 hover:opacity-100" title="Load Local File">
+                <i class="fa-solid fa-folder-open"></i> Local
+                <input type="file" id="mapInput" accept="image/*" class="hidden">
+            </label>
+        </div>
+        
+        <div class="flex items-center gap-2">
+            <button id="toggleCalibrate" class="btn-tool px-2 py-1 text-xs rounded" title="Calibrate Coordinates"><i class="fa-solid fa-ruler-combined"></i> Calibrate</button>
+            <button id="clearPaths" class="btn-tool px-2 py-1 text-xs rounded text-red-400" title="Clear All Paths"><i class="fa-solid fa-trash-can"></i> Paths</button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="relative flex-1 overflow-hidden bg-[#111]" id="canvasContainer">
+        
+        <canvas id="mapCanvas"></canvas>
+
+        <!-- Hover Coordinates -->
+        <div id="hoverCoords" class="pointer-events-none absolute hidden px-2 py-1 bg-black/90 text-green-400 text-xs border border-green-800 rounded whitespace-nowrap z-50 font-mono shadow-lg">
+            00W 00S
+        </div>
+
+        <!-- Toolbar -->
+        <div class="absolute top-4 left-4 flex flex-col gap-2 z-10">
+            <button class="btn-tool w-10 h-10 rounded flex items-center justify-center text-gray-300 active" onclick="setTool('select')" title="Pan/Select (Esc)">
+                <i class="fa-solid fa-hand"></i>
+            </button>
+            <div class="h-px bg-gray-700 mx-2"></div>
+            <button class="btn-tool w-10 h-10 rounded flex items-center justify-center text-blue-400" onclick="setTool('p1')" title="Set Player 1">
+                <i class="fa-solid fa-person"></i>
+            </button>
+            <button class="btn-tool w-10 h-10 rounded flex items-center justify-center text-yellow-400" onclick="setTool('p2')" title="Set Player 2">
+                <i class="fa-solid fa-person-walking"></i>
+            </button>
+            <button class="btn-tool w-10 h-10 rounded flex items-center justify-center text-green-400" onclick="setTool('home')" title="Set Home Base">
+                <i class="fa-solid fa-house"></i>
+            </button>
+            <button class="btn-tool w-10 h-10 rounded flex items-center justify-center text-red-400" onclick="setTool('poi')" title="Add Point of Interest">
+                <i class="fa-solid fa-map-pin"></i>
+            </button>
+            <div class="h-px bg-gray-700 mx-2"></div>
+            <button class="btn-tool w-10 h-10 rounded flex items-center justify-center text-purple-400" onclick="setTool('path')" title="Plot Path">
+                <i class="fa-solid fa-route"></i>
+            </button>
+             <button class="btn-tool w-10 h-10 rounded flex items-center justify-center text-gray-500 hover:text-red-500 hover:border-red-500" onclick="setTool('eraser')" title="Eraser (Click marker to remove)">
+                <i class="fa-solid fa-eraser"></i>
+            </button>
+        </div>
+
+        <!-- Telemetry Panel -->
+        <div class="absolute top-4 right-4 w-64 flex flex-col gap-2 z-10 pointer-events-none">
+            <div class="hud-panel p-3 rounded pointer-events-auto shadow-lg">
+                <div class="flex justify-between items-start mb-2 border-b border-gray-700 pb-2">
+                    <span class="text-xs text-gray-400 uppercase tracking-wider">Telemetry</span>
+                    <span id="scaleReadout" class="text-xs text-gray-500">100%</span>
+                </div>
+
+                <div class="space-y-2 text-xs font-mono">
+                    <div class="flex justify-between items-center text-blue-300">
+                        <span>P1 (Me)</span>
+                        <span id="p1Coords">--'W --'S</span>
+                    </div>
+                    <div class="flex justify-between items-center text-yellow-300">
+                        <span>P2</span>
+                        <span id="p2Coords">--'W --'S</span>
+                    </div>
+                    <div class="flex justify-between items-center text-green-300">
+                        <span>Home</span>
+                        <span id="homeCoords">--'W --'S</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Radar / Compass -->
+            <div class="hud-panel p-3 rounded pointer-events-auto flex items-center gap-4 shadow-lg">
+                <!-- New Compass UI -->
+                <div class="radar-circle flex-shrink-0">
+                    <div class="compass-label compass-n">N</div>
+                    <div class="compass-label compass-e">E</div>
+                    <div class="compass-label compass-s">S</div>
+                    <div class="compass-label compass-w">W</div>
+                    
+                    <div class="compass-pin"></div>
+                    
+                    <!-- Needle Container rotates -->
+                    <div id="compassNeedle" class="compass-needle-container" style="display: none;">
+                        <div class="compass-needle"></div>
+                    </div>
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <div class="text-xs text-gray-400 mb-1">Target: 
+                        <select id="radarTarget" class="bg-gray-800 border-none text-white text-xs p-1 rounded cursor-pointer outline-none w-full truncate">
+                            <option value="home">Home</option>
+                            <option value="p2">Player 2</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-[10px] text-gray-500 uppercase">Distance</span>
+                        <span id="radarDist" class="text-lg font-bold text-green-500 font-mono leading-none">--</span>
+                    </div>
+                    <div class="flex flex-col mt-1">
+                        <span class="text-[10px] text-gray-500 uppercase">Heading</span>
+                        <span id="radarDir" class="text-lg font-bold text-white font-mono leading-none">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Calibration Modal -->
+        <div id="calibrationModal" class="hidden absolute inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm">
+            <div class="hud-panel p-6 rounded max-w-sm w-full shadow-2xl border-green-900">
+                <h2 class="text-lg font-bold text-green-500 mb-4 uppercase tracking-widest">Calibration</h2>
+                <p class="text-xs text-gray-400 mb-4">Adjust map edge coordinates.</p>
+                
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Left Edge (W)</label>
+                        <input type="number" id="calWest" class="w-full bg-black border border-gray-600 text-white px-2 py-1 text-sm focus:border-green-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Top Edge (S)</label>
+                        <input type="number" id="calNorth" class="w-full bg-black border border-gray-600 text-white px-2 py-1 text-sm focus:border-green-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Right Edge (W)</label>
+                        <input type="number" id="calEast" class="w-full bg-black border border-gray-600 text-white px-2 py-1 text-sm focus:border-green-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Bottom Edge (S)</label>
+                        <input type="number" id="calSouth" class="w-full bg-black border border-gray-600 text-white px-2 py-1 text-sm focus:border-green-500 outline-none">
+                    </div>
+                </div>
+                
+                <div class="flex justify-end gap-2 border-t border-gray-700 pt-4">
+                    <button onclick="document.getElementById('calibrationModal').classList.add('hidden')" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 text-xs rounded uppercase">Cancel</button>
+                    <button id="saveCalibration" class="bg-green-700 hover:bg-green-600 text-white px-4 py-2 text-xs rounded uppercase font-bold">Apply</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Configuration & State ---
+        const canvas = document.getElementById('mapCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('canvasContainer');
+        const mapInput = document.getElementById('mapInput');
+        const radarTargetSelect = document.getElementById('radarTarget');
+        
+        let mapConfig = {
+            leftW: 55,   
+            topS: 13,    
+            rightW: 22,  
+            bottomS: 38  
+        };
+
+        let view = {
+            scale: 1,
+            offsetX: 0,
+            offsetY: 0,
+            isDragging: false,
+            lastX: 0,
+            lastY: 0
+        };
+
+        let markers = { p1: null, p2: null, home: null };
+        let pois = []; 
+        let paths = []; 
+        let currentPath = null;
+        let activeTool = 'select'; 
+        let mapImage = new Image();
+        let isMapLoaded = false;
+
+        // --- Initialization ---
+        function resizeCanvas() {
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            draw();
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // --- Auto-Load Map ---
+        window.onload = function() {
+            const loading = document.getElementById('loadingIndicator');
+            loading.classList.remove('hidden');
+            loading.classList.add('flex');
+
+            const mapUrl = "https://raw.githubusercontent.com/GH-Beowulff/GreenHellMap/master/GreenHell%20Map.png";
+            
+            const tryLoad = (src) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.onload = () => {
+                    mapImage = img;
+                    loading.classList.add('hidden');
+                    initMap();
+                };
+                img.onerror = () => {
+                    if(src === mapUrl) {
+                        loading.innerHTML = "<span class='text-red-500'>Failed. Load local.</span>";
+                    }
+                };
+                img.src = src;
+            };
+            
+            tryLoad(mapUrl);
+        };
+
+        function initMap() {
+            isMapLoaded = true;
+            view.scale = Math.min(canvas.width / mapImage.width, canvas.height / mapImage.height) * 0.95;
+            view.offsetX = (canvas.width - mapImage.width * view.scale) / 2;
+            view.offsetY = (canvas.height - mapImage.height * view.scale) / 2;
+            draw();
+            updateRadarOptions();
+        }
+
+        // --- Manual File Loading ---
+        mapInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    mapImage = img;
+                    initMap();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // --- Tool Logic ---
+        window.setTool = (tool) => {
+            activeTool = tool;
+            
+            document.querySelectorAll('.btn-tool').forEach(b => {
+                b.classList.remove('active');
+            });
+
+            const btns = document.querySelectorAll('button[onclick]');
+            btns.forEach(btn => {
+                if(btn.getAttribute('onclick').includes(`'${tool}'`)) {
+                    btn.classList.add('active');
+                }
+            });
+
+            if (tool !== 'path' && currentPath) {
+                if (currentPath.length > 1) paths.push(currentPath);
+                currentPath = null;
+            }
+            if (tool === 'path') currentPath = [];
+            draw();
+        };
+
+        document.getElementById('clearPaths').addEventListener('click', () => {
+            if(confirm('Delete all drawn paths?')) {
+                paths = [];
+                currentPath = null;
+                draw();
+            }
+        });
+
+        // --- POI & Radar Logic ---
+        function addPOI(pos) {
+            const name = prompt("Name this location:", "POI " + (pois.length + 1));
+            if (name) {
+                pois.push({
+                    id: Date.now(),
+                    x: pos.x,
+                    y: pos.y,
+                    name: name
+                });
+                updateRadarOptions();
+                radarTargetSelect.value = "poi-" + pois[pois.length-1].id;
+                updateTelemetry();
+            }
+        }
+
+        function removeMarkerAt(pos) {
+            const hitRadius = 20 / view.scale; 
+            
+            if (markers.home && getDistance(pos, markers.home) < hitRadius) { markers.home = null; updateTelemetry(); draw(); return; }
+            if (markers.p1 && getDistance(pos, markers.p1) < hitRadius) { markers.p1 = null; updateTelemetry(); draw(); return; }
+            if (markers.p2 && getDistance(pos, markers.p2) < hitRadius) { markers.p2 = null; updateTelemetry(); draw(); return; }
+
+            const poiIndex = pois.findIndex(p => getDistance(pos, p) < hitRadius);
+            if (poiIndex !== -1) {
+                pois.splice(poiIndex, 1);
+                updateRadarOptions();
+                updateTelemetry();
+                draw();
+                return;
+            }
+        }
+
+        function updateRadarOptions() {
+            const current = radarTargetSelect.value;
+            radarTargetSelect.innerHTML = `
+                <option value="home">Home</option>
+                <option value="p2">Player 2</option>
+            `;
+            pois.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = "poi-" + p.id;
+                opt.innerText = p.name;
+                radarTargetSelect.appendChild(opt);
+            });
+             const exists = Array.from(radarTargetSelect.options).some(o => o.value === current);
+             if(exists) radarTargetSelect.value = current;
+        }
+
+        // --- Calibration Logic ---
+        document.getElementById('toggleCalibrate').addEventListener('click', () => {
+            document.getElementById('calWest').value = mapConfig.leftW;
+            document.getElementById('calNorth').value = mapConfig.topS;
+            document.getElementById('calEast').value = mapConfig.rightW;
+            document.getElementById('calSouth').value = mapConfig.bottomS;
+            document.getElementById('calibrationModal').classList.remove('hidden');
+        });
+
+        document.getElementById('saveCalibration').addEventListener('click', () => {
+            mapConfig.leftW = parseFloat(document.getElementById('calWest').value);
+            mapConfig.topS = parseFloat(document.getElementById('calNorth').value);
+            mapConfig.rightW = parseFloat(document.getElementById('calEast').value);
+            mapConfig.bottomS = parseFloat(document.getElementById('calSouth').value);
+            document.getElementById('calibrationModal').classList.add('hidden');
+            draw();
+            updateTelemetry();
+        });
+
+        // --- Math & Coords ---
+        function screenToImage(sx, sy) {
+            return {
+                x: (sx - view.offsetX) / view.scale,
+                y: (sy - view.offsetY) / view.scale
+            };
+        }
+
+        function imageToGeo(ix, iy) {
+            if (!isMapLoaded) return { w: 0, s: 0 };
+            const pctX = ix / mapImage.width;
+            const pctY = iy / mapImage.height;
+            const w = mapConfig.leftW + (mapConfig.rightW - mapConfig.leftW) * pctX;
+            const s = mapConfig.topS + (mapConfig.bottomS - mapConfig.topS) * pctY;
+            return { w, s };
+        }
+
+        function geoStr(geo) {
+            return `${geo.w.toFixed(1)}'W ${geo.s.toFixed(1)}'S`;
+        }
+
+        function getDistance(p1, p2) {
+            if(!p1 || !p2) return 999999;
+            const dx = p1.x - p2.x;
+            const dy = p1.y - p2.y;
+            return Math.sqrt(dx*dx + dy*dy);
+        }
+
+        // --- Inputs ---
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const direction = e.deltaY < 0 ? 1 : -1;
+            const factor = 1 + (0.1 * direction);
+            
+            const mouseX = e.offsetX;
+            const mouseY = e.offsetY;
+            const dx = (mouseX - view.offsetX) / view.scale;
+            const dy = (mouseY - view.offsetY) / view.scale;
+            
+            view.scale *= factor;
+            view.scale = Math.max(0.05, Math.min(view.scale, 10));
+
+            view.offsetX = mouseX - dx * view.scale;
+            view.offsetY = mouseY - dy * view.scale;
+
+            document.getElementById('scaleReadout').innerText = Math.round(view.scale * 100) + '%';
+            draw();
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (activeTool === 'select') {
+                view.isDragging = true;
+                view.lastX = e.offsetX;
+                view.lastY = e.offsetY;
+                canvas.style.cursor = 'grabbing';
+            } else if (isMapLoaded) {
+                const pos = screenToImage(e.offsetX, e.offsetY);
+                if (pos.x >= 0 && pos.x <= mapImage.width && pos.y >= 0 && pos.y <= mapImage.height) {
+                    if (activeTool === 'p1') markers.p1 = pos;
+                    if (activeTool === 'p2') markers.p2 = pos;
+                    if (activeTool === 'home') markers.home = pos;
+                    if (activeTool === 'poi') addPOI(pos);
+                    if (activeTool === 'eraser') removeMarkerAt(pos);
+                    if (activeTool === 'path') {
+                        if(!currentPath) currentPath = [];
+                        currentPath.push(pos);
+                    }
+                    updateTelemetry();
+                }
+            }
+            draw();
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (view.isDragging && activeTool === 'select') {
+                const dx = e.offsetX - view.lastX;
+                const dy = e.offsetY - view.lastY;
+                view.offsetX += dx;
+                view.offsetY += dy;
+                view.lastX = e.offsetX;
+                view.lastY = e.offsetY;
+                draw();
+            }
+
+            const hoverDiv = document.getElementById('hoverCoords');
+            if (isMapLoaded) {
+                const pos = screenToImage(e.offsetX, e.offsetY);
+                if (pos.x >= 0 && pos.x <= mapImage.width && pos.y >= 0 && pos.y <= mapImage.height) {
+                    const geo = imageToGeo(pos.x, pos.y);
+                    hoverDiv.innerText = geoStr(geo);
+                    hoverDiv.style.display = 'block';
+                    hoverDiv.style.left = (e.offsetX + 20) + 'px';
+                    hoverDiv.style.top = (e.offsetY + 20) + 'px';
+                } else {
+                    hoverDiv.style.display = 'none';
+                }
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            view.isDragging = false;
+            canvas.style.cursor = 'default';
+        });
+
+        // --- Render ---
+        function draw() {
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (!isMapLoaded) {
+                ctx.fillStyle = '#444';
+                ctx.font = '16px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText("WAITING FOR MAP DATA...", canvas.width/2, canvas.height/2);
+                return;
+            }
+
+            ctx.save();
+            ctx.translate(view.offsetX, view.offsetY);
+            ctx.scale(view.scale, view.scale);
+            
+            ctx.drawImage(mapImage, 0, 0);
+
+            // Paths
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            paths.forEach(path => drawPath(path, '#888', 2));
+            if (currentPath && currentPath.length > 0) drawPath(currentPath, '#a855f7', 3);
+
+            // Markers
+            if (markers.home) drawIcon(markers.home, '\uf015', '#4ade80');
+            if (markers.p2) drawIcon(markers.p2, '\uf554', '#facc15');
+            if (markers.p1) drawIcon(markers.p1, '\uf183', '#60a5fa');
+            
+            // POIs
+            pois.forEach(p => {
+                drawIcon(p, '\uf3c5', '#f87171', p.name); 
+            });
+
+            ctx.restore();
+        }
+
+        function drawPath(pts, color, width) {
+            if (pts.length < 2) {
+                if(pts.length === 1) {
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.arc(pts[0].x, pts[0].y, width * 2, 0, Math.PI*2);
+                    ctx.fill();
+                }
+                return;
+            }
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 4 / view.scale; 
+            ctx.moveTo(pts[0].x, pts[0].y);
+            for(let i=1; i<pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+            ctx.stroke();
+        }
+
+        function drawIcon(pos, charCode, color, label) {
+            const size = 24 / view.scale;
+            ctx.font = `900 ${size}px "Font Awesome 6 Free"`;
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            ctx.fillText(charCode, pos.x + 2/view.scale, pos.y + 2/view.scale); 
+            
+            ctx.fillStyle = color;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(charCode, pos.x, pos.y);
+            
+            if(label) {
+                ctx.font = `bold ${12 / view.scale}px monospace`;
+                ctx.fillStyle = '#fff';
+                ctx.fillText(label, pos.x, pos.y - size);
+            }
+        }
+
+        // --- Telemetry ---
+        function updateTelemetry() {
+            if(markers.p1) document.getElementById('p1Coords').innerText = geoStr(imageToGeo(markers.p1.x, markers.p1.y));
+            if(markers.p2) document.getElementById('p2Coords').innerText = geoStr(imageToGeo(markers.p2.x, markers.p2.y));
+            if(markers.home) document.getElementById('homeCoords').innerText = geoStr(imageToGeo(markers.home.x, markers.home.y));
+
+            const targetVal = radarTargetSelect.value;
+            let target = null;
+            if(targetVal === 'home') target = markers.home;
+            else if(targetVal === 'p2') target = markers.p2;
+            else if(targetVal.startsWith('poi-')) {
+                const pid = parseInt(targetVal.split('-')[1]);
+                target = pois.find(p => p.id === pid);
+            }
+
+            const compassNeedle = document.getElementById('compassNeedle');
+            const distDiv = document.getElementById('radarDist');
+            const dirDiv = document.getElementById('radarDir');
+
+            if (markers.p1 && target) {
+                const g1 = imageToGeo(markers.p1.x, markers.p1.y);
+                const g2 = imageToGeo(target.x, target.y);
+                const dW = g1.w - g2.w;
+                const dS = g1.s - g2.s;
+                const distVal = Math.sqrt(dW*dW + dS*dS) * 100;
+                distDiv.innerText = Math.round(distVal) + "m";
+                
+                // Angle
+                const dx = target.x - markers.p1.x;
+                const dy = target.y - markers.p1.y;
+                let angle = Math.atan2(dy, dx); 
+                let deg = angle * 180 / Math.PI;
+
+                // Rotate the needle container
+                // When deg = 0 (Right/East). Needle should point East.
+                // Our needle CSS points UP (North) by default? 
+                // Wait.
+                // .compass-needle::before points UP (North) if rotated 0?
+                // Actually my CSS: border-bottom: 35px solid green. 
+                // A triangle with border-bottom points UP.
+                // So default 0 deg = UP (North).
+                
+                // Math.atan2(dy,dx):
+                // 0 = East (Right). 
+                // 90 = South (Down).
+                // -90 = North (Up).
+                // 180 = West (Left).
+
+                // If target is North (-90 deg from atan2). Needle should be 0 deg rotation.
+                // If target is East (0 deg from atan2). Needle should be 90 deg rotation.
+                // So: Rotation = Atan2_Deg + 90.
+                let rot = deg + 90;
+                
+                compassNeedle.style.transform = `translate(-50%, -50%) rotate(${rot}deg)`;
+                compassNeedle.style.display = 'block';
+                
+                // Compass Text
+                let normDeg = deg;
+                if(normDeg < 0) normDeg += 360;
+                let compassDeg = normDeg + 90;
+                if(compassDeg >= 360) compassDeg -= 360;
+
+                const cardinals = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+                const index = Math.round(compassDeg / 45) % 8;
+                dirDiv.innerText = `${cardinals[index]} ${Math.round(compassDeg)}°`;
+
+            } else {
+                compassNeedle.style.display = 'none';
+                distDiv.innerText = "--";
+                dirDiv.innerText = "--";
+            }
+        }
+        
+        radarTargetSelect.addEventListener('change', updateTelemetry);
+    </script>
+</body>
+</html>

@@ -1,5 +1,12 @@
 [
     {
+        "filename": "Green Hell Go.html",
+        "title": "Green Hell Navigation",
+        "description": "interactive map help",
+        "type": "Tool",
+        "date_added": "2026-01-08"
+    },
+    {
         "filename": "Spatial Sniper.html",
         "title": "Spatial Sniper",
         "description": "A small sniper game using spatial sound",
