@@ -123,12 +123,26 @@
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col">
+    <!-- BLUES HUB NAVIGATION -->
+    <a href="https://1verysimple-lab.github.io/project-hub/" 
+    target="_blank"
+    style="position: fixed; top: 20px; left: 20px; z-index: 9999; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; text-decoration: none; color: #e2e8f0; font-family: system-ui, sans-serif; font-size: 13px; font-weight: 500; transition: all 0.2s ease; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);"
+    onmouseover="this.style.transform='translateY(-1px)'; this.style.background='rgba(15, 23, 42, 0.95)'"
+    onmouseout="this.style.transform='translateY(0)'; this.style.background='rgba(15, 23, 42, 0.8)'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+        <span>Hub</span>
+    </a>
+    <!-- END BLUES HUB NAVIGATION -->
 
     <!-- Top Bar -->
-    <div class="hud-panel p-2 flex items-center justify-between z-20 shadow-md border-b border-gray-800">
+    <!-- Added pl-32 to push content away from the Hub button if needed, or we rely on z-index. 
+         Since Hub is fixed top-left, we should probably pad the top bar or just let it float over. 
+         I'll stick to z-index layering, but the top bar text might get covered. 
+         Let's add some left padding to the header container. -->
+    <div class="hud-panel p-2 pl-32 flex items-center justify-between z-20 shadow-md border-b border-gray-800">
         <div class="flex items-center gap-4">
             <h1 class="text-sm font-bold text-green-500 uppercase tracking-widest flex items-center gap-2">
-                <i class="fa-solid fa-compass"></i> GH-NAV <span class="text-xs text-gray-500">// v2.3</span>
+                <i class="fa-solid fa-compass"></i> GH-NAV <span class="text-xs text-gray-500">// v2.4</span>
             </h1>
             <div id="loadingIndicator" class="hidden flex items-center gap-2 text-xs text-yellow-400">
                 <div class="spinner w-4 h-4 border-2"></div> Fetching Map...
@@ -155,8 +169,8 @@
             00W 00S
         </div>
 
-        <!-- Toolbar -->
-        <div class="absolute top-4 left-4 flex flex-col gap-2 z-10">
+        <!-- Toolbar (Moved down to top-20 to avoid Hub Button) -->
+        <div class="absolute top-20 left-4 flex flex-col gap-2 z-10">
             <button class="btn-tool w-10 h-10 rounded flex items-center justify-center text-gray-300 active" onclick="setTool('select')" title="Pan/Select (Esc)">
                 <i class="fa-solid fa-hand"></i>
             </button>
@@ -208,16 +222,12 @@
 
             <!-- Radar / Compass -->
             <div class="hud-panel p-3 rounded pointer-events-auto flex items-center gap-4 shadow-lg">
-                <!-- New Compass UI -->
                 <div class="radar-circle flex-shrink-0">
                     <div class="compass-label compass-n">N</div>
                     <div class="compass-label compass-e">E</div>
                     <div class="compass-label compass-s">S</div>
                     <div class="compass-label compass-w">W</div>
-                    
                     <div class="compass-pin"></div>
-                    
-                    <!-- Needle Container rotates -->
                     <div id="compassNeedle" class="compass-needle-container" style="display: none;">
                         <div class="compass-needle"></div>
                     </div>
@@ -308,6 +318,32 @@
         let mapImage = new Image();
         let isMapLoaded = false;
 
+        // --- Local Storage Logic ---
+        function saveData() {
+            const data = {
+                mapConfig,
+                markers,
+                pois,
+                paths
+            };
+            localStorage.setItem('greenHellNavData', JSON.stringify(data));
+        }
+
+        function loadData() {
+            const raw = localStorage.getItem('greenHellNavData');
+            if (raw) {
+                try {
+                    const data = JSON.parse(raw);
+                    if (data.mapConfig) mapConfig = data.mapConfig;
+                    if (data.markers) markers = data.markers;
+                    if (data.pois) pois = data.pois;
+                    if (data.paths) paths = data.paths;
+                } catch (e) {
+                    console.error("Failed to load local data", e);
+                }
+            }
+        }
+
         // --- Initialization ---
         function resizeCanvas() {
             canvas.width = container.clientWidth;
@@ -319,6 +355,8 @@
 
         // --- Auto-Load Map ---
         window.onload = function() {
+            loadData(); // Load saved locations first
+            
             const loading = document.getElementById('loadingIndicator');
             loading.classList.remove('hidden');
             loading.classList.add('flex');
@@ -346,11 +384,15 @@
 
         function initMap() {
             isMapLoaded = true;
+            // Only set default view if we haven't manipulated it manually? 
+            // For now, always re-center map on load for convenience, but keep data.
             view.scale = Math.min(canvas.width / mapImage.width, canvas.height / mapImage.height) * 0.95;
             view.offsetX = (canvas.width - mapImage.width * view.scale) / 2;
             view.offsetY = (canvas.height - mapImage.height * view.scale) / 2;
+            
+            updateRadarOptions(); // Populate list from saved POIs
+            updateTelemetry();
             draw();
-            updateRadarOptions();
         }
 
         // --- Manual File Loading ---
@@ -384,8 +426,12 @@
                 }
             });
 
+            // If we were drawing a path and switched tools, save it
             if (tool !== 'path' && currentPath) {
-                if (currentPath.length > 1) paths.push(currentPath);
+                if (currentPath.length > 1) {
+                    paths.push(currentPath);
+                    saveData();
+                }
                 currentPath = null;
             }
             if (tool === 'path') currentPath = [];
@@ -396,6 +442,7 @@
             if(confirm('Delete all drawn paths?')) {
                 paths = [];
                 currentPath = null;
+                saveData();
                 draw();
             }
         });
@@ -410,6 +457,7 @@
                     y: pos.y,
                     name: name
                 });
+                saveData();
                 updateRadarOptions();
                 radarTargetSelect.value = "poi-" + pois[pois.length-1].id;
                 updateTelemetry();
@@ -419,17 +467,23 @@
         function removeMarkerAt(pos) {
             const hitRadius = 20 / view.scale; 
             
-            if (markers.home && getDistance(pos, markers.home) < hitRadius) { markers.home = null; updateTelemetry(); draw(); return; }
-            if (markers.p1 && getDistance(pos, markers.p1) < hitRadius) { markers.p1 = null; updateTelemetry(); draw(); return; }
-            if (markers.p2 && getDistance(pos, markers.p2) < hitRadius) { markers.p2 = null; updateTelemetry(); draw(); return; }
+            let changed = false;
+            if (markers.home && getDistance(pos, markers.home) < hitRadius) { markers.home = null; changed = true; }
+            else if (markers.p1 && getDistance(pos, markers.p1) < hitRadius) { markers.p1 = null; changed = true; }
+            else if (markers.p2 && getDistance(pos, markers.p2) < hitRadius) { markers.p2 = null; changed = true; }
+            else {
+                const poiIndex = pois.findIndex(p => getDistance(pos, p) < hitRadius);
+                if (poiIndex !== -1) {
+                    pois.splice(poiIndex, 1);
+                    changed = true;
+                }
+            }
 
-            const poiIndex = pois.findIndex(p => getDistance(pos, p) < hitRadius);
-            if (poiIndex !== -1) {
-                pois.splice(poiIndex, 1);
+            if (changed) {
+                saveData();
                 updateRadarOptions();
                 updateTelemetry();
                 draw();
-                return;
             }
         }
 
@@ -463,6 +517,7 @@
             mapConfig.topS = parseFloat(document.getElementById('calNorth').value);
             mapConfig.rightW = parseFloat(document.getElementById('calEast').value);
             mapConfig.bottomS = parseFloat(document.getElementById('calSouth').value);
+            saveData();
             document.getElementById('calibrationModal').classList.add('hidden');
             draw();
             updateTelemetry();
@@ -526,16 +581,23 @@
             } else if (isMapLoaded) {
                 const pos = screenToImage(e.offsetX, e.offsetY);
                 if (pos.x >= 0 && pos.x <= mapImage.width && pos.y >= 0 && pos.y <= mapImage.height) {
-                    if (activeTool === 'p1') markers.p1 = pos;
-                    if (activeTool === 'p2') markers.p2 = pos;
-                    if (activeTool === 'home') markers.home = pos;
-                    if (activeTool === 'poi') addPOI(pos);
-                    if (activeTool === 'eraser') removeMarkerAt(pos);
+                    let dataChanged = false;
+                    if (activeTool === 'p1') { markers.p1 = pos; dataChanged = true; }
+                    if (activeTool === 'p2') { markers.p2 = pos; dataChanged = true; }
+                    if (activeTool === 'home') { markers.home = pos; dataChanged = true; }
+                    if (activeTool === 'poi') { addPOI(pos); } // Saves internally
+                    if (activeTool === 'eraser') { removeMarkerAt(pos); } // Saves internally
                     if (activeTool === 'path') {
                         if(!currentPath) currentPath = [];
                         currentPath.push(pos);
+                        // Path saves on tool switch or mouseup? usually on completion.
+                        // We'll leave path saving to tool switch or explicit completion logic.
                     }
-                    updateTelemetry();
+                    
+                    if (dataChanged) {
+                        saveData();
+                        updateTelemetry();
+                    }
                 }
             }
             draw();
@@ -679,24 +741,6 @@
                 let angle = Math.atan2(dy, dx); 
                 let deg = angle * 180 / Math.PI;
 
-                // Rotate the needle container
-                // When deg = 0 (Right/East). Needle should point East.
-                // Our needle CSS points UP (North) by default? 
-                // Wait.
-                // .compass-needle::before points UP (North) if rotated 0?
-                // Actually my CSS: border-bottom: 35px solid green. 
-                // A triangle with border-bottom points UP.
-                // So default 0 deg = UP (North).
-                
-                // Math.atan2(dy,dx):
-                // 0 = East (Right). 
-                // 90 = South (Down).
-                // -90 = North (Up).
-                // 180 = West (Left).
-
-                // If target is North (-90 deg from atan2). Needle should be 0 deg rotation.
-                // If target is East (0 deg from atan2). Needle should be 90 deg rotation.
-                // So: Rotation = Atan2_Deg + 90.
                 let rot = deg + 90;
                 
                 compassNeedle.style.transform = `translate(-50%, -50%) rotate(${rot}deg)`;
