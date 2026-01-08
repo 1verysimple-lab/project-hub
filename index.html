@@ -148,6 +148,42 @@
         </div>
     </footer>
 
+    <!-- Audio Player -->
+    <div id="audio-player" class="fixed bottom-6 right-6 z-50 transition-all duration-500 transform translate-y-20 opacity-0">
+        <div class="glass-card p-3 rounded-full md:rounded-2xl shadow-2xl flex items-center gap-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-indigo-500/30">
+            <!-- Info -->
+            <div class="hidden md:block mr-2 ml-2">
+                <p id="track-name" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 max-w-[120px] truncate">Select Track</p>
+                <p id="track-status" class="text-[10px] text-slate-500 font-mono">STOPPED</p>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex items-center gap-1">
+                <button id="btn-prev" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
+                    <i data-lucide="skip-back" class="w-4 h-4 text-slate-600 dark:text-slate-300"></i>
+                </button>
+                
+                <button id="btn-play" class="p-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg shadow-indigo-500/30 transition-all active:scale-95 group">
+                    <i data-lucide="play" class="w-5 h-5 fill-current ml-0.5 group-[.playing]:hidden"></i>
+                    <i data-lucide="pause" class="w-5 h-5 fill-current hidden group-[.playing]:block"></i>
+                </button>
+                
+                <button id="btn-next" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
+                    <i data-lucide="skip-forward" class="w-4 h-4 text-slate-600 dark:text-slate-300"></i>
+                </button>
+            </div>
+
+            <!-- Volume -->
+            <div class="hidden sm:flex items-center gap-2 border-l pl-3 border-slate-200 dark:border-slate-700">
+                <button id="btn-mute" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
+                    <i data-lucide="volume-2" class="w-4 h-4 text-slate-500"></i>
+                </button>
+                <input type="range" id="vol-slider" min="0" max="1" step="0.05" value="0.3" class="w-16 h-1 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+            </div>
+        </div>
+        <audio id="bg-music" preload="none"></audio>
+    </div>
+
     <script>
         // --- State ---
         let allProjects = [];
@@ -174,6 +210,7 @@
             
             setupFilters();
             setupSearch();
+            initAudioPlayer();
             lucide.createIcons();
         });
 
@@ -288,6 +325,134 @@
                 );
                 renderProjects(filtered);
             });
+        }
+
+        // --- Audio Player Logic ---
+        async function initAudioPlayer() {
+            const playerUI = document.getElementById('audio-player');
+            const audio = document.getElementById('bg-music');
+            const trackName = document.getElementById('track-name');
+            const trackStatus = document.getElementById('track-status');
+            const btnPlay = document.getElementById('btn-play');
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+            const btnMute = document.getElementById('btn-mute');
+            const volSlider = document.getElementById('vol-slider');
+
+            let playlist = [];
+            let currentIndex = 0;
+
+            try {
+                // Fetch playlist
+                const res = await fetch('music.json?v=' + new Date().getTime());
+                if (!res.ok) throw new Error('No music found');
+                playlist = await res.json();
+                
+                if (playlist.length === 0) return;
+
+                // Reveal Player
+                playerUI.classList.remove('translate-y-20', 'opacity-0');
+                
+                // Init Volume
+                audio.volume = volSlider.value;
+
+                // --- Functions ---
+                
+                const loadTrack = (index) => {
+                    if (index < 0) index = playlist.length - 1;
+                    if (index >= playlist.length) index = 0;
+                    currentIndex = index;
+                    
+                    const src = playlist[currentIndex];
+                    // Extract clean name: "bgmus/My Song.mp3" -> "My Song"
+                    const name = src.split('/').pop().replace('.mp3', '').replace(/_/g, ' ');
+                    
+                    trackName.textContent = name;
+                    trackName.title = name;
+                    audio.src = src;
+                    
+                    // Update navigator metadata if supported
+                    if ('mediaSession' in navigator) {
+                        navigator.mediaSession.metadata = new MediaMetadata({ title: name, artist: "Blues' Lab" });
+                    }
+                };
+
+                const playTrack = async () => {
+                    try {
+                        await audio.play();
+                        btnPlay.classList.add('playing');
+                        trackStatus.textContent = "PLAYING";
+                        trackStatus.className = "text-[10px] text-indigo-500 font-bold font-mono animate-pulse";
+                    } catch (e) {
+                        console.log("Autoplay prevented or error:", e);
+                        btnPlay.classList.remove('playing');
+                        trackStatus.textContent = "PAUSED";
+                    }
+                };
+
+                const pauseTrack = () => {
+                    audio.pause();
+                    btnPlay.classList.remove('playing');
+                    trackStatus.textContent = "PAUSED";
+                    trackStatus.className = "text-[10px] text-slate-500 font-mono";
+                };
+
+                const togglePlay = () => {
+                    if (audio.paused) {
+                        playTrack();
+                    } else {
+                        pauseTrack();
+                    }
+                };
+
+                const nextTrack = () => {
+                    loadTrack(currentIndex + 1);
+                    playTrack();
+                };
+
+                const prevTrack = () => {
+                    loadTrack(currentIndex - 1);
+                    playTrack();
+                };
+
+                // --- Listeners ---
+
+                btnPlay.addEventListener('click', togglePlay);
+                btnNext.addEventListener('click', nextTrack);
+                btnPrev.addEventListener('click', prevTrack);
+                
+                audio.addEventListener('ended', nextTrack);
+                
+                // Volume
+                volSlider.addEventListener('input', (e) => {
+                    audio.volume = e.target.value;
+                    audio.muted = false;
+                    updateMuteIcon();
+                });
+
+                btnMute.addEventListener('click', () => {
+                    audio.muted = !audio.muted;
+                    updateMuteIcon();
+                });
+
+                function updateMuteIcon() {
+                    const icon = btnMute.querySelector('i');
+                    if (audio.muted || audio.volume === 0) {
+                        icon.setAttribute('data-lucide', 'volume-x');
+                        icon.classList.add('text-red-500');
+                    } else {
+                        icon.setAttribute('data-lucide', 'volume-2');
+                        icon.classList.remove('text-red-500');
+                    }
+                    lucide.createIcons();
+                }
+
+                // Initial Load (Don't play yet)
+                loadTrack(0);
+
+            } catch (err) {
+                console.log("Audio player disabled: " + err.message);
+            }
         }
     </script>
 </body>
