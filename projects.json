@@ -1,12 +1,5 @@
 [
     {
-        "filename": "green walk.html",
-        "title": "MAP GUIDE",
-        "description": "Map Green Hell",
-        "type": "Tool",
-        "date_added": "2026-01-07"
-    },
-    {
         "filename": "Spatial Sniper.html",
         "title": "Spatial Sniper",
         "description": "A small sniper game using spatial sound",
