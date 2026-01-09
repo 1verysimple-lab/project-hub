@@ -495,5 +495,17 @@
             }
         }
     </script>
+    <script>
+        // Global Click Sound
+        const clickSound = new Audio('noiseclick.mp3');
+        clickSound.volume = 0.4;
+        
+        document.addEventListener('click', () => {
+            // Clone and play to allow overlapping sounds
+            const sound = clickSound.cloneNode();
+            sound.volume = 0.4;
+            sound.play().catch(() => {}); // Catch browser autoplay/interact blocks
+        });
+    </script>
 </body>
 </html>
