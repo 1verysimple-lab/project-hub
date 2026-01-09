@@ -1,1690 +1,354 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Green Hell Crafting Encyclopedia</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+import React, { useState, useMemo } from 'react';
+import { Search, PenTool, Sword, Shield, Activity, Home, Hammer, Menu, X, Info, Leaf, Box, Utensils, Sprout, Cat, Skull } from 'lucide-react';
 
-<style>
-    :root {
-        --bg: #0f1115;
-        --bg-elevated: #171a21;
-        --bg-card: #1d2129;
-        --accent: #3ea6ff;
-        --accent-soft: rgba(62,166,255,0.18);
-        --text-main: #e3e6ec;
-        --text-muted: #b0b6c2;
-        --border-subtle: #252a34;
-        --danger: #ff5370;
-        --success: #6ee7b7;
-        --shadow-soft: 0 8px 24px rgba(0,0,0,0.45);
+const CRAFTING_DATA = [
+  // --- WEAPONS ---
+  { id: 'w1', name: 'Weak Spear', category: 'Weapons', ingredients: ['1x Long Stick'], desc: 'Basic reach weapon. Good for throwing.', rarity: 'common' },
+  { id: 'w2', name: 'Stone Spear', category: 'Weapons', ingredients: ['1x Long Stick', '1x Stone Blade', '1x Rope'], desc: 'Improved damage. The standard early game weapon.', rarity: 'common' },
+  { id: 'w3', name: 'Bone Spear', category: 'Weapons', ingredients: ['1x Long Stick', '1x Bone', '1x Rope'], desc: 'Solid damage. Easy to craft after a kill.', rarity: 'common' },
+  { id: 'w4', name: 'Obsidian Spear', category: 'Weapons', ingredients: ['1x Long Stick', '1x Obsidian Stone', '1x Rope'], desc: 'High damage, brittle material.', rarity: 'rare' },
+  { id: 'w5', name: 'Four Pronged Spear', category: 'Weapons', ingredients: ['1x Long Stick', '2x Small Stick', '1x Rope'], desc: 'The best fishing spear.', rarity: 'uncommon' },
+  { id: 'w6', name: 'Bamboo Spear', category: 'Weapons', ingredients: ['1x Long Bamboo Stick'], desc: 'Lightweight, low stamina usage.', rarity: 'common' },
+  { id: 'w7', name: 'Metal Spear', category: 'Weapons', ingredients: ['1x Long Stick', '1x Metal Blade', '1x Rope'], desc: 'Top tier spear. Requires forge.', rarity: 'legendary' },
+  { id: 'w8', name: 'Bow', category: 'Weapons', ingredients: ['1x Long Stick', '1x Rope'], desc: 'Headshots kill almost anything.', rarity: 'common' },
+  { id: 'w9', name: 'Bamboo Bow', category: 'Weapons', ingredients: ['1x Long Bamboo Stick', '1x Rope'], desc: 'Lighter than wood bow.', rarity: 'common' },
+  { id: 'w10', name: 'Arrow', category: 'Weapons', ingredients: ['2x Feather', '1x Small Stick'], desc: 'Basic ammunition.', rarity: 'common' },
+  { id: 'w11', name: 'Metal Arrow', category: 'Weapons', ingredients: ['1x Metal Arrowhead', '2x Feather', '1x Small Stick'], desc: 'High damage, penetrating arrow.', rarity: 'legendary' },
+  { id: 'w12', name: 'Blowpipe', category: 'Weapons', ingredients: ['1x Long Bamboo Stick', '2x Rope'], desc: 'Non-lethal. Knocks animals out for taming.', rarity: 'uncommon' },
+
+  // --- ARMOR ---
+  { id: 'a1', name: 'Leaf Armor', category: 'Armor', ingredients: ['1x Banana Leaf', '2x Rope'], desc: 'Minimal protection. Better than nothing.', rarity: 'common' },
+  { id: 'a2', name: 'Stick Armor', category: 'Armor', ingredients: ['1x Banana Leaf', '2x Rope', '3x Stick'], desc: 'Decent early game protection against scratches.', rarity: 'common' },
+  { id: 'a3', name: 'Bone Armor', category: 'Armor', ingredients: ['1x Banana Leaf', '2x Rope', '3x Bone'], desc: 'Good physical protection. Moderate weight.', rarity: 'uncommon' },
+  { id: 'a4', name: 'Armadillo Armor', category: 'Armor', ingredients: ['1x Banana Leaf', '2x Rope', '1x Armadillo Shell'], desc: 'High defense. Hard to find materials.', rarity: 'rare' },
+  { id: 'a5', name: 'Metal Armor', category: 'Armor', ingredients: ['1x Banana Leaf', '2x Rope', '3x Metal Armor Cast'], desc: 'Maximum protection. Very heavy.', rarity: 'legendary' },
+
+  // --- TOOLS ---
+  { id: 't1', name: 'Stone Blade', category: 'Tools', ingredients: ['2x Stone'], desc: 'Basic cutting tool. Essential for harvesting.', rarity: 'common' },
+  { id: 't2', name: 'Stone Axe', category: 'Tools', ingredients: ['1x Stick', '1x Stone Blade', '1x Rope'], desc: 'Standard axe.', rarity: 'common' },
+  { id: 't3', name: 'Blade Axe', category: 'Tools', ingredients: ['1x Stick', '3x Stone Blade'], desc: 'High cutting damage axe.', rarity: 'uncommon' },
+  { id: 't4', name: 'Bone Knife', category: 'Tools', ingredients: ['1x Bone', '1x Rope'], desc: 'Sharp knife harvested from carcasses.', rarity: 'common' },
+  { id: 't5', name: 'Obsidian Axe', category: 'Tools', ingredients: ['1x Obsidian Stone', '1x Stick', '1x Rope'], desc: 'Durable and sharp axe.', rarity: 'rare' },
+  { id: 't6', name: 'Coconut Bidon', category: 'Tools', ingredients: ['1x Drinkable Coconut', '1x Rope'], desc: 'Carries water (40 units).', rarity: 'common' },
+  { id: 't7', name: 'Fire Starter', category: 'Tools', ingredients: ['2x Small Stick'], desc: 'Hand drill.', rarity: 'common' },
+  { id: 't8', name: 'Weak Torch', category: 'Tools', ingredients: ['1x Stick', '1x Rope'], desc: 'Provides light.', rarity: 'common' },
+  { id: 't9', name: 'Fishing Rod', category: 'Tools', ingredients: ['1x Long Stick', '1x Rope', '2x Feather', '1x Brazil Nut Shell'], desc: 'Requires Hook + Bait.', rarity: 'uncommon' },
+  { id: 't10', name: 'Bone Hook', category: 'Tools', ingredients: ['1x Bone Needle'], desc: 'Hook for fishing.', rarity: 'common' },
+
+  // --- HUSBANDRY ---
+  { id: 'h1', name: 'Animal Pen', category: 'Husbandry', ingredients: ['Logs', 'Long Sticks', 'Rope', 'Sticks'], desc: 'Base structure for breeding animals.', rarity: 'common' },
+  { id: 'h3', name: 'Poison Dart', category: 'Husbandry', ingredients: ['1x Unfinished Dart', '1x Poison Dart Frog / Wandering Spider'], desc: 'Ammo for Blowpipe.', rarity: 'uncommon' },
+  { id: 'h4', name: 'Small Trough', category: 'Husbandry', ingredients: ['4x Small Stick', '2x Rope'], desc: 'Food/Water for animals.', rarity: 'common' },
+
+  // --- FARMING ---
+  { id: 'fa1', name: 'Small Planting Box', category: 'Farming', ingredients: ['4x Board', '4x Stick', '4x Rope'], desc: 'Grow herbs.', rarity: 'common' },
+  { id: 'fa2', name: 'Large Planting Box', category: 'Farming', ingredients: ['4x Log', '4x Stick', '4x Rope'], desc: 'Grow trees/bamboo.', rarity: 'common' },
+  { id: 'fa10', name: 'Fertilizer', category: 'Farming', source: 'Rotten Fruit / Poop', desc: 'Boosts growth speed.', rarity: 'common' },
+
+  // --- FOOD & COOKING (Recipes) ---
+  { id: 'f1', name: 'Meat Soup', category: 'Food & Drink', ingredients: ['Boiling Water', '1x Piece of Meat', 'Bowl'], desc: 'High Protein + Hydration.', rarity: 'common' },
+  { id: 'f2', name: 'Bone Infusion', category: 'Food & Drink', ingredients: ['Boiling Water', '1x Bone', 'Bowl'], desc: 'Cures Fever. Protein.', rarity: 'common' },
+  { id: 'f6', name: 'Smoked Meat', category: 'Food & Drink', ingredients: ['Raw Meat', 'Smoker'], desc: 'Long preservation.', rarity: 'uncommon' },
+  { id: 'f7', name: 'Dried Meat', category: 'Food & Drink', ingredients: ['Raw Meat', 'Drying Rack'], desc: 'Very long preservation.', rarity: 'uncommon' },
+
+  // --- CONSTRUCTION ---
+  { id: 'c1', name: 'Frame', category: 'Construction', ingredients: ['4x Log', '1x Long Stick', '4x Rope'], desc: 'Basic skeleton.', rarity: 'common' },
+  { id: 'c3', name: 'Palm Roof', category: 'Construction', ingredients: ['16x Palm Leaf'], desc: 'Waterproof roof.', rarity: 'common' },
+  { id: 'c5', name: 'Wall', category: 'Construction', ingredients: ['9x Stick', '4x Rope'], desc: 'Basic wall.', rarity: 'common' },
+  { id: 'c11', name: 'Smoker', category: 'Construction', ingredients: ['3x Long Stick', '1x Rope', '4x Leaf', '1x Campfire'], desc: 'Cooks and preserves.', rarity: 'uncommon' },
+  { id: 'c12', name: 'Drying Rack', category: 'Construction', ingredients: ['7x Long Stick', '11x Rope', '3x Small Stick'], desc: 'Dries meat.', rarity: 'uncommon' },
+  { id: 'c13', name: 'Water Filter', category: 'Construction', ingredients: ['2x Long Stick', '1x Log', '2x Rope', '3x Charcoal', '2x Stone'], desc: 'Filters dirty water.', rarity: 'uncommon' },
+  { id: 'hu1', name: 'Snare Trap', category: 'Construction', ingredients: ['2x Log', '1x Long Stick', '8x Rope', '2x Small Stick'], desc: 'Catches small game.', rarity: 'common' },
+  { id: 'hu2', name: 'Killer Trap', category: 'Construction', ingredients: ['4x Log', '1x Long Stick', '7x Rope', '1x Stick', '4x Small Stone'], desc: 'Lethal trap.', rarity: 'rare' },
+
+  // --- MEDICINE ---
+  { id: 'm1', name: 'Leaf Bandage', category: 'Medicine', ingredients: ['1x Molineria Leaf'], desc: 'Cures: Bleeding.', rarity: 'common' },
+  { id: 'm2', name: 'Ash Dressing', category: 'Medicine', ingredients: ['1x Leaf Bandage', '1x Ash'], desc: 'Cures: Laceration.', rarity: 'common' },
+  { id: 'm3', name: 'Tobacco Dressing', category: 'Medicine', ingredients: ['1x Leaf Bandage', '1x Tobacco Leaf'], desc: 'Cures: Venom Poisoning.', rarity: 'uncommon' },
+  { id: 'm4', name: 'Honey Dressing', category: 'Medicine', ingredients: ['1x Leaf Bandage', '1x Honeycomb'], desc: 'Cures: Rashes, Infections.', rarity: 'uncommon' },
+  { id: 'm5', name: 'Lily Dressing', category: 'Medicine', ingredients: ['1x Leaf Bandage', '1x Plantain Lily Leaf'], desc: 'Cures: Rashes.', rarity: 'common' },
+];
+
+const RESOURCES_DATA = [
+  // --- WILDLIFE ---
+  { id: 'an1', name: 'Peccary', category: 'Hunting', source: 'Jungle floor (Herds)', usage: 'Kill: Headshot/Spear. Yields: Peccary Meat.', rarity: 'common' },
+  { id: 'an2', name: 'Tapir', category: 'Hunting', source: 'Jungle floor', usage: 'Kill: Headshots required. Yields: Tapir Meat.', rarity: 'rare' },
+  { id: 'an3', name: 'Capybara', category: 'Hunting', source: 'Near water', usage: 'Kill: Easy target. Yields: Capybara Meat.', rarity: 'common' },
+  { id: 'an4', name: 'Jaguar', category: 'Hunting', source: 'Predator', usage: 'Kill: Headshot immediately. Yields: Meat, Fangs.', rarity: 'legendary' },
+  { id: 'an5', name: 'Caiman', category: 'Hunting', source: 'River Banks', usage: 'Kill: HEAD ONLY. Yields: Meat, Bones.', rarity: 'rare' },
+  { id: 'an6', name: 'Rattlesnake', category: 'Hunting', source: 'Ground', usage: 'Kill: Spear/Arrow. Watch your step.', rarity: 'common' },
+  { id: 'an7', name: 'Wandering Spider', category: 'Hunting', source: 'Ground', usage: 'Kill: Spear. Harvest for Poison Dart.', rarity: 'uncommon' },
+  
+  // --- RAW FOODS (No Ingredients) ---
+  { id: 'rf1', name: 'Banana', category: 'Food & Drink', source: 'Banana Tree', usage: 'Carbs. Harvest for Seeds.', rarity: 'common' },
+  { id: 'rf2', name: 'Orange', category: 'Food & Drink', source: 'Small orange tree', usage: 'Carbs + Hydration.', rarity: 'common' },
+  { id: 'rf3', name: 'Avocado', category: 'Food & Drink', source: 'Tall trees', usage: 'High Fats.', rarity: 'common' },
+  { id: 'rf4', name: 'Monstera Fruit', category: 'Food & Drink', source: 'Monstera plant', usage: 'Protein + Carbs. Harvest for Seeds.', rarity: 'uncommon' },
+  { id: 'rf10', name: 'Cassava Bulb', category: 'Food & Drink', source: 'Cassava bush', usage: 'Massive Carbs (60). COOK FIRST.', rarity: 'common' },
+
+  // --- MATERIALS ---
+  { id: 'r2', name: 'Obsidian Stone', category: 'Resources', source: 'Caves', usage: 'High tier blades.', rarity: 'rare' },
+  { id: 'r3', name: 'Molineria Leaf', category: 'Resources', source: 'Yellow flower', usage: 'Bandages.', rarity: 'common' },
+  { id: 'r4', name: 'Tobacco Leaf', category: 'Resources', source: 'Pink flower', usage: 'Antivenom.', rarity: 'uncommon' },
+  { id: 'r10', name: 'Bone', category: 'Resources', source: 'Dead animals', usage: 'Tools, Armor, Soup.', rarity: 'common' },
+];
+
+const CATEGORIES = [
+  { id: 'All', icon: Home, label: 'All' },
+  { id: 'Weapons', icon: Sword, label: 'Weapons' },
+  { id: 'Armor', icon: Shield, label: 'Armor' },
+  { id: 'Tools', icon: PenTool, label: 'Tools' },
+  { id: 'Construction', icon: Hammer, label: 'Build' },
+  { id: 'Food & Drink', icon: Utensils, label: 'Food' },
+  { id: 'Hunting', icon: Skull, label: 'Hunting' },
+  { id: 'Medicine', icon: Activity, label: 'Meds' },
+  { id: 'Husbandry', icon: Cat, label: 'Pets' },
+  { id: 'Farming', icon: Sprout, label: 'Farm' },
+  { id: 'Resources', icon: Leaf, label: 'Mats' },
+];
+
+export default function GreenHellGuide() {
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+
+  const combinedData = useMemo(() => [...CRAFTING_DATA, ...RESOURCES_DATA], []);
+
+  const filteredData = useMemo(() => {
+    let dataToFilter = combinedData;
+
+    // Direct Category Filter
+    if (activeCategory === 'Hunting' || activeCategory === 'Resources') {
+       // Force resource view logic if category matches, but also respect "All"
+       dataToFilter = combinedData.filter(i => i.category === activeCategory);
+    } else if (activeCategory !== 'All') {
+       dataToFilter = combinedData.filter(item => item.category === activeCategory);
     }
 
-    * {
-        box-sizing: border-box;
-    }
+    // Search Filter
+    return dataToFilter.filter((item) => {
+      const searchLower = searchQuery.toLowerCase();
+      const nameMatch = item.name.toLowerCase().includes(searchLower);
+      
+      let contentMatch = false;
+      if (item.ingredients) {
+        contentMatch = item.ingredients.some(ing => ing.toLowerCase().includes(searchLower));
+      } else if (item.source || item.usage) {
+        contentMatch = (item.source?.toLowerCase().includes(searchLower) || item.usage?.toLowerCase().includes(searchLower));
+      }
 
-    body {
-        margin: 0;
-        padding: 0;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        background: radial-gradient(circle at top, #1a2233 0, #05060a 40%, #020308 100%);
-        color: var(--text-main);
-    }
-
-    .app {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px 16px 40px;
-    }
-
-    header {
-        margin-bottom: 20px;
-    }
-
-    h1 {
-        font-size: 28px;
-        margin: 0 0 6px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    h1 span.logo-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 999px;
-        background: var(--accent);
-        box-shadow: 0 0 18px rgba(62,166,255,0.9);
-    }
-
-    header p {
-        margin: 0;
-        font-size: 13px;
-        color: var(--text-muted);
-    }
-
-    .top-bar {
-        margin-top: 16px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        align-items: center;
-    }
-
-    .search-box {
-        flex: 1 1 220px;
-        position: relative;
-    }
-
-    .search-box input {
-        width: 100%;
-        padding: 10px 36px 10px 32px;
-        border-radius: 999px;
-        border: 1px solid var(--border-subtle);
-        background: #11131a;
-        color: var(--text-main);
-        font-size: 14px;
-        outline: none;
-        box-shadow: 0 0 0 1px rgba(0,0,0,0.4);
-    }
-
-    .search-box input::placeholder {
-        color: #666c7a;
-    }
-
-    .search-icon {
-        position: absolute;
-        left: 11px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 14px;
-        color: #666c7a;
-    }
-
-    .clear-icon {
-        position: absolute;
-        right: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 13px;
-        color: #666c7a;
-        cursor: pointer;
-        display: none;
-    }
-
-    .search-box.has-text .clear-icon {
-        display: block;
-    }
-
-    .chip-bar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-
-    .chip {
-        font-size: 11px;
-        padding: 5px 10px;
-        border-radius: 999px;
-        border: 1px solid var(--border-subtle);
-        color: var(--text-muted);
-        cursor: pointer;
-        background: rgba(255,255,255,0.01);
-    }
-
-    .chip.active {
-        border-color: var(--accent);
-        background: var(--accent-soft);
-        color: var(--accent);
-    }
-
-    main {
-        margin-top: 20px;
-        display: grid;
-        grid-template-columns: minmax(0, 1.4fr) minmax(0, 2.6fr);
-        gap: 20px;
-    }
-
-    @media (max-width: 900px) {
-        main {
-            grid-template-columns: minmax(0, 1fr);
-        }
-    }
-
-    .sidebar {
-        position: sticky;
-        top: 10px;
-        align-self: flex-start;
-        background: rgba(7,9,14,0.85);
-        border-radius: 12px;
-        border: 1px solid var(--border-subtle);
-        padding: 10px 10px 6px;
-        backdrop-filter: blur(18px);
-    }
-
-    .sidebar h2 {
-        font-size: 13px;
-        margin: 0 0 8px;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: #9ca3b5;
-    }
-
-    .nav-btn {
-        width: 100%;
-        text-align: left;
-        padding: 8px 10px;
-        border-radius: 8px;
-        border: none;
-        background: transparent;
-        color: var(--text-muted);
-        font-size: 13px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 4px;
-    }
-
-    .nav-btn span.label {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .nav-btn .dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 999px;
-        background: #3f4654;
-    }
-
-    .nav-btn.active .dot {
-        background: var(--accent);
-        box-shadow: 0 0 8px rgba(62,166,255,0.8);
-    }
-
-    .nav-btn.active {
-        background: var(--accent-soft);
-        color: var(--accent);
-    }
-
-    .nav-btn small {
-        font-size: 11px;
-        color: #6b7280;
-    }
-
-    .content {
-        background: rgba(7,9,14,0.9);
-        border-radius: 12px;
-        border: 1px solid var(--border-subtle);
-        padding: 14px 12px;
-        box-shadow: var(--shadow-soft);
-    }
-
-    .section {
-        display: none;
-    }
-
-    .section.active {
-        display: block;
-    }
-
-    .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        margin-bottom: 8px;
-    }
-
-    .section-header h2 {
-        font-size: 16px;
-        margin: 0;
-    }
-
-    .section-header small {
-        font-size: 12px;
-        color: var(--text-muted);
-    }
-
-    .cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 10px;
-        margin-top: 8px;
-    }
-
-    .card {
-        background: var(--bg-card);
-        border-radius: 10px;
-        padding: 10px 10px 8px;
-        border: 1px solid #242a36;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.35);
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        transition: border-color 0.15s ease, transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
-    }
-
-    .card.hidden {
-        display: none !important;
-    }
-
-    .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .card-title {
-        font-size: 14px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .pill {
-        font-size: 10px;
-        padding: 2px 7px;
-        border-radius: 999px;
-        border: 1px solid rgba(148,163,184,0.4);
-        color: #9ca3af;
-    }
-
-    .pill.material {
-        border-color: var(--accent);
-        color: var(--accent);
-    }
-
-    .pill.rare {
-        border-color: #fbbf24;
-        color: #fbbf24;
-    }
-
-    .pill.danger {
-        border-color: var(--danger);
-        color: var(--danger);
-    }
-
-    .card-body {
-        font-size: 12px;
-        color: var(--text-muted);
-    }
-
-    .meta-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        font-size: 11px;
-        color: #9ca3af;
-    }
-
-    .meta-tag {
-        padding: 2px 6px;
-        border-radius: 999px;
-        background: rgba(15,23,42,0.8);
-        border: 1px solid #1f2933;
-    }
-
-    .meta-tag strong {
-        font-weight: 600;
-        color: #e5e7eb;
-    }
-
-    .card-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 4px;
-    }
-
-    .toggle-btn {
-        font-size: 11px;
-        border: none;
-        background: rgba(15,23,42,0.95);
-        color: #9ca3af;
-        padding: 4px 8px;
-        border-radius: 999px;
-        cursor: pointer;
-        border: 1px solid #243047;
-    }
-
-    .toggle-btn span {
-        opacity: 0.8;
-    }
-
-    .toggle-btn.active {
-        color: var(--accent);
-        border-color: var(--accent);
-        background: var(--accent-soft);
-    }
-
-    .detail {
-        margin-top: 6px;
-        padding-top: 6px;
-        border-top: 1px dashed #292f3a;
-        font-size: 12px;
-        color: var(--text-muted);
-        display: none;
-    }
-
-    .detail.visible {
-        display: block;
-    }
-
-    .detail p {
-        margin: 3px 0;
-    }
-
-    .detail p label {
-        font-weight: 600;
-        color: #e5e7eb;
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
-        display: block;
-        margin-bottom: 1px;
-    }
-
-    .usage-list {
-        margin: 2px 0 0 0;
-        padding-left: 14px;
-    }
-
-    .usage-list li {
-        margin-bottom: 1px;
-    }
-
-    .section-note {
-        font-size: 11px;
-        color: #9ca3af;
-        margin-bottom: 4px;
-    }
-
-    .empty-state {
-        font-size: 12px;
-        color: #9ca3af;
-        margin-top: 10px;
-        padding: 10px;
-        border-radius: 8px;
-        background: rgba(15,23,42,0.85);
-        border: 1px dashed #374151;
-    }
-</style>
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const searchInput = document.getElementById("search");
-    const sections = document.querySelectorAll(".section");
-    const navButtons = document.querySelectorAll(".nav-btn");
-    const chips = document.querySelectorAll(".chip");
-    const clearIcon = document.querySelector(".clear-icon");
-
-    function setActiveSection(id) {
-        sections.forEach(sec => {
-            sec.classList.toggle("active", sec.id === id);
-        });
-        navButtons.forEach(btn => {
-            btn.classList.toggle("active", btn.dataset.target === id);
-        });
-    }
-
-    navButtons.forEach(btn => {
-        btn.addEventListener("click", () => {
-            setActiveSection(btn.dataset.target);
-        });
+      return nameMatch || contentMatch;
     });
+  }, [activeCategory, searchQuery, combinedData]);
 
-    setActiveSection("materials");
-
-    document.querySelectorAll(".toggle-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const card = btn.closest(".card");
-            const detail = card.querySelector(".detail");
-            const expanded = detail.classList.toggle("visible");
-            btn.classList.toggle("active", expanded);
-            btn.querySelector("span").textContent = expanded ? "Hide details" : "Show details";
-        });
-    });
-
-    function applySearch() {
-        const query = searchInput.value.trim().toLowerCase();
-        const hasText = query.length > 0;
-        const cards = document.querySelectorAll(".card");
-        const searchBox = document.querySelector(".search-box");
-        if (hasText) {
-            searchBox.classList.add("has-text");
-        } else {
-            searchBox.classList.remove("has-text");
-        }
-
-        let anyVisibleBySection = {
-            materials: false,
-            items: false,
-            buildings: false,
-            soa: false
-        };
-
-        cards.forEach(card => {
-            const text = card.innerText.toLowerCase();
-            const tags = (card.dataset.tags || "").toLowerCase();
-            const matches = !hasText || text.includes(query) || tags.includes(query);
-            card.classList.toggle("hidden", !matches);
-            if (matches) {
-                const sec = card.closest(".section");
-                if (sec) {
-                    if (sec.id === "materials") anyVisibleBySection.materials = true;
-                    if (sec.id === "items") anyVisibleBySection.items = true;
-                    if (sec.id === "buildings") anyVisibleBySection.buildings = true;
-                    if (sec.id === "soa") anyVisibleBySection.soa = true;
-                }
-            }
-        });
-
-        document.querySelectorAll(".empty-state").forEach(el => el.remove());
-
-        if (hasText) {
-            sections.forEach(sec => {
-                const visibleCards = sec.querySelectorAll(".card:not(.hidden)");
-                if (visibleCards.length === 0) {
-                    const note = document.createElement("div");
-                    note.className = "empty-state";
-                    note.textContent = "No matches in this category for \"" + query + "\".";
-                    sec.appendChild(note);
-                }
-            });
-        }
+  const getRarityColor = (rarity) => {
+    switch(rarity) {
+      case 'common': return 'border-l-4 border-slate-500';
+      case 'uncommon': return 'border-l-4 border-emerald-500';
+      case 'rare': return 'border-l-4 border-blue-500';
+      case 'legendary': return 'border-l-4 border-amber-500';
+      default: return 'border-l-4 border-slate-500';
     }
+  };
 
-    searchInput.addEventListener("input", applySearch);
-
-    clearIcon.addEventListener("click", () => {
-        searchInput.value = "";
-        applySearch();
-    });
-
-    chips.forEach(chip => {
-        chip.addEventListener("click", () => {
-            const term = chip.dataset.term;
-            searchInput.value = term;
-            applySearch();
-        });
-    });
-});
-</script>
-</head>
-
-<body>
-<div class="app">
-    <header>
-        <h1><span class="logo-dot"></span>Green Hell Crafting Encyclopedia</h1>
-        <p>Search any material, item, or concept (like “fiber”) to see where to find it and what it’s used for.</p>
-
-        <div class="top-bar">
-            <div class="search-box">
-                <span class="search-icon">🔎</span>
-                <input id="search" type="text" placeholder="Search (e.g. fiber, rope, spear, mud, bandage, dart)">
-                <span class="clear-icon">✕</span>
+  return (
+    <div className="min-h-screen bg-slate-900 text-slate-100 font-sans selection:bg-emerald-500 selection:text-white pb-20">
+      <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveCategory('All')}>
+              <div className="w-8 h-8 bg-emerald-600 rounded flex items-center justify-center shadow-lg shadow-emerald-900/50">
+                <span className="font-bold text-white">GH</span>
+              </div>
+              <h1 className="hidden sm:block text-xl font-bold tracking-tight text-emerald-50 text-opacity-90">
+                Jungle<span className="text-emerald-500">Guide</span>
+              </h1>
             </div>
-            <div class="chip-bar">
-                <button class="chip" data-term="fiber">Fiber</button>
-                <button class="chip" data-term="rope">Rope</button>
-                <button class="chip" data-term="spear">Spear</button>
-                <button class="chip" data-term="bandage">Bandage</button>
-                <button class="chip" data-term="mud">Mud</button>
-            </div>
+            <nav className="hidden md:flex gap-1 overflow-x-auto no-scrollbar max-w-2xl">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 flex items-center gap-2 whitespace-nowrap ${
+                    activeCategory === cat.id
+                      ? 'bg-emerald-600 text-white shadow-md'
+                      : 'text-slate-400 hover:text-emerald-400 hover:bg-slate-800'
+                  }`}
+                >
+                  <cat.icon size={14} />
+                  {cat.label}
+                </button>
+              ))}
+            </nav>
+            <button 
+              className="md:hidden p-2 text-slate-300 hover:text-white"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
-    </header>
-
-    <main>
-        <aside class="sidebar">
-            <h2>Sections</h2>
-            <button class="nav-btn" data-target="materials">
-                <span class="label">
-                    <span class="dot"></span>
-                    Materials
-                </span>
-                <small>Resources & plants</small>
-            </button>
-            <button class="nav-btn" data-target="items">
-                <span class="label">
-                    <span class="dot"></span>
-                    Crafting Items
-                </span>
-                <small>Weapons, tools, armor, medicine</small>
-            </button>
-            <button class="nav-btn" data-target="buildings">
-                <span class="label">
-                    <span class="dot"></span>
-                    Buildings & Structures
-                </span>
-                <small>Base, mud, metalworking</small>
-            </button>
-            <button class="nav-btn" data-target="soa">
-                <span class="label">
-                    <span class="dot"></span>
-                    Spirits of Amazonia
-                </span>
-                <small>Legend & tribal items</small>
-            </button>
-        </aside>
-
-        <section class="content">
-
-            <!-- MATERIALS -->
-            <div id="materials" class="section">
-                <div class="section-header">
-                    <h2>Materials</h2>
-                    <small>Core resources, plants, drops & metal</small>
+        {isMobileMenuOpen && (
+          <div className="md:hidden border-t border-slate-800 bg-slate-900 p-2 space-y-1 shadow-2xl max-h-[60vh] overflow-y-auto">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => {
+                  setActiveCategory(cat.id);
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium flex items-center gap-3 ${
+                  activeCategory === cat.id
+                    ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/30'
+                    : 'text-slate-400 hover:bg-slate-800'
+                }`}
+              >
+                <cat.icon size={18} />
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </header>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="relative max-w-2xl mx-auto mb-10">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-slate-500" />
+          </div>
+          <input
+            type="text"
+            className="block w-full pl-10 pr-3 py-4 border border-slate-700 rounded-xl leading-5 bg-slate-800/50 text-slate-100 placeholder-slate-500 focus:outline-none focus:bg-slate-800 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all shadow-inner"
+            placeholder="Search: 'Obsidian Spear', 'Armor', 'Tapir'..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="mb-8 p-4 rounded-lg bg-emerald-900/20 border border-emerald-900/50 flex items-start gap-3">
+          <Info className="text-emerald-500 shrink-0 mt-0.5" size={20} />
+          <p className="text-sm text-emerald-200/80">
+             <strong>Survival Tip:</strong> {activeCategory === 'Armor' ? "Armor doesn't just reduce damage; it prevents lacerations and rashes. Metal Armor is strongest but slows you down significantly." : "Headshots are critical. A weak spear to the head is better than a metal spear to the leg."}
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredData.length > 0 ? (
+            filteredData.map((item) => (
+              <div 
+                key={item.id}
+                onClick={() => setSelectedItem(item)}
+                className={`group relative bg-slate-800 rounded-xl p-5 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col justify-between ${getRarityColor(item.rarity)}`}
+              >
+                <div>
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="text-lg font-bold text-slate-100 group-hover:text-emerald-400 transition-colors pr-2 leading-tight">
+                      {item.name}
+                    </h3>
+                    {item.rarity === 'legendary' && <span className="text-amber-500"><Box size={16}/></span>}
+                  </div>
+                  <p className="text-sm text-slate-400 mb-4 h-12 overflow-hidden line-clamp-2">
+                    {item.desc || item.usage}
+                  </p>
                 </div>
-                <p class="section-note">Each material includes general locations, example coordinates, appearance, and what it’s used in.</p>
-
-                <div class="cards">
-
-                    <!-- Fiber -->
-                    <article class="card" data-tags="fiber plant crafting darts fire bow hand drill spirits of amazonia cordage">
-                        <div class="card-header">
-                            <div class="card-title">Fiber</div>
-                            <div class="pill material">Material</div>
-                        </div>
-                        <div class="card-body">
-                            Plant fibers used for crafting darts, fire-starting tools, and some legend items.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Biome:</strong> Dense jungle, near saplings</div>
-                            <div class="meta-tag"><strong>Coords:</strong> Common around ~46W / 25S and other forested areas</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Where to find</label>
-                            Comes from chopping small saplings and thin young plants. Look for thin, straight saplings and cut them with any bladed tool; fiber often drops with small sticks.</p>
-                            <p><label>Looks like</label>
-                            A small bundle of thin, brownish strands or shavings, often in loose piles on the ground after chopping.</p>
-                            <p><label>Used in</label></p>
-                            <ul class="usage-list">
-                                <li>Darts and blowgun darts</li>
-                                <li>Hand drill / fire bow components</li>
-                                <li>Certain Spirits of Amazonia legend/ritual crafts</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Rope -->
-                    <article class="card" data-tags="rope liana vine tree crafting weapons tools armor building">
-                        <div class="card-header">
-                            <div class="card-title">Rope (Liana)</div>
-                            <div class="pill material">Material</div>
-                        </div>
-                        <div class="card-body">
-                            Core binding material used in almost all tools, weapons, armor, and many structures.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Biome:</strong> Jungle trees with hanging vines</div>
-                            <div class="meta-tag"><strong>Coords:</strong> Very common; e.g. 46W / 26S, 50W / 27S</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Where to find</label>
-                            Harvest from green vines wrapped around tree trunks at about head height. Approach the vine and use the harvest interaction to collect rope.</p>
-                            <p><label>Looks like</label>
-                            Thick green vine spiraling around tree trunks, often multiple per tree.</p>
-                            <p><label>Used in</label></p>
-                            <ul class="usage-list">
-                                <li>Stone axe, stone spear, bows, armor pieces</li>
-                                <li>Fishing rod, traps, shelters and frames</li>
-                                <li>Most mid‑ and late‑game constructions</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Long Stick -->
-                    <article class="card" data-tags="long stick wood weapon spear bow frames building basic">
-                        <div class="card-header">
-                            <div class="card-title">Long Stick</div>
-                            <div class="pill material">Material</div>
-                        </div>
-                        <div class="card-body">
-                            Base structural wood used for weapons, tools, and building frames.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Biome:</strong> Everywhere; from felled trees and large branches</div>
-                            <div class="meta-tag"><strong>Coords:</strong> Common near any forest clearing, e.g. 45W / 27S</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Where to find</label>
-                            Chop medium trees or large logs with an axe. Long sticks also often lie on the ground near downed trees.</p>
-                            <p><label>Looks like</label>
-                            Long straight wooden poles, bigger than normal sticks, usually lying separately or produced from chopped logs.</p>
-                            <p><label>Used in</label></p>
-                            <ul class="usage-list">
-                                <li>Spears, bows, some traps</li>
-                                <li>Base frames and structural building pieces</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Small Stick -->
-                    <article class="card" data-tags="small stick wood fire arrows tools">
-                        <div class="card-header">
-                            <div class="card-title">Small Stick</div>
-                            <div class="pill material">Material</div>
-                        </div>
-                        <div class="card-body">
-                            Basic crafting and fire material; essential for arrows and early structures.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Biome:</strong> Forest floor, from branches and logs</div>
-                            <div class="meta-tag"><strong>Coords:</strong> Almost everywhere; dense around 46W / 25S</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Where to find</label>
-                            Pick up from the forest floor or craft by breaking down sticks and long sticks.</p>
-                            <p><label>Looks like</label>
-                            Short thin wooden sticks scattered on the ground, often under trees and near logs.</p>
-                            <p><label>Used in</label></p>
-                            <ul class="usage-list">
-                                <li>Arrows, hand drill, basic fires</li>
-                                <li>Many early‑game tools and small structures</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Small Stone -->
-                    <article class="card" data-tags="small stone rock stone blade tools axe spear">
-                        <div class="card-header">
-                            <div class="card-title">Small Stone</div>
-                            <div class="pill material">Material</div>
-                        </div>
-                        <div class="card-body">
-                            Basic stone used for blades, axes, and primitive tools.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Biome:</strong> Riverbeds, rocky ground</div>
-                            <div class="meta-tag"><strong>Coords:</strong> Along rivers, e.g. 46W / 24S, 50W / 26S</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Where to find</label>
-                            Look along riverbanks, near cliffs, and on gravelly terrain. Very common.</p>
-                            <p><label>Looks like</label>
-                            Palm‑sized gray stones lying singly or in loose clusters.</p>
-                            <p><label>Used in</label></p>
-                            <ul class="usage-list">
-                                <li>Stone blade (2x small stone)</li>
-                                <li>Stone axe, stone spear heads, some traps</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Obsidian -->
-                    <article class="card" data-tags="obsidian black rock advanced weapons tools">
-                        <div class="card-header">
-                            <div class="card-title">Obsidian</div>
-                            <div class="pill material">Material</div>
-                            <div class="pill rare">Rare</div>
-                        </div>
-                        <div class="card-body">
-                            Volcanic glass used for stronger blades and spear tips.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Biome:</strong> Near rocky outcrops and caves</div>
-                            <div class="meta-tag"><strong>Coords:</strong> Around 41W / 24S and similar cliff areas</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Where to find</label>
-                            Look for shiny black rocks near cliffs, cave entrances, and certain tribal areas.</p>
-                            <p><label>Looks like</label>
-                            Dark black, glassy stones with a reflective surface.</p>
-                            <p><label>Used in</label></p>
-                            <ul class="usage-list">
-                                <li>Obsidian blade, obsidian spear</li>
-                                <li>Higher‑tier cutting and piercing tools</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Bone -->
-                    <article class="card" data-tags="bone animal drop armor knife hook needle fishing">
-                        <div class="card-header">
-                            <div class="card-title">Bone</div>
-                            <div class="pill material">Material</div>
-                        </div>
-                        <div class="card-body">
-                            Animal bones used for armor, tools, hooks, and needles.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Biome:</strong> Where animals are hunted or carcasses found</div>
-                            <div class="meta-tag"><strong>Coords:</strong> Common near hunting areas; e.g. 47W / 25S</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Where to find</label>
-                            Harvest carcasses of larger animals (tapir, peccary, caiman, etc.) or find scattered near predator kills.</p>
-                            <p><label>Looks like</label>
-                            Pale long bones lying on the ground or dropped after harvesting animals.</p>
-                            <p><label>Used in</label></p>
-                            <ul class="usage-list">
-                                <li>Bone armor, bone knife</li>
-                                <li>Bone hook, bone needle (for fishing rod and sewing)</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Feather -->
-                    <article class="card" data-tags="feather bird arrow fletching arrows">
-                        <div class="card-header">
-                            <div class="card-title">Feather</div>
-                            <div class="pill material">Material</div>
-                        </div>
-                        <div class="card-body">
-                            Bird feathers primarily used for crafting arrows.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Biome:</strong> Near bird corpses and under trees</div>
-                            <div class="meta-tag"><strong>Coords:</strong> Common everywhere, especially near water and clearings</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Where to find</label>
-                            Loot dead birds, or find feathers on the ground near where birds land or die.</p>
-                            <p><label>Looks like</label>
-                            Small white or colored feathers lying on the ground.</p>
-                            <p><label>Used in</label></p>
-                            <ul class="usage-list">
-                                <li>Arrows (2 feathers per arrow)</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Banana Leaf -->
-                    <article class="card" data-tags="banana leaf large leaf shelter armor wrap">
-                        <div class="card-header">
-                            <div class="card-title">Banana Leaf</div>
-                            <div class="pill material">Material</div>
-                        </div>
-                        <div class="card-body">
-                            Large leaf used for shelters, beds, and some armor.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Biome:</strong> Near banana trees in jungle clearings</div>
-                            <div class="meta-tag"><strong>Coords:</strong> Common around 46W / 27S and similar lowland jungle</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Where to find</label>
-                            Chop banana plants; large leaves drop alongside bananas and palm‑like fronds.</p>
-                            <p><label>Looks like</label>
-                            Very large, wide, bright green leaves in stacks when dropped.</p>
-                            <p><label>Used in</label></p>
-                            <ul class="usage-list">
-                                <li>Leaf shelters and basic beds</li>
-                                <li>Leaf armor and roof coverings</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Molineria -->
-                    <article class="card" data-tags="molineria bandage medical plant leaf">
-                        <div class="card-header">
-                            <div class="card-title">Molineria</div>
-                            <div class="pill material">Material</div>
-                        </div>
-                        <div class="card-body">
-                            Medicinal plant used to craft basic leaf bandages.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Biome:</strong> Jungle floor, often in clusters</div>
-                            <div class="meta-tag"><strong>Coords:</strong> Frequently around 46W / 26S and near riverbanks</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Where to find</label>
-                            Look for plants with long green leaves and a distinct yellow flower stalk in the middle.</p>
-                            <p><label>Looks like</label>
-                            Bright green, broad leaves with a tall central stem bearing small yellow flowers.</p>
-                            <p><label>Used in</label></p>
-                            <ul class="usage-list">
-                                <li>Leaf bandage (base for most dressings)</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Tobacco -->
-                    <article class="card" data-tags="tobacco medical plant venom bandage dressing">
-                        <div class="card-header">
-                            <div class="card-title">Tobacco</div>
-                            <div class="pill material">Material</div>
-                        </div>
-                        <div class="card-body">
-                            Medicinal plant used to treat venom and insect bites when combined with bandages.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Biome:</strong> Jungle, near logs and paths</div>
-                            <div class="meta-tag"><strong>Coords:</strong> Around 47W / 26S and various forest paths</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Where to find</label>
-                            Found as medium plants with purple flowers; usually near paths or logs.</p>
-                            <p><label>Looks like</label>
-                            Green leaves with noticeable purple flowers above them.</p>
-                            <p><label>Used in</label></p>
-                            <ul class="usage-list">
-                                <li>Tobacco dressing (leaf bandage + tobacco leaf)</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Lilly -->
-                    <article class="card" data-tags="lily medical plant rash bandage dressing">
-                        <div class="card-header">
-                            <div class="card-title">Lily</div>
-                            <div class="pill material">Material</div>
-                        </div>
-                        <div class="card-body">
-                            Medicinal plant used for dressings against rash and some venom effects.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Biome:</strong> Jungle clearings and near water</div>
-                            <div class="meta-tag"><strong>Coords:</strong> Scattered; e.g. 45W / 25S, 47W / 24S</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Where to find</label>
-                            Found as low plants with pink or purple flowers in small groups.</p>
-                            <p><label>Looks like</label>
-                            Simple leafy plant with colorful flower clusters.</p>
-                            <p><label>Used in</label></p>
-                            <ul class="usage-list">
-                                <li>Lily dressing (leaf bandage + lily leaf)</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Mud -->
-                    <article class="card" data-tags="mud clay building furnace forge mud wall water filter">
-                        <div class="card-header">
-                            <div class="card-title">Mud</div>
-                            <div class="pill material">Material</div>
-                        </div>
-                        <div class="card-body">
-                            Wet soil used for mud bricks, walls, furnaces, and advanced water structures.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Biome:</strong> Near muddy pools, riverbanks</div>
-                            <div class="meta-tag"><strong>Coords:</strong> Around 47W / 27S and other waterlogged spots</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Where to find</label>
-                            Gather from muddy pools and edges of rivers when mud interaction is available.</p>
-                            <p><label>Looks like</label>
-                            Brown, wet piles or splotches on the banks, used via crafting interface.</p>
-                            <p><label>Used in</label></p>
-                            <ul class="usage-list">
-                                <li>Mud bricks and walls</li>
-                                <li>Furnace, forge, mud water filter</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Iron Ore -->
-                    <article class="card" data-tags="iron ore metal ore mining caves furnace smelting">
-                        <div class="card-header">
-                            <div class="card-title">Iron Ore</div>
-                            <div class="pill material">Material</div>
-                            <div class="pill rare">Rare</div>
-                        </div>
-                        <div class="card-body">
-                            Metal ore used for smelting into iron ingots for advanced tools and armor.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Biome:</strong> Caves and rocky overhangs</div>
-                            <div class="meta-tag"><strong>Coords:</strong> Various cave systems; e.g. 46W / 19S, 43W / 24S</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Where to find</label>
-                            Mined from ore veins in caves using a pick‑like tool, or found in metal deposits/crates in some areas.</p>
-                            <p><label>Looks like</label>
-                            Dark stone nodes with metallic patches on cave walls, and ore chunks when mined.</p>
-                            <p><label>Used in</label></p>
-                            <ul class="usage-list">
-                                <li>Iron ingots via furnace</li>
-                                <li>Metal tools, spears, and armor plates</li>
-                            </ul>
-                        </div>
-                    </article>
-
+                <div className="space-y-2 pt-2 border-t border-slate-700/50">
+                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                    {/* CRITICAL FIX: Check if ingredients exist, otherwise assume it's a Source/Resource type */}
+                    {(item.ingredients && item.ingredients.length > 0) ? 'Requires' : 'Source / Find At'}
+                  </div>
+                  
+                  {/* CRITICAL FIX: Render ingredients ONLY if they exist */}
+                  {(item.ingredients && item.ingredients.length > 0) ? (
+                    <div className="flex flex-wrap gap-1">
+                      {item.ingredients.slice(0, 3).map((ing, idx) => (
+                        <span key={idx} className="text-xs bg-slate-700 px-2 py-1 rounded text-slate-300 whitespace-nowrap">
+                          {ing.includes('x') ? ing : `1x ${ing}`}
+                        </span>
+                      ))}
+                      {item.ingredients.length > 3 && (
+                        <span className="text-xs bg-slate-700 px-2 py-1 rounded text-slate-400">+{item.ingredients.length - 3}</span>
+                      )}
+                    </div>
+                  ) : (
+                    // Fallback for items with no ingredients (Resources, Hunting, Raw Food)
+                     <p className="text-sm text-emerald-300 font-medium truncate">{item.source || 'Scavenge'}</p>
+                  )}
                 </div>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-20 text-slate-500">
+              <p className="text-lg">No results found for "{searchQuery}" in {activeCategory}</p>
             </div>
-
-            <!-- CRAFTING ITEMS -->
-            <div id="items" class="section">
-                <div class="section-header">
-                    <h2>Crafting Items</h2>
-                    <small>Weapons, tools, armor, medicine, and more</small>
-                </div>
-                <p class="section-note">Each item shows its recipe, what materials it consumes, and where those materials are found.</p>
-
-                <div class="cards">
-
-                    <!-- Stone Axe -->
-                    <article class="card" data-tags="stone axe weapon tool woodcutting crafting early rope stone stick">
-                        <div class="card-header">
-                            <div class="card-title">Stone Axe</div>
-                            <div class="pill">Tool / Weapon</div>
-                        </div>
-                        <div class="card-body">
-                            Basic axe used for chopping trees, logs, and light combat.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Recipe:</strong> 1 Stick + 1 Stone + 1 Rope</div>
-                            <div class="meta-tag"><strong>Tier:</strong> Early‑game</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Recipe breakdown</label>
-                            <ul class="usage-list">
-                                <li><strong>Stick:</strong> Found under trees or crafted from long sticks.</li>
-                                <li><strong>Stone:</strong> Gathered from riverbeds and rocky ground.</li>
-                                <li><strong>Rope:</strong> Harvested from green vines (lianas) on trees.</li>
-                            </ul>
-                            </p>
-                            <p><label>Looks like</label>
-                            A simple wooden handle with a rough gray stone lashed to the end by rope.</p>
-                            <p><label>Uses</label></p>
-                            <ul class="usage-list">
-                                <li>Chopping trees for wood and long sticks</li>
-                                <li>Breaking logs and branches for sticks</li>
-                                <li>Emergency melee weapon against wildlife and enemies</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Stone Blade -->
-                    <article class="card" data-tags="stone blade tool cutting crafting stone knife base">
-                        <div class="card-header">
-                            <div class="card-title">Stone Blade</div>
-                            <div class="pill">Tool</div>
-                        </div>
-                        <div class="card-body">
-                            Basic cutting blade used directly or as a component in other tools and weapons.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Recipe:</strong> 2x Small Stone</div>
-                            <div class="meta-tag"><strong>Tier:</strong> Early‑game</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Recipe breakdown</label>
-                            <ul class="usage-list">
-                                <li><strong>Small Stone:</strong> Found along riverbeds and rocky terrain.</li>
-                            </ul>
-                            </p>
-                            <p><label>Looks like</label>
-                            A flat, sharpened stone with chipped edges, small enough to hold.</p>
-                            <p><label>Uses</label></p>
-                            <ul class="usage-list">
-                                <li>Direct cutting and harvesting</li>
-                                <li>Component in: stone spear, stone axe variants, knives</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Stone Spear -->
-                    <article class="card" data-tags="stone spear weapon hunting fishing combat spear rope long stick stone blade">
-                        <div class="card-header">
-                            <div class="card-title">Stone Spear</div>
-                            <div class="pill">Weapon</div>
-                        </div>
-                        <div class="card-body">
-                            Early spear for hunting and defense, craftable from basic materials.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Recipe:</strong> 1 Long Stick + 1 Stone Blade + 1 Rope</div>
-                            <div class="meta-tag"><strong>Tier:</strong> Early‑game</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Recipe breakdown</label>
-                            <ul class="usage-list">
-                                <li><strong>Long Stick:</strong> From chopping trees and logs.</li>
-                                <li><strong>Stone Blade:</strong> Crafted from 2 small stones.</li>
-                                <li><strong>Rope:</strong> Green vines on trees.</li>
-                            </ul>
-                            </p>
-                            <p><label>Looks like</label>
-                            A long wooden shaft with a sharp stone blade lashed to one end.</p>
-                            <p><label>Uses</label></p>
-                            <ul class="usage-list">
-                                <li>Hunting medium animals and fish</li>
-                                <li>Defensive weapon against predators and hostile humans</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Bow -->
-                    <article class="card" data-tags="bow weapon ranged hunting rope long stick arrows">
-                        <div class="card-header">
-                            <div class="card-title">Bow</div>
-                            <div class="pill">Weapon</div>
-                        </div>
-                        <div class="card-body">
-                            Basic ranged weapon for hunting and stealth combat.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Recipe:</strong> 1 Long Stick + 1 Rope</div>
-                            <div class="meta-tag"><strong>Tier:</strong> Early‑mid game</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Recipe breakdown</label>
-                            <ul class="usage-list">
-                                <li><strong>Long Stick:</strong> From small trees and logs.</li>
-                                <li><strong>Rope:</strong> From liana vines on trees.</li>
-                            </ul>
-                            </p>
-                            <p><label>Looks like</label>
-                            A slightly curved wooden bow strung with vine rope.</p>
-                            <p><label>Uses</label></p>
-                            <ul class="usage-list">
-                                <li>Hunting at range with arrows</li>
-                                <li>Safer combat against dangerous animals</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Arrow -->
-                    <article class="card" data-tags="arrow ranged weapon feather small stick bow hunting">
-                        <div class="card-header">
-                            <div class="card-title">Arrow</div>
-                            <div class="pill">Ammunition</div>
-                        </div>
-                        <div class="card-body">
-                            Basic arrow used with bows for hunting and combat.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Recipe:</strong> 1 Small Stick + 2 Feathers</div>
-                            <div class="meta-tag"><strong>Tier:</strong> Early‑mid game</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Recipe breakdown</label>
-                            <ul class="usage-list">
-                                <li><strong>Small Stick:</strong> Floor pickups or crafted from sticks.</li>
-                                <li><strong>Feathers:</strong> Looted from birds or found on the ground.</li>
-                            </ul>
-                            </p>
-                            <p><label>Looks like</label>
-                            A thin wooden shaft with a sharpened tip and feather fletching.</p>
-                            <p><label>Uses</label></p>
-                            <ul class="usage-list">
-                                <li>Used as ammunition for bows</li>
-                                <li>Can be upgraded to bone or obsidian variants</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Basic Dart (using fiber) -->
-                    <article class="card" data-tags="dart blowgun fiber ammunition poison ranged">
-                        <div class="card-header">
-                            <div class="card-title">Dart (Basic)</div>
-                            <div class="pill">Ammunition</div>
-                        </div>
-                        <div class="card-body">
-                            Lightweight projectile for blowguns; can be poisoned for high effectiveness.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Recipe:</strong> Small Stick + Fiber (variants)</div>
-                            <div class="meta-tag"><strong>Tier:</strong> Mid‑game</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Recipe breakdown</label>
-                            <ul class="usage-list">
-                                <li><strong>Small Stick:</strong> Floor pickups or crafted from sticks.</li>
-                                <li><strong>Fiber:</strong> From chopped saplings and small plants.</li>
-                                <li><strong>(Optional poison):</strong> Venom from frogs, spiders, or other sources.</li>
-                            </ul>
-                            </p>
-                            <p><label>Looks like</label>
-                            Very thin wooden darts bound with fiber at the tail; may be tipped with poison.</p>
-                            <p><label>Uses</label></p>
-                            <ul class="usage-list">
-                                <li>Used with blowguns for silent ranged attacks</li>
-                                <li>Extremely effective when poisoned against animals and humans</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Hand Drill (fire) -->
-                    <article class="card" data-tags="hand drill fire starting fiber small stick crafting">
-                        <div class="card-header">
-                            <div class="card-title">Hand Drill</div>
-                            <div class="pill">Fire Tool</div>
-                        </div>
-                        <div class="card-body">
-                            Basic fire‑starting tool that can be improved with dry materials.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Recipe:</strong> 1 Stick + 1 Small Stick (fiber/dry add‑ons)</div>
-                            <div class="meta-tag"><strong>Tier:</strong> Early‑game</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Recipe breakdown</label>
-                            <ul class="usage-list">
-                                <li><strong>Stick & Small Stick:</strong> Found or crafted from branches.</li>
-                                <li><strong>Fiber / dry leaves:</strong> Used as tinder to catch the ember.</li>
-                            </ul>
-                            </p>
-                            <p><label>Looks like</label>
-                            A simple wooden spindle and base set used by rotating between your hands.</p>
-                            <p><label>Uses</label></p>
-                            <ul class="usage-list">
-                                <li>Starting campfires when combined with dry tinder (fiber, dry leaves, bird nest)</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Fishing Rod -->
-                    <article class="card" data-tags="fishing rod food fishing hook bone rope water">
-                        <div class="card-header">
-                            <div class="card-title">Fishing Rod</div>
-                            <div class="pill">Tool</div>
-                        </div>
-                        <div class="card-body">
-                            Tool used for active fishing in rivers and lakes.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Recipe:</strong> 1 Long Stick + 1 Rope + 1 Hook</div>
-                            <div class="meta-tag"><strong>Tier:</strong> Early‑mid game</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Recipe breakdown</label>
-                            <ul class="usage-list">
-                                <li><strong>Long Stick:</strong> From trees/logs.</li>
-                                <li><strong>Rope:</strong> From liana vines.</li>
-                                <li><strong>Hook:</strong> Typically bone hook crafted from bone / bone needle.</li>
-                            </ul>
-                            </p>
-                            <p><label>Looks like</label>
-                            A long flexible rod with a vine line and small hook at the end.</p>
-                            <p><label>Uses</label></p>
-                            <ul class="usage-list">
-                                <li>Fishing in rivers and pools for steady protein</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Leaf Bandage -->
-                    <article class="card" data-tags="leaf bandage medical healing molineria wound">
-                        <div class="card-header">
-                            <div class="card-title">Leaf Bandage</div>
-                            <div class="pill">Medicine</div>
-                        </div>
-                        <div class="card-body">
-                            Basic bandage used directly or as the base for medicinal dressings.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Recipe:</strong> Molineria Leaf (harvested)</div>
-                            <div class="meta-tag"><strong>Tier:</strong> Early‑game medical</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Recipe breakdown</label>
-                            <ul class="usage-list">
-                                <li><strong>Molineria leaf:</strong> From Molineria plant (yellow flower stalk).</li>
-                            </ul>
-                            </p>
-                            <p><label>Looks like</label>
-                            A neat roll of green leaf, ready to be wrapped around wounds.</p>
-                            <p><label>Uses</label></p>
-                            <ul class="usage-list">
-                                <li>Stops bleeding when applied to open wounds</li>
-                                <li>Base for: tobacco dressing, lily dressing, and other combinations</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Tobacco Dressing -->
-                    <article class="card" data-tags="tobacco dressing medical venom bite bandage leaf">
-                        <div class="card-header">
-                            <div class="card-title">Tobacco Dressing</div>
-                            <div class="pill">Medicine</div>
-                        </div>
-                        <div class="card-body">
-                            Bandage infused with tobacco to help against venom and insect bites.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Recipe:</strong> Leaf Bandage + Tobacco Leaf</div>
-                            <div class="meta-tag"><strong>Tier:</strong> Medical upgrade</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Recipe breakdown</label>
-                            <ul class="usage-list">
-                                <li><strong>Leaf Bandage:</strong> From Molineria leaf.</li>
-                                <li><strong>Tobacco leaf:</strong> From tobacco plants with purple flowers.</li>
-                            </ul>
-                            </p>
-                            <p><label>Looks like</label>
-                            A green bandage roll with slightly different texture and tint compared to plain bandages.</p>
-                            <p><label>Uses</label></p>
-                            <ul class="usage-list">
-                                <li>Applied to wounds from venomous bites or stings</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Leaf Armor -->
-                    <article class="card" data-tags="leaf armor defense protection banana leaf rope stick">
-                        <div class="card-header">
-                            <div class="card-title">Leaf Armor</div>
-                            <div class="pill">Armor</div>
-                        </div>
-                        <div class="card-body">
-                            Simple armor made from sticks and large leaves for basic limb protection.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Recipe:</strong> 3 Sticks + 2 Large Leaves + 1 Rope</div>
-                            <div class="meta-tag"><strong>Tier:</strong> Early armor</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Recipe breakdown</label>
-                            <ul class="usage-list">
-                                <li><strong>Sticks:</strong> From branches and logs.</li>
-                                <li><strong>Large leaves:</strong> From banana or palm plants.</li>
-                                <li><strong>Rope:</strong> From liana vines.</li>
-                            </ul>
-                            </p>
-                            <p><label>Looks like</label>
-                            A crude leaf “sleeve” tied around your limbs with vines.</p>
-                            <p><label>Uses</label></p>
-                            <ul class="usage-list">
-                                <li>Reduces damage taken to equipped limb</li>
-                                <li>Basic defense before bone and metal armor</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Bone Armor -->
-                    <article class="card" data-tags="bone armor defense protection bone rope advanced">
-                        <div class="card-header">
-                            <div class="card-title">Bone Armor</div>
-                            <div class="pill">Armor</div>
-                        </div>
-                        <div class="card-body">
-                            Stronger armor made from animal bones and rope for significant protection.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Recipe:</strong> 3 Bones + 2 Rope + Stick/leaf frame</div>
-                            <div class="meta-tag"><strong>Tier:</strong> Mid‑game armor</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Recipe breakdown</label>
-                            <ul class="usage-list">
-                                <li><strong>Bones:</strong> From animal carcasses.</li>
-                                <li><strong>Rope:</strong> From liana vines.</li>
-                                <li><strong>Frame:</strong> Usually sticks/leaf combo or basic armor base.</li>
-                            </ul>
-                            </p>
-                            <p><label>Looks like</label>
-                            Pieces of bone strapped over leaves or cloth around your limbs.</p>
-                            <p><label>Uses</label></p>
-                            <ul class="usage-list">
-                                <li>Significantly reduces damage to equipped limbs</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                </div>
+          )}
+        </div>
+      </main>
+      
+      {/* MODAL */}
+      {selectedItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button 
+              onClick={() => setSelectedItem(null)}
+              className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
+            >
+              <X size={24} />
+            </button>
+            <h2 className="text-2xl font-bold text-white mb-1">{selectedItem.name}</h2>
+            <div className="flex items-center gap-2 mb-6">
+              <span className="text-emerald-500 text-sm uppercase tracking-wide font-medium">{selectedItem.category}</span>
+              <span className="text-slate-600 text-sm">•</span>
+              <span className={`text-xs px-2 py-0.5 rounded uppercase font-bold tracking-wider ${
+                selectedItem.rarity === 'rare' ? 'bg-blue-900/30 text-blue-400' :
+                selectedItem.rarity === 'legendary' ? 'bg-amber-900/30 text-amber-400' :
+                'bg-slate-800 text-slate-400'
+              }`}>
+                {selectedItem.rarity}
+              </span>
             </div>
-
-            <!-- BUILDINGS & STRUCTURES -->
-            <div id="buildings" class="section">
-                <div class="section-header">
-                    <h2>Buildings & Structures</h2>
-                    <small>Shelters, mud constructions, furnaces & water systems</small>
+            
+            {/* Logic for Modal Content */}
+            {(!selectedItem.ingredients || selectedItem.ingredients.length === 0) ? (
+              <div className="space-y-4">
+                 <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Where to find / Harvest</h3>
+                    <p className="text-emerald-300 font-medium text-lg">{selectedItem.source || 'Scavenge in Jungle'}</p>
+                 </div>
+                 <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Usage / Tactics</h3>
+                    <p className="text-slate-200">{selectedItem.usage || selectedItem.desc}</p>
+                 </div>
+              </div>
+            ) : (
+              <>
+                <div className="bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-700/50">
+                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Construction / Recipe</h3>
+                  <ul className="space-y-2">
+                    {selectedItem.ingredients.map((ing, idx) => (
+                      <li key={idx} className="flex items-center gap-3 text-slate-200">
+                        <div className="w-8 h-8 rounded bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-400 shrink-0">
+                            {ing.includes('x') ? ing.split('x')[0] : '•'}
+                        </div>
+                        <span className="text-base">{ing.includes('x') ? ing.split('x')[1] : ing}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <p class="section-note">Base building elements and advanced mud/metal structures.</p>
-
-                <div class="cards">
-
-                    <!-- Leaf Shelter -->
-                    <article class="card" data-tags="leaf shelter save sleep banana palm basic base">
-                        <div class="card-header">
-                            <div class="card-title">Leaf Shelter</div>
-                            <div class="pill">Shelter</div>
-                        </div>
-                        <div class="card-body">
-                            Simple shelter used for saving the game and sleeping.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Recipe:</strong> Sticks + Palm/Banana Leaves</div>
-                            <div class="meta-tag"><strong>Tier:</strong> Early‑game shelter</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Recipe breakdown</label>
-                            <ul class="usage-list">
-                                <li><strong>Sticks:</strong> From branches/logs.</li>
-                                <li><strong>Palm/banana leaves:</strong> From palm and banana plants.</li>
-                            </ul>
-                            </p>
-                            <p><label>Looks like</label>
-                            A small, sloped leaf‑covered structure with a simple frame.</p>
-                            <p><label>Uses</label></p>
-                            <ul class="usage-list">
-                                <li>Provides a save point</li>
-                                <li>Allows sleeping under cover</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Bed -->
-                    <article class="card" data-tags="leaf bed sleep rest comfort base">
-                        <div class="card-header">
-                            <div class="card-title">Leaf Bed</div>
-                            <div class="pill">Furniture</div>
-                        </div>
-                        <div class="card-body">
-                            Simple leaf bed placed inside or outside shelters for resting.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Recipe:</strong> Sticks + Large Leaves</div>
-                            <div class="meta-tag"><strong>Tier:</strong> Early‑game comfort</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Recipe breakdown</label>
-                            <ul class="usage-list">
-                                <li><strong>Sticks:</strong> From branches.</li>
-                                <li><strong>Large leaves:</strong> From banana/palm plants.</li>
-                            </ul>
-                            </p>
-                            <p><label>Looks like</label>
-                            A low, leaf‑covered frame used as a basic bed.</p>
-                            <p><label>Uses</label></p>
-                            <ul class="usage-list">
-                                <li>Resting and recovering energy</li>
-                                <li>Often paired with permanent shelters</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Mud Mixer -->
-                    <article class="card" data-tags="mud mixer construction mud bricks water base">
-                        <div class="card-header">
-                            <div class="card-title">Mud Mixer</div>
-                            <div class="pill">Mud Structure</div>
-                        </div>
-                        <div class="card-body">
-                            Structure used to mix mud with water to form mud bricks.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Recipe:</strong> Sticks + Logs + Mud (varies by layout)</div>
-                            <div class="meta-tag"><strong>Tier:</strong> Mid‑game building</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Recipe breakdown</label>
-                            Uses a wooden frame near mud/water; you add mud and water to create bricks.</p>
-                            <p><label>Looks like</label>
-                            A trough‑like structure in which you stomp and mix mud.</p>
-                            <p><label>Uses</label></p>
-                            <ul class="usage-list">
-                                <li>Produces mud bricks for walls and advanced structures</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Mud Wall -->
-                    <article class="card" data-tags="mud wall base defense building structure">
-                        <div class="card-header">
-                            <div class="card-title">Mud Wall</div>
-                            <div class="pill">Mud Structure</div>
-                        </div>
-                        <div class="card-body">
-                            Solid wall made from mud bricks attached to frames.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Recipe:</strong> Wooden frame + Mud Bricks</div>
-                            <div class="meta-tag"><strong>Tier:</strong> Mid‑game base building</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Recipe breakdown</label>
-                            <ul class="usage-list">
-                                <li><strong>Wooden frame:</strong> Built from logs, long sticks, and rope.</li>
-                                <li><strong>Mud bricks:</strong> Mixed in mud mixer.</li>
-                            </ul>
-                            </p>
-                            <p><label>Looks like</label>
-                            A thick, brownish mud wall attached to structural frames.</p>
-                            <p><label>Uses</label></p>
-                            <ul class="usage-list">
-                                <li>Weather and partial predator protection</li>
-                                <li>Core of advanced base design</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Furnace -->
-                    <article class="card" data-tags="furnace mud metal smelting iron ore charcoal">
-                        <div class="card-header">
-                            <div class="card-title">Furnace</div>
-                            <div class="pill">Metalworking</div>
-                        </div>
-                        <div class="card-body">
-                            Mud and stone structure for smelting iron ore into ingots using charcoal.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Recipe:</strong> Mud bricks + Stones + Fire</div>
-                            <div class="meta-tag"><strong>Tier:</strong> Mid‑late game</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Recipe breakdown</label>
-                            Built as a standing mud structure; loaded with charcoal and iron ore to smelt ingots.</p>
-                            <p><label>Looks like</label>
-                            A round, kiln‑like mud oven with openings for fuel and ore.</p>
-                            <p><label>Uses</label></p>
-                            <ul class="usage-list">
-                                <li>Smelting iron ore into iron ingots</li>
-                                <li>Essential step toward metal tools and armor</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Forge -->
-                    <article class="card" data-tags="forge metal tools armor plates iron ingot">
-                        <div class="card-header">
-                            <div class="card-title">Forge</div>
-                            <div class="pill">Metalworking</div>
-                        </div>
-                        <div class="card-body">
-                            Station used to heat and shape smelted metal into tools and armor plates.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Recipe:</strong> Mud + Stones + Fire + Bellows elements</div>
-                            <div class="meta-tag"><strong>Tier:</strong> Late‑game crafting</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Recipe breakdown</label>
-                            Built as a mud/stone structure, fueled with charcoal; used with molds and iron ingots.</p>
-                            <p><label>Looks like</label>
-                            A low, glowing metalworking hearth with an anvil or working surface.</p>
-                            <p><label>Uses</label></p>
-                            <ul class="usage-list">
-                                <li>Creates metal tools (axes, spears, knives)</li>
-                                <li>Creates metal armor plates</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <!-- Water Filter -->
-                    <article class="card" data-tags="mud water filter clean water charcoal base">
-                        <div class="card-header">
-                            <div class="card-title">Mud Water Filter</div>
-                            <div class="pill">Water Structure</div>
-                        </div>
-                        <div class="card-body">
-                            Structure that purifies unsafe water using charcoal and mud layers.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Recipe:</strong> Mud bricks + Sticks + Charcoal</div>
-                            <div class="meta-tag"><strong>Tier:</strong> Mid‑game hydration</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Recipe breakdown</label>
-                            Built from mud and wood, then filled with charcoal and containers to filter dirty water.</p>
-                            <p><label>Looks like</label>
-                            A tall mud cylinder or box with upper and lower basins for water flow.</p>
-                            <p><label>Uses</label></p>
-                            <ul class="usage-list">
-                                <li>Converts unsafe river water into safe drinkable water</li>
-                            </ul>
-                        </div>
-                    </article>
-
+                <div className="prose prose-invert">
+                  <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Details</h3>
+                  <p className="text-slate-300 leading-relaxed">
+                    {selectedItem.desc}
+                  </p>
                 </div>
-            </div>
-
-            <!-- SPIRITS OF AMAZONIA -->
-            <div id="soa" class="section">
-                <div class="section-header">
-                    <h2>Spirits of Amazonia</h2>
-                    <small>Legend items, tribal crafts & ritual components</small>
-                </div>
-                <p class="section-note">Representative examples of legend items and crafts. Exact recipes vary by legend quest.</p>
-
-                <div class="cards">
-
-                    <!-- Tribal Statue Offering -->
-                    <article class="card" data-tags="spirits of amazonia legend statue offering fiber ritual">
-                        <div class="card-header">
-                            <div class="card-title">Tribal Offering (Example)</div>
-                            <div class="pill">Legend / Ritual</div>
-                        </div>
-                        <div class="card-body">
-                            Example of a legend‑related crafted offering that may combine statues, animal parts, and materials like fiber.
-                        </div>
-                        <div class="meta-row">
-                            <div class="meta-tag"><strong>Recipe:</strong> Varies by legend (statue + fiber + other items)</div>
-                            <div class="meta-tag"><strong>Tier:</strong> Spirits of Amazonia</div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="toggle-btn"><span>Show details</span></button>
-                        </div>
-                        <div class="detail">
-                            <p><label>Usage of fiber here</label>
-                            Fiber is sometimes used as a binding or symbolic component in ritual crafts, combining with carved statues or bones depending on the legend task.</p>
-                            <p><label>Looks like</label>
-                            A small improvised bundle or altar piece placed at a tribal marker or on a designated spot.</p>
-                            <p><label>Notes</label></p>
-                            <ul class="usage-list">
-                                <li>Each legend has its own specific recipe and placement location</li>
-                                <li>Check legend stones and tribal clues for exact combinations</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                </div>
-            </div>
-
-        </section>
-    </main>
-</div>
-
-<!-- BLUES HUB NAVIGATION -->
-<a href="https://1verysimple-lab.github.io/project-hub/" 
-   target="_blank"
-   style="position: fixed; top: 20px; left: 20px; z-index: 9999; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; text-decoration: none; color: #e2e8f0; font-family: system-ui, sans-serif; font-size: 13px; font-weight: 500; transition: all 0.2s ease; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);"
-   onmouseover="this.style.transform='translateY(-1px)'; this.style.background='rgba(15, 23, 42, 0.95)'"
-   onmouseout="this.style.transform='translateY(0)'; this.style.background='rgba(15, 23, 42, 0.8)'">
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
-    <span>Hub</span>
-</a>
-<!-- END BLUES HUB NAVIGATION -->
-
-</body>
-</html>
+              </>
+            )}
+            <button 
+              onClick={() => setSelectedItem(null)}
+              className="w-full mt-8 bg-slate-800 hover:bg-slate-700 text-white font-medium py-3 rounded-lg transition-colors border border-slate-700"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
