@@ -52,12 +52,6 @@
         "type": "Guide"
     },
     {
-        "filename": "CS2BINDGENERATOR.html",
-        "title": "It would be cool if it worked but...",
-        "description": "Some parts works others not.",
-        "type": "Tool"
-    },
-    {
         "filename": "dice_game.html",
         "title": "Dice Roulette",
         "description": "3 dices and a kind of roulette concept",
