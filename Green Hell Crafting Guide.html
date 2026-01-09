@@ -1,354 +1,415 @@
-import React, { useState, useMemo } from 'react';
-import { Search, PenTool, Sword, Shield, Activity, Home, Hammer, Menu, X, Info, Leaf, Box, Utensils, Sprout, Cat, Skull } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Hell Crafting Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom scrollbar to match the dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
 
-const CRAFTING_DATA = [
-  // --- WEAPONS ---
-  { id: 'w1', name: 'Weak Spear', category: 'Weapons', ingredients: ['1x Long Stick'], desc: 'Basic reach weapon. Good for throwing.', rarity: 'common' },
-  { id: 'w2', name: 'Stone Spear', category: 'Weapons', ingredients: ['1x Long Stick', '1x Stone Blade', '1x Rope'], desc: 'Improved damage. The standard early game weapon.', rarity: 'common' },
-  { id: 'w3', name: 'Bone Spear', category: 'Weapons', ingredients: ['1x Long Stick', '1x Bone', '1x Rope'], desc: 'Solid damage. Easy to craft after a kill.', rarity: 'common' },
-  { id: 'w4', name: 'Obsidian Spear', category: 'Weapons', ingredients: ['1x Long Stick', '1x Obsidian Stone', '1x Rope'], desc: 'High damage, brittle material.', rarity: 'rare' },
-  { id: 'w5', name: 'Four Pronged Spear', category: 'Weapons', ingredients: ['1x Long Stick', '2x Small Stick', '1x Rope'], desc: 'The best fishing spear.', rarity: 'uncommon' },
-  { id: 'w6', name: 'Bamboo Spear', category: 'Weapons', ingredients: ['1x Long Bamboo Stick'], desc: 'Lightweight, low stamina usage.', rarity: 'common' },
-  { id: 'w7', name: 'Metal Spear', category: 'Weapons', ingredients: ['1x Long Stick', '1x Metal Blade', '1x Rope'], desc: 'Top tier spear. Requires forge.', rarity: 'legendary' },
-  { id: 'w8', name: 'Bow', category: 'Weapons', ingredients: ['1x Long Stick', '1x Rope'], desc: 'Headshots kill almost anything.', rarity: 'common' },
-  { id: 'w9', name: 'Bamboo Bow', category: 'Weapons', ingredients: ['1x Long Bamboo Stick', '1x Rope'], desc: 'Lighter than wood bow.', rarity: 'common' },
-  { id: 'w10', name: 'Arrow', category: 'Weapons', ingredients: ['2x Feather', '1x Small Stick'], desc: 'Basic ammunition.', rarity: 'common' },
-  { id: 'w11', name: 'Metal Arrow', category: 'Weapons', ingredients: ['1x Metal Arrowhead', '2x Feather', '1x Small Stick'], desc: 'High damage, penetrating arrow.', rarity: 'legendary' },
-  { id: 'w12', name: 'Blowpipe', category: 'Weapons', ingredients: ['1x Long Bamboo Stick', '2x Rope'], desc: 'Non-lethal. Knocks animals out for taming.', rarity: 'uncommon' },
+    <script type="text/babel">
+        const { useState, useMemo } = React;
 
-  // --- ARMOR ---
-  { id: 'a1', name: 'Leaf Armor', category: 'Armor', ingredients: ['1x Banana Leaf', '2x Rope'], desc: 'Minimal protection. Better than nothing.', rarity: 'common' },
-  { id: 'a2', name: 'Stick Armor', category: 'Armor', ingredients: ['1x Banana Leaf', '2x Rope', '3x Stick'], desc: 'Decent early game protection against scratches.', rarity: 'common' },
-  { id: 'a3', name: 'Bone Armor', category: 'Armor', ingredients: ['1x Banana Leaf', '2x Rope', '3x Bone'], desc: 'Good physical protection. Moderate weight.', rarity: 'uncommon' },
-  { id: 'a4', name: 'Armadillo Armor', category: 'Armor', ingredients: ['1x Banana Leaf', '2x Rope', '1x Armadillo Shell'], desc: 'High defense. Hard to find materials.', rarity: 'rare' },
-  { id: 'a5', name: 'Metal Armor', category: 'Armor', ingredients: ['1x Banana Leaf', '2x Rope', '3x Metal Armor Cast'], desc: 'Maximum protection. Very heavy.', rarity: 'legendary' },
+        // Icon Components Mapping (Lucide -> FontAwesome)
+        const IconWrapper = ({ icon, size = 24, className = "" }) => (
+            <i className={`fas ${icon} ${className}`} style={{ fontSize: size }}></i>
+        );
 
-  // --- TOOLS ---
-  { id: 't1', name: 'Stone Blade', category: 'Tools', ingredients: ['2x Stone'], desc: 'Basic cutting tool. Essential for harvesting.', rarity: 'common' },
-  { id: 't2', name: 'Stone Axe', category: 'Tools', ingredients: ['1x Stick', '1x Stone Blade', '1x Rope'], desc: 'Standard axe.', rarity: 'common' },
-  { id: 't3', name: 'Blade Axe', category: 'Tools', ingredients: ['1x Stick', '3x Stone Blade'], desc: 'High cutting damage axe.', rarity: 'uncommon' },
-  { id: 't4', name: 'Bone Knife', category: 'Tools', ingredients: ['1x Bone', '1x Rope'], desc: 'Sharp knife harvested from carcasses.', rarity: 'common' },
-  { id: 't5', name: 'Obsidian Axe', category: 'Tools', ingredients: ['1x Obsidian Stone', '1x Stick', '1x Rope'], desc: 'Durable and sharp axe.', rarity: 'rare' },
-  { id: 't6', name: 'Coconut Bidon', category: 'Tools', ingredients: ['1x Drinkable Coconut', '1x Rope'], desc: 'Carries water (40 units).', rarity: 'common' },
-  { id: 't7', name: 'Fire Starter', category: 'Tools', ingredients: ['2x Small Stick'], desc: 'Hand drill.', rarity: 'common' },
-  { id: 't8', name: 'Weak Torch', category: 'Tools', ingredients: ['1x Stick', '1x Rope'], desc: 'Provides light.', rarity: 'common' },
-  { id: 't9', name: 'Fishing Rod', category: 'Tools', ingredients: ['1x Long Stick', '1x Rope', '2x Feather', '1x Brazil Nut Shell'], desc: 'Requires Hook + Bait.', rarity: 'uncommon' },
-  { id: 't10', name: 'Bone Hook', category: 'Tools', ingredients: ['1x Bone Needle'], desc: 'Hook for fishing.', rarity: 'common' },
+        const Search = (props) => <IconWrapper icon="fa-search" {...props} />;
+        const PenTool = (props) => <IconWrapper icon="fa-pen-nib" {...props} />;
+        const Sword = (props) => <IconWrapper icon="fa-khanda" {...props} />; // Closest to sword in free set
+        const Shield = (props) => <IconWrapper icon="fa-shield-alt" {...props} />;
+        const Activity = (props) => <IconWrapper icon="fa-heartbeat" {...props} />;
+        const Home = (props) => <IconWrapper icon="fa-home" {...props} />;
+        const Hammer = (props) => <IconWrapper icon="fa-hammer" {...props} />;
+        const Menu = (props) => <IconWrapper icon="fa-bars" {...props} />;
+        const X = (props) => <IconWrapper icon="fa-times" {...props} />;
+        const Info = (props) => <IconWrapper icon="fa-info-circle" {...props} />;
+        const Leaf = (props) => <IconWrapper icon="fa-leaf" {...props} />;
+        const Box = (props) => <IconWrapper icon="fa-box-open" {...props} />;
+        const Utensils = (props) => <IconWrapper icon="fa-utensils" {...props} />;
+        const Sprout = (props) => <IconWrapper icon="fa-seedling" {...props} />;
+        const Cat = (props) => <IconWrapper icon="fa-paw" {...props} />; // Cat icon
+        const Skull = (props) => <IconWrapper icon="fa-skull" {...props} />;
 
-  // --- HUSBANDRY ---
-  { id: 'h1', name: 'Animal Pen', category: 'Husbandry', ingredients: ['Logs', 'Long Sticks', 'Rope', 'Sticks'], desc: 'Base structure for breeding animals.', rarity: 'common' },
-  { id: 'h3', name: 'Poison Dart', category: 'Husbandry', ingredients: ['1x Unfinished Dart', '1x Poison Dart Frog / Wandering Spider'], desc: 'Ammo for Blowpipe.', rarity: 'uncommon' },
-  { id: 'h4', name: 'Small Trough', category: 'Husbandry', ingredients: ['4x Small Stick', '2x Rope'], desc: 'Food/Water for animals.', rarity: 'common' },
+        // --- PASTE CONTENT START ---
 
-  // --- FARMING ---
-  { id: 'fa1', name: 'Small Planting Box', category: 'Farming', ingredients: ['4x Board', '4x Stick', '4x Rope'], desc: 'Grow herbs.', rarity: 'common' },
-  { id: 'fa2', name: 'Large Planting Box', category: 'Farming', ingredients: ['4x Log', '4x Stick', '4x Rope'], desc: 'Grow trees/bamboo.', rarity: 'common' },
-  { id: 'fa10', name: 'Fertilizer', category: 'Farming', source: 'Rotten Fruit / Poop', desc: 'Boosts growth speed.', rarity: 'common' },
+        const CRAFTING_DATA = [
+          // --- WEAPONS ---
+          { id: 'w1', name: 'Weak Spear', category: 'Weapons', ingredients: ['1x Long Stick'], desc: 'Basic reach weapon. Good for throwing.', rarity: 'common' },
+          { id: 'w2', name: 'Stone Spear', category: 'Weapons', ingredients: ['1x Long Stick', '1x Stone Blade', '1x Rope'], desc: 'Improved damage. The standard early game weapon.', rarity: 'common' },
+          { id: 'w3', name: 'Bone Spear', category: 'Weapons', ingredients: ['1x Long Stick', '1x Bone', '1x Rope'], desc: 'Solid damage. Easy to craft after a kill.', rarity: 'common' },
+          { id: 'w4', name: 'Obsidian Spear', category: 'Weapons', ingredients: ['1x Long Stick', '1x Obsidian Stone', '1x Rope'], desc: 'High damage, brittle material.', rarity: 'rare' },
+          { id: 'w5', name: 'Four Pronged Spear', category: 'Weapons', ingredients: ['1x Long Stick', '2x Small Stick', '1x Rope'], desc: 'The best fishing spear.', rarity: 'uncommon' },
+          { id: 'w6', name: 'Bamboo Spear', category: 'Weapons', ingredients: ['1x Long Bamboo Stick'], desc: 'Lightweight, low stamina usage.', rarity: 'common' },
+          { id: 'w7', name: 'Metal Spear', category: 'Weapons', ingredients: ['1x Long Stick', '1x Metal Blade', '1x Rope'], desc: 'Top tier spear. Requires forge.', rarity: 'legendary' },
+          { id: 'w8', name: 'Bow', category: 'Weapons', ingredients: ['1x Long Stick', '1x Rope'], desc: 'Headshots kill almost anything.', rarity: 'common' },
+          { id: 'w9', name: 'Bamboo Bow', category: 'Weapons', ingredients: ['1x Long Bamboo Stick', '1x Rope'], desc: 'Lighter than wood bow.', rarity: 'common' },
+          { id: 'w10', name: 'Arrow', category: 'Weapons', ingredients: ['2x Feather', '1x Small Stick'], desc: 'Basic ammunition.', rarity: 'common' },
+          { id: 'w11', name: 'Metal Arrow', category: 'Weapons', ingredients: ['1x Metal Arrowhead', '2x Feather', '1x Small Stick'], desc: 'High damage, penetrating arrow.', rarity: 'legendary' },
+          { id: 'w12', name: 'Blowpipe', category: 'Weapons', ingredients: ['1x Long Bamboo Stick', '2x Rope'], desc: 'Non-lethal. Knocks animals out for taming.', rarity: 'uncommon' },
 
-  // --- FOOD & COOKING (Recipes) ---
-  { id: 'f1', name: 'Meat Soup', category: 'Food & Drink', ingredients: ['Boiling Water', '1x Piece of Meat', 'Bowl'], desc: 'High Protein + Hydration.', rarity: 'common' },
-  { id: 'f2', name: 'Bone Infusion', category: 'Food & Drink', ingredients: ['Boiling Water', '1x Bone', 'Bowl'], desc: 'Cures Fever. Protein.', rarity: 'common' },
-  { id: 'f6', name: 'Smoked Meat', category: 'Food & Drink', ingredients: ['Raw Meat', 'Smoker'], desc: 'Long preservation.', rarity: 'uncommon' },
-  { id: 'f7', name: 'Dried Meat', category: 'Food & Drink', ingredients: ['Raw Meat', 'Drying Rack'], desc: 'Very long preservation.', rarity: 'uncommon' },
+          // --- ARMOR ---
+          { id: 'a1', name: 'Leaf Armor', category: 'Armor', ingredients: ['1x Banana Leaf', '2x Rope'], desc: 'Minimal protection. Better than nothing.', rarity: 'common' },
+          { id: 'a2', name: 'Stick Armor', category: 'Armor', ingredients: ['1x Banana Leaf', '2x Rope', '3x Stick'], desc: 'Decent early game protection against scratches.', rarity: 'common' },
+          { id: 'a3', name: 'Bone Armor', category: 'Armor', ingredients: ['1x Banana Leaf', '2x Rope', '3x Bone'], desc: 'Good physical protection. Moderate weight.', rarity: 'uncommon' },
+          { id: 'a4', name: 'Armadillo Armor', category: 'Armor', ingredients: ['1x Banana Leaf', '2x Rope', '1x Armadillo Shell'], desc: 'High defense. Hard to find materials.', rarity: 'rare' },
+          { id: 'a5', name: 'Metal Armor', category: 'Armor', ingredients: ['1x Banana Leaf', '2x Rope', '3x Metal Armor Cast'], desc: 'Maximum protection. Very heavy.', rarity: 'legendary' },
 
-  // --- CONSTRUCTION ---
-  { id: 'c1', name: 'Frame', category: 'Construction', ingredients: ['4x Log', '1x Long Stick', '4x Rope'], desc: 'Basic skeleton.', rarity: 'common' },
-  { id: 'c3', name: 'Palm Roof', category: 'Construction', ingredients: ['16x Palm Leaf'], desc: 'Waterproof roof.', rarity: 'common' },
-  { id: 'c5', name: 'Wall', category: 'Construction', ingredients: ['9x Stick', '4x Rope'], desc: 'Basic wall.', rarity: 'common' },
-  { id: 'c11', name: 'Smoker', category: 'Construction', ingredients: ['3x Long Stick', '1x Rope', '4x Leaf', '1x Campfire'], desc: 'Cooks and preserves.', rarity: 'uncommon' },
-  { id: 'c12', name: 'Drying Rack', category: 'Construction', ingredients: ['7x Long Stick', '11x Rope', '3x Small Stick'], desc: 'Dries meat.', rarity: 'uncommon' },
-  { id: 'c13', name: 'Water Filter', category: 'Construction', ingredients: ['2x Long Stick', '1x Log', '2x Rope', '3x Charcoal', '2x Stone'], desc: 'Filters dirty water.', rarity: 'uncommon' },
-  { id: 'hu1', name: 'Snare Trap', category: 'Construction', ingredients: ['2x Log', '1x Long Stick', '8x Rope', '2x Small Stick'], desc: 'Catches small game.', rarity: 'common' },
-  { id: 'hu2', name: 'Killer Trap', category: 'Construction', ingredients: ['4x Log', '1x Long Stick', '7x Rope', '1x Stick', '4x Small Stone'], desc: 'Lethal trap.', rarity: 'rare' },
+          // --- TOOLS ---
+          { id: 't1', name: 'Stone Blade', category: 'Tools', ingredients: ['2x Stone'], desc: 'Basic cutting tool. Essential for harvesting.', rarity: 'common' },
+          { id: 't2', name: 'Stone Axe', category: 'Tools', ingredients: ['1x Stick', '1x Stone Blade', '1x Rope'], desc: 'Standard axe.', rarity: 'common' },
+          { id: 't3', name: 'Blade Axe', category: 'Tools', ingredients: ['1x Stick', '3x Stone Blade'], desc: 'High cutting damage axe.', rarity: 'uncommon' },
+          { id: 't4', name: 'Bone Knife', category: 'Tools', ingredients: ['1x Bone', '1x Rope'], desc: 'Sharp knife harvested from carcasses.', rarity: 'common' },
+          { id: 't5', name: 'Obsidian Axe', category: 'Tools', ingredients: ['1x Obsidian Stone', '1x Stick', '1x Rope'], desc: 'Durable and sharp axe.', rarity: 'rare' },
+          { id: 't6', name: 'Coconut Bidon', category: 'Tools', ingredients: ['1x Drinkable Coconut', '1x Rope'], desc: 'Carries water (40 units).', rarity: 'common' },
+          { id: 't7', name: 'Fire Starter', category: 'Tools', ingredients: ['2x Small Stick'], desc: 'Hand drill.', rarity: 'common' },
+          { id: 't8', name: 'Weak Torch', category: 'Tools', ingredients: ['1x Stick', '1x Rope'], desc: 'Provides light.', rarity: 'common' },
+          { id: 't9', name: 'Fishing Rod', category: 'Tools', ingredients: ['1x Long Stick', '1x Rope', '2x Feather', '1x Brazil Nut Shell'], desc: 'Requires Hook + Bait.', rarity: 'uncommon' },
+          { id: 't10', name: 'Bone Hook', category: 'Tools', ingredients: ['1x Bone Needle'], desc: 'Hook for fishing.', rarity: 'common' },
 
-  // --- MEDICINE ---
-  { id: 'm1', name: 'Leaf Bandage', category: 'Medicine', ingredients: ['1x Molineria Leaf'], desc: 'Cures: Bleeding.', rarity: 'common' },
-  { id: 'm2', name: 'Ash Dressing', category: 'Medicine', ingredients: ['1x Leaf Bandage', '1x Ash'], desc: 'Cures: Laceration.', rarity: 'common' },
-  { id: 'm3', name: 'Tobacco Dressing', category: 'Medicine', ingredients: ['1x Leaf Bandage', '1x Tobacco Leaf'], desc: 'Cures: Venom Poisoning.', rarity: 'uncommon' },
-  { id: 'm4', name: 'Honey Dressing', category: 'Medicine', ingredients: ['1x Leaf Bandage', '1x Honeycomb'], desc: 'Cures: Rashes, Infections.', rarity: 'uncommon' },
-  { id: 'm5', name: 'Lily Dressing', category: 'Medicine', ingredients: ['1x Leaf Bandage', '1x Plantain Lily Leaf'], desc: 'Cures: Rashes.', rarity: 'common' },
-];
+          // --- HUSBANDRY ---
+          { id: 'h1', name: 'Animal Pen', category: 'Husbandry', ingredients: ['Logs', 'Long Sticks', 'Rope', 'Sticks'], desc: 'Base structure for breeding animals.', rarity: 'common' },
+          { id: 'h3', name: 'Poison Dart', category: 'Husbandry', ingredients: ['1x Unfinished Dart', '1x Poison Dart Frog / Wandering Spider'], desc: 'Ammo for Blowpipe.', rarity: 'uncommon' },
+          { id: 'h4', name: 'Small Trough', category: 'Husbandry', ingredients: ['4x Small Stick', '2x Rope'], desc: 'Food/Water for animals.', rarity: 'common' },
 
-const RESOURCES_DATA = [
-  // --- WILDLIFE ---
-  { id: 'an1', name: 'Peccary', category: 'Hunting', source: 'Jungle floor (Herds)', usage: 'Kill: Headshot/Spear. Yields: Peccary Meat.', rarity: 'common' },
-  { id: 'an2', name: 'Tapir', category: 'Hunting', source: 'Jungle floor', usage: 'Kill: Headshots required. Yields: Tapir Meat.', rarity: 'rare' },
-  { id: 'an3', name: 'Capybara', category: 'Hunting', source: 'Near water', usage: 'Kill: Easy target. Yields: Capybara Meat.', rarity: 'common' },
-  { id: 'an4', name: 'Jaguar', category: 'Hunting', source: 'Predator', usage: 'Kill: Headshot immediately. Yields: Meat, Fangs.', rarity: 'legendary' },
-  { id: 'an5', name: 'Caiman', category: 'Hunting', source: 'River Banks', usage: 'Kill: HEAD ONLY. Yields: Meat, Bones.', rarity: 'rare' },
-  { id: 'an6', name: 'Rattlesnake', category: 'Hunting', source: 'Ground', usage: 'Kill: Spear/Arrow. Watch your step.', rarity: 'common' },
-  { id: 'an7', name: 'Wandering Spider', category: 'Hunting', source: 'Ground', usage: 'Kill: Spear. Harvest for Poison Dart.', rarity: 'uncommon' },
-  
-  // --- RAW FOODS (No Ingredients) ---
-  { id: 'rf1', name: 'Banana', category: 'Food & Drink', source: 'Banana Tree', usage: 'Carbs. Harvest for Seeds.', rarity: 'common' },
-  { id: 'rf2', name: 'Orange', category: 'Food & Drink', source: 'Small orange tree', usage: 'Carbs + Hydration.', rarity: 'common' },
-  { id: 'rf3', name: 'Avocado', category: 'Food & Drink', source: 'Tall trees', usage: 'High Fats.', rarity: 'common' },
-  { id: 'rf4', name: 'Monstera Fruit', category: 'Food & Drink', source: 'Monstera plant', usage: 'Protein + Carbs. Harvest for Seeds.', rarity: 'uncommon' },
-  { id: 'rf10', name: 'Cassava Bulb', category: 'Food & Drink', source: 'Cassava bush', usage: 'Massive Carbs (60). COOK FIRST.', rarity: 'common' },
+          // --- FARMING ---
+          { id: 'fa1', name: 'Small Planting Box', category: 'Farming', ingredients: ['4x Board', '4x Stick', '4x Rope'], desc: 'Grow herbs.', rarity: 'common' },
+          { id: 'fa2', name: 'Large Planting Box', category: 'Farming', ingredients: ['4x Log', '4x Stick', '4x Rope'], desc: 'Grow trees/bamboo.', rarity: 'common' },
+          { id: 'fa10', name: 'Fertilizer', category: 'Farming', source: 'Rotten Fruit / Poop', desc: 'Boosts growth speed.', rarity: 'common' },
 
-  // --- MATERIALS ---
-  { id: 'r2', name: 'Obsidian Stone', category: 'Resources', source: 'Caves', usage: 'High tier blades.', rarity: 'rare' },
-  { id: 'r3', name: 'Molineria Leaf', category: 'Resources', source: 'Yellow flower', usage: 'Bandages.', rarity: 'common' },
-  { id: 'r4', name: 'Tobacco Leaf', category: 'Resources', source: 'Pink flower', usage: 'Antivenom.', rarity: 'uncommon' },
-  { id: 'r10', name: 'Bone', category: 'Resources', source: 'Dead animals', usage: 'Tools, Armor, Soup.', rarity: 'common' },
-];
+          // --- FOOD & COOKING (Recipes) ---
+          { id: 'f1', name: 'Meat Soup', category: 'Food & Drink', ingredients: ['Boiling Water', '1x Piece of Meat', 'Bowl'], desc: 'High Protein + Hydration.', rarity: 'common' },
+          { id: 'f2', name: 'Bone Infusion', category: 'Food & Drink', ingredients: ['Boiling Water', '1x Bone', 'Bowl'], desc: 'Cures Fever. Protein.', rarity: 'common' },
+          { id: 'f6', name: 'Smoked Meat', category: 'Food & Drink', ingredients: ['Raw Meat', 'Smoker'], desc: 'Long preservation.', rarity: 'uncommon' },
+          { id: 'f7', name: 'Dried Meat', category: 'Food & Drink', ingredients: ['Raw Meat', 'Drying Rack'], desc: 'Very long preservation.', rarity: 'uncommon' },
 
-const CATEGORIES = [
-  { id: 'All', icon: Home, label: 'All' },
-  { id: 'Weapons', icon: Sword, label: 'Weapons' },
-  { id: 'Armor', icon: Shield, label: 'Armor' },
-  { id: 'Tools', icon: PenTool, label: 'Tools' },
-  { id: 'Construction', icon: Hammer, label: 'Build' },
-  { id: 'Food & Drink', icon: Utensils, label: 'Food' },
-  { id: 'Hunting', icon: Skull, label: 'Hunting' },
-  { id: 'Medicine', icon: Activity, label: 'Meds' },
-  { id: 'Husbandry', icon: Cat, label: 'Pets' },
-  { id: 'Farming', icon: Sprout, label: 'Farm' },
-  { id: 'Resources', icon: Leaf, label: 'Mats' },
-];
+          // --- CONSTRUCTION ---
+          { id: 'c1', name: 'Frame', category: 'Construction', ingredients: ['4x Log', '1x Long Stick', '4x Rope'], desc: 'Basic skeleton.', rarity: 'common' },
+          { id: 'c3', name: 'Palm Roof', category: 'Construction', ingredients: ['16x Palm Leaf'], desc: 'Waterproof roof.', rarity: 'common' },
+          { id: 'c5', name: 'Wall', category: 'Construction', ingredients: ['9x Stick', '4x Rope'], desc: 'Basic wall.', rarity: 'common' },
+          { id: 'c11', name: 'Smoker', category: 'Construction', ingredients: ['3x Long Stick', '1x Rope', '4x Leaf', '1x Campfire'], desc: 'Cooks and preserves.', rarity: 'uncommon' },
+          { id: 'c12', name: 'Drying Rack', category: 'Construction', ingredients: ['7x Long Stick', '11x Rope', '3x Small Stick'], desc: 'Dries meat.', rarity: 'uncommon' },
+          { id: 'c13', name: 'Water Filter', category: 'Construction', ingredients: ['2x Long Stick', '1x Log', '2x Rope', '3x Charcoal', '2x Stone'], desc: 'Filters dirty water.', rarity: 'uncommon' },
+          { id: 'hu1', name: 'Snare Trap', category: 'Construction', ingredients: ['2x Log', '1x Long Stick', '8x Rope', '2x Small Stick'], desc: 'Catches small game.', rarity: 'common' },
+          { id: 'hu2', name: 'Killer Trap', category: 'Construction', ingredients: ['4x Log', '1x Long Stick', '7x Rope', '1x Stick', '4x Small Stone'], desc: 'Lethal trap.', rarity: 'rare' },
 
-export default function GreenHellGuide() {
-  const [activeCategory, setActiveCategory] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
+          // --- MEDICINE ---
+          { id: 'm1', name: 'Leaf Bandage', category: 'Medicine', ingredients: ['1x Molineria Leaf'], desc: 'Cures: Bleeding.', rarity: 'common' },
+          { id: 'm2', name: 'Ash Dressing', category: 'Medicine', ingredients: ['1x Leaf Bandage', '1x Ash'], desc: 'Cures: Laceration.', rarity: 'common' },
+          { id: 'm3', name: 'Tobacco Dressing', category: 'Medicine', ingredients: ['1x Leaf Bandage', '1x Tobacco Leaf'], desc: 'Cures: Venom Poisoning.', rarity: 'uncommon' },
+          { id: 'm4', name: 'Honey Dressing', category: 'Medicine', ingredients: ['1x Leaf Bandage', '1x Honeycomb'], desc: 'Cures: Rashes, Infections.', rarity: 'uncommon' },
+          { id: 'm5', name: 'Lily Dressing', category: 'Medicine', ingredients: ['1x Leaf Bandage', '1x Plantain Lily Leaf'], desc: 'Cures: Rashes.', rarity: 'common' },
+        ];
 
-  const combinedData = useMemo(() => [...CRAFTING_DATA, ...RESOURCES_DATA], []);
+        const RESOURCES_DATA = [
+          // --- WILDLIFE ---
+          { id: 'an1', name: 'Peccary', category: 'Hunting', source: 'Jungle floor (Herds)', usage: 'Kill: Headshot/Spear. Yields: Peccary Meat.', rarity: 'common' },
+          { id: 'an2', name: 'Tapir', category: 'Hunting', source: 'Jungle floor', usage: 'Kill: Headshots required. Yields: Tapir Meat.', rarity: 'rare' },
+          { id: 'an3', name: 'Capybara', category: 'Hunting', source: 'Near water', usage: 'Kill: Easy target. Yields: Capybara Meat.', rarity: 'common' },
+          { id: 'an4', name: 'Jaguar', category: 'Hunting', source: 'Predator', usage: 'Kill: Headshot immediately. Yields: Meat, Fangs.', rarity: 'legendary' },
+          { id: 'an5', name: 'Caiman', category: 'Hunting', source: 'River Banks', usage: 'Kill: HEAD ONLY. Yields: Meat, Bones.', rarity: 'rare' },
+          { id: 'an6', name: 'Rattlesnake', category: 'Hunting', source: 'Ground', usage: 'Kill: Spear/Arrow. Watch your step.', rarity: 'common' },
+          { id: 'an7', name: 'Wandering Spider', category: 'Hunting', source: 'Ground', usage: 'Kill: Spear. Harvest for Poison Dart.', rarity: 'uncommon' },
+          
+          // --- RAW FOODS (No Ingredients) ---
+          { id: 'rf1', name: 'Banana', category: 'Food & Drink', source: 'Banana Tree', usage: 'Carbs. Harvest for Seeds.', rarity: 'common' },
+          { id: 'rf2', name: 'Orange', category: 'Food & Drink', source: 'Small orange tree', usage: 'Carbs + Hydration.', rarity: 'common' },
+          { id: 'rf3', name: 'Avocado', category: 'Food & Drink', source: 'Tall trees', usage: 'High Fats.', rarity: 'common' },
+          { id: 'rf4', name: 'Monstera Fruit', category: 'Food & Drink', source: 'Monstera plant', usage: 'Protein + Carbs. Harvest for Seeds.', rarity: 'uncommon' },
+          { id: 'rf10', name: 'Cassava Bulb', category: 'Food & Drink', source: 'Cassava bush', usage: 'Massive Carbs (60). COOK FIRST.', rarity: 'common' },
 
-  const filteredData = useMemo(() => {
-    let dataToFilter = combinedData;
+          // --- MATERIALS ---
+          { id: 'r2', name: 'Obsidian Stone', category: 'Resources', source: 'Caves', usage: 'High tier blades.', rarity: 'rare' },
+          { id: 'r3', name: 'Molineria Leaf', category: 'Resources', source: 'Yellow flower', usage: 'Bandages.', rarity: 'common' },
+          { id: 'r4', name: 'Tobacco Leaf', category: 'Resources', source: 'Pink flower', usage: 'Antivenom.', rarity: 'uncommon' },
+          { id: 'r10', name: 'Bone', category: 'Resources', source: 'Dead animals', usage: 'Tools, Armor, Soup.', rarity: 'common' },
+        ];
 
-    // Direct Category Filter
-    if (activeCategory === 'Hunting' || activeCategory === 'Resources') {
-       // Force resource view logic if category matches, but also respect "All"
-       dataToFilter = combinedData.filter(i => i.category === activeCategory);
-    } else if (activeCategory !== 'All') {
-       dataToFilter = combinedData.filter(item => item.category === activeCategory);
-    }
+        const CATEGORIES = [
+          { id: 'All', icon: Home, label: 'All' },
+          { id: 'Weapons', icon: Sword, label: 'Weapons' },
+          { id: 'Armor', icon: Shield, label: 'Armor' },
+          { id: 'Tools', icon: PenTool, label: 'Tools' },
+          { id: 'Construction', icon: Hammer, label: 'Build' },
+          { id: 'Food & Drink', icon: Utensils, label: 'Food' },
+          { id: 'Hunting', icon: Skull, label: 'Hunting' },
+          { id: 'Medicine', icon: Activity, label: 'Meds' },
+          { id: 'Husbandry', icon: Cat, label: 'Pets' },
+          { id: 'Farming', icon: Sprout, label: 'Farm' },
+          { id: 'Resources', icon: Leaf, label: 'Mats' },
+        ];
 
-    // Search Filter
-    return dataToFilter.filter((item) => {
-      const searchLower = searchQuery.toLowerCase();
-      const nameMatch = item.name.toLowerCase().includes(searchLower);
-      
-      let contentMatch = false;
-      if (item.ingredients) {
-        contentMatch = item.ingredients.some(ing => ing.toLowerCase().includes(searchLower));
-      } else if (item.source || item.usage) {
-        contentMatch = (item.source?.toLowerCase().includes(searchLower) || item.usage?.toLowerCase().includes(searchLower));
-      }
+        function GreenHellGuide() {
+          const [activeCategory, setActiveCategory] = useState('All');
+          const [searchQuery, setSearchQuery] = useState('');
+          const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+          const [selectedItem, setSelectedItem] = useState(null);
 
-      return nameMatch || contentMatch;
-    });
-  }, [activeCategory, searchQuery, combinedData]);
+          const combinedData = useMemo(() => [...CRAFTING_DATA, ...RESOURCES_DATA], []);
 
-  const getRarityColor = (rarity) => {
-    switch(rarity) {
-      case 'common': return 'border-l-4 border-slate-500';
-      case 'uncommon': return 'border-l-4 border-emerald-500';
-      case 'rare': return 'border-l-4 border-blue-500';
-      case 'legendary': return 'border-l-4 border-amber-500';
-      default: return 'border-l-4 border-slate-500';
-    }
-  };
+          const filteredData = useMemo(() => {
+            let dataToFilter = combinedData;
 
-  return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 font-sans selection:bg-emerald-500 selection:text-white pb-20">
-      <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveCategory('All')}>
-              <div className="w-8 h-8 bg-emerald-600 rounded flex items-center justify-center shadow-lg shadow-emerald-900/50">
-                <span className="font-bold text-white">GH</span>
-              </div>
-              <h1 className="hidden sm:block text-xl font-bold tracking-tight text-emerald-50 text-opacity-90">
-                Jungle<span className="text-emerald-500">Guide</span>
-              </h1>
-            </div>
-            <nav className="hidden md:flex gap-1 overflow-x-auto no-scrollbar max-w-2xl">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={`px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 flex items-center gap-2 whitespace-nowrap ${
-                    activeCategory === cat.id
-                      ? 'bg-emerald-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-emerald-400 hover:bg-slate-800'
-                  }`}
-                >
-                  <cat.icon size={14} />
-                  {cat.label}
-                </button>
-              ))}
-            </nav>
-            <button 
-              className="md:hidden p-2 text-slate-300 hover:text-white"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
-        </div>
-        {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-slate-800 bg-slate-900 p-2 space-y-1 shadow-2xl max-h-[60vh] overflow-y-auto">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => {
-                  setActiveCategory(cat.id);
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium flex items-center gap-3 ${
-                  activeCategory === cat.id
-                    ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/30'
-                    : 'text-slate-400 hover:bg-slate-800'
-                }`}
-              >
-                <cat.icon size={18} />
-                {cat.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </header>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="relative max-w-2xl mx-auto mb-10">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-slate-500" />
-          </div>
-          <input
-            type="text"
-            className="block w-full pl-10 pr-3 py-4 border border-slate-700 rounded-xl leading-5 bg-slate-800/50 text-slate-100 placeholder-slate-500 focus:outline-none focus:bg-slate-800 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all shadow-inner"
-            placeholder="Search: 'Obsidian Spear', 'Armor', 'Tapir'..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <div className="mb-8 p-4 rounded-lg bg-emerald-900/20 border border-emerald-900/50 flex items-start gap-3">
-          <Info className="text-emerald-500 shrink-0 mt-0.5" size={20} />
-          <p className="text-sm text-emerald-200/80">
-             <strong>Survival Tip:</strong> {activeCategory === 'Armor' ? "Armor doesn't just reduce damage; it prevents lacerations and rashes. Metal Armor is strongest but slows you down significantly." : "Headshots are critical. A weak spear to the head is better than a metal spear to the leg."}
-          </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredData.length > 0 ? (
-            filteredData.map((item) => (
-              <div 
-                key={item.id}
-                onClick={() => setSelectedItem(item)}
-                className={`group relative bg-slate-800 rounded-xl p-5 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col justify-between ${getRarityColor(item.rarity)}`}
-              >
-                <div>
-                  <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-lg font-bold text-slate-100 group-hover:text-emerald-400 transition-colors pr-2 leading-tight">
-                      {item.name}
-                    </h3>
-                    {item.rarity === 'legendary' && <span className="text-amber-500"><Box size={16}/></span>}
+            // Direct Category Filter
+            if (activeCategory === 'Hunting' || activeCategory === 'Resources') {
+               // Force resource view logic if category matches, but also respect "All"
+               dataToFilter = combinedData.filter(i => i.category === activeCategory);
+            } else if (activeCategory !== 'All') {
+               dataToFilter = combinedData.filter(item => item.category === activeCategory);
+            }
+
+            // Search Filter
+            return dataToFilter.filter((item) => {
+              const searchLower = searchQuery.toLowerCase();
+              const nameMatch = item.name.toLowerCase().includes(searchLower);
+              
+              let contentMatch = false;
+              if (item.ingredients) {
+                contentMatch = item.ingredients.some(ing => ing.toLowerCase().includes(searchLower));
+              } else if (item.source || item.usage) {
+                contentMatch = (item.source?.toLowerCase().includes(searchLower) || item.usage?.toLowerCase().includes(searchLower));
+              }
+
+              return nameMatch || contentMatch;
+            });
+          }, [activeCategory, searchQuery, combinedData]);
+
+          const getRarityColor = (rarity) => {
+            switch(rarity) {
+              case 'common': return 'border-l-4 border-slate-500';
+              case 'uncommon': return 'border-l-4 border-emerald-500';
+              case 'rare': return 'border-l-4 border-blue-500';
+              case 'legendary': return 'border-l-4 border-amber-500';
+              default: return 'border-l-4 border-slate-500';
+            }
+          };
+
+          return (
+            <div className="min-h-screen bg-slate-900 text-slate-100 font-sans selection:bg-emerald-500 selection:text-white pb-20">
+              <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="flex justify-between items-center h-16">
+                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveCategory('All')}>
+                      <div className="w-8 h-8 bg-emerald-600 rounded flex items-center justify-center shadow-lg shadow-emerald-900/50">
+                        <span className="font-bold text-white">GH</span>
+                      </div>
+                      <h1 className="hidden sm:block text-xl font-bold tracking-tight text-emerald-50 text-opacity-90">
+                        Jungle<span className="text-emerald-500">Guide</span>
+                      </h1>
+                    </div>
+                    <nav className="hidden md:flex gap-1 overflow-x-auto no-scrollbar max-w-2xl">
+                      {CATEGORIES.map((cat) => (
+                        <button
+                          key={cat.id}
+                          onClick={() => setActiveCategory(cat.id)}
+                          className={`px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 flex items-center gap-2 whitespace-nowrap ${
+                            activeCategory === cat.id
+                              ? 'bg-emerald-600 text-white shadow-md'
+                              : 'text-slate-400 hover:text-emerald-400 hover:bg-slate-800'
+                          }`}
+                        >
+                          <cat.icon size={14} />
+                          {cat.label}
+                        </button>
+                      ))}
+                    </nav>
+                    <button 
+                      className="md:hidden p-2 text-slate-300 hover:text-white"
+                      onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    >
+                      {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                    </button>
                   </div>
-                  <p className="text-sm text-slate-400 mb-4 h-12 overflow-hidden line-clamp-2">
-                    {item.desc || item.usage}
+                </div>
+                {isMobileMenuOpen && (
+                  <div className="md:hidden border-t border-slate-800 bg-slate-900 p-2 space-y-1 shadow-2xl max-h-[60vh] overflow-y-auto">
+                    {CATEGORIES.map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => {
+                          setActiveCategory(cat.id);
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium flex items-center gap-3 ${
+                          activeCategory === cat.id
+                            ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/30'
+                            : 'text-slate-400 hover:bg-slate-800'
+                        }`}
+                      >
+                        <cat.icon size={18} />
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </header>
+              <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="relative max-w-2xl mx-auto mb-10">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-5 w-5 text-slate-500" />
+                  </div>
+                  <input
+                    type="text"
+                    className="block w-full pl-10 pr-3 py-4 border border-slate-700 rounded-xl leading-5 bg-slate-800/50 text-slate-100 placeholder-slate-500 focus:outline-none focus:bg-slate-800 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all shadow-inner"
+                    placeholder="Search: 'Obsidian Spear', 'Armor', 'Tapir'..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <div className="mb-8 p-4 rounded-lg bg-emerald-900/20 border border-emerald-900/50 flex items-start gap-3">
+                  <Info className="text-emerald-500 shrink-0 mt-0.5" size={20} />
+                  <p className="text-sm text-emerald-200/80">
+                     <strong>Survival Tip:</strong> {activeCategory === 'Armor' ? "Armor doesn't just reduce damage; it prevents lacerations and rashes. Metal Armor is strongest but slows you down significantly." : "Headshots are critical. A weak spear to the head is better than a metal spear to the leg."}
                   </p>
                 </div>
-                <div className="space-y-2 pt-2 border-t border-slate-700/50">
-                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                    {/* CRITICAL FIX: Check if ingredients exist, otherwise assume it's a Source/Resource type */}
-                    {(item.ingredients && item.ingredients.length > 0) ? 'Requires' : 'Source / Find At'}
-                  </div>
-                  
-                  {/* CRITICAL FIX: Render ingredients ONLY if they exist */}
-                  {(item.ingredients && item.ingredients.length > 0) ? (
-                    <div className="flex flex-wrap gap-1">
-                      {item.ingredients.slice(0, 3).map((ing, idx) => (
-                        <span key={idx} className="text-xs bg-slate-700 px-2 py-1 rounded text-slate-300 whitespace-nowrap">
-                          {ing.includes('x') ? ing : `1x ${ing}`}
-                        </span>
-                      ))}
-                      {item.ingredients.length > 3 && (
-                        <span className="text-xs bg-slate-700 px-2 py-1 rounded text-slate-400">+{item.ingredients.length - 3}</span>
-                      )}
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {filteredData.length > 0 ? (
+                    filteredData.map((item) => (
+                      <div 
+                        key={item.id}
+                        onClick={() => setSelectedItem(item)}
+                        className={`group relative bg-slate-800 rounded-xl p-5 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col justify-between ${getRarityColor(item.rarity)}`}
+                      >
+                        <div>
+                          <div className="flex justify-between items-start mb-3">
+                            <h3 className="text-lg font-bold text-slate-100 group-hover:text-emerald-400 transition-colors pr-2 leading-tight">
+                              {item.name}
+                            </h3>
+                            {item.rarity === 'legendary' && <span className="text-amber-500"><Box size={16}/></span>}
+                          </div>
+                          <p className="text-sm text-slate-400 mb-4 h-12 overflow-hidden line-clamp-2">
+                            {item.desc || item.usage}
+                          </p>
+                        </div>
+                        <div className="space-y-2 pt-2 border-t border-slate-700/50">
+                          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                            {/* CRITICAL FIX: Check if ingredients exist, otherwise assume it's a Source/Resource type */}
+                            {(item.ingredients && item.ingredients.length > 0) ? 'Requires' : 'Source / Find At'}
+                          </div>
+                          
+                          {/* CRITICAL FIX: Render ingredients ONLY if they exist */}
+                          {(item.ingredients && item.ingredients.length > 0) ? (
+                            <div className="flex flex-wrap gap-1">
+                              {item.ingredients.slice(0, 3).map((ing, idx) => (
+                                <span key={idx} className="text-xs bg-slate-700 px-2 py-1 rounded text-slate-300 whitespace-nowrap">
+                                  {ing.includes('x') ? ing : `1x ${ing}`}
+                                </span>
+                              ))}
+                              {item.ingredients.length > 3 && (
+                                <span className="text-xs bg-slate-700 px-2 py-1 rounded text-slate-400">+{item.ingredients.length - 3}</span>
+                              )}
+                            </div>
+                          ) : (
+                            // Fallback for items with no ingredients (Resources, Hunting, Raw Food)
+                             <p className="text-sm text-emerald-300 font-medium truncate">{item.source || 'Scavenge'}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))
                   ) : (
-                    // Fallback for items with no ingredients (Resources, Hunting, Raw Food)
-                     <p className="text-sm text-emerald-300 font-medium truncate">{item.source || 'Scavenge'}</p>
+                    <div className="col-span-full text-center py-20 text-slate-500">
+                      <p className="text-lg">No results found for "{searchQuery}" in {activeCategory}</p>
+                    </div>
                   )}
                 </div>
-              </div>
-            ))
-          ) : (
-            <div className="col-span-full text-center py-20 text-slate-500">
-              <p className="text-lg">No results found for "{searchQuery}" in {activeCategory}</p>
-            </div>
-          )}
-        </div>
-      </main>
-      
-      {/* MODAL */}
-      {selectedItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
-            <button 
-              onClick={() => setSelectedItem(null)}
-              className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
-            >
-              <X size={24} />
-            </button>
-            <h2 className="text-2xl font-bold text-white mb-1">{selectedItem.name}</h2>
-            <div className="flex items-center gap-2 mb-6">
-              <span className="text-emerald-500 text-sm uppercase tracking-wide font-medium">{selectedItem.category}</span>
-              <span className="text-slate-600 text-sm">•</span>
-              <span className={`text-xs px-2 py-0.5 rounded uppercase font-bold tracking-wider ${
-                selectedItem.rarity === 'rare' ? 'bg-blue-900/30 text-blue-400' :
-                selectedItem.rarity === 'legendary' ? 'bg-amber-900/30 text-amber-400' :
-                'bg-slate-800 text-slate-400'
-              }`}>
-                {selectedItem.rarity}
-              </span>
-            </div>
-            
-            {/* Logic for Modal Content */}
-            {(!selectedItem.ingredients || selectedItem.ingredients.length === 0) ? (
-              <div className="space-y-4">
-                 <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
-                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Where to find / Harvest</h3>
-                    <p className="text-emerald-300 font-medium text-lg">{selectedItem.source || 'Scavenge in Jungle'}</p>
-                 </div>
-                 <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
-                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Usage / Tactics</h3>
-                    <p className="text-slate-200">{selectedItem.usage || selectedItem.desc}</p>
-                 </div>
-              </div>
-            ) : (
-              <>
-                <div className="bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-700/50">
-                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Construction / Recipe</h3>
-                  <ul className="space-y-2">
-                    {selectedItem.ingredients.map((ing, idx) => (
-                      <li key={idx} className="flex items-center gap-3 text-slate-200">
-                        <div className="w-8 h-8 rounded bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-400 shrink-0">
-                            {ing.includes('x') ? ing.split('x')[0] : '•'}
+              </main>
+              
+              {/* MODAL */}
+              {selectedItem && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+                  <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+                    <button 
+                      onClick={() => setSelectedItem(null)}
+                      className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
+                    >
+                      <X size={24} />
+                    </button>
+                    <h2 className="text-2xl font-bold text-white mb-1">{selectedItem.name}</h2>
+                    <div className="flex items-center gap-2 mb-6">
+                      <span className="text-emerald-500 text-sm uppercase tracking-wide font-medium">{selectedItem.category}</span>
+                      <span className="text-slate-600 text-sm">•</span>
+                      <span className={`text-xs px-2 py-0.5 rounded uppercase font-bold tracking-wider ${
+                        selectedItem.rarity === 'rare' ? 'bg-blue-900/30 text-blue-400' :
+                        selectedItem.rarity === 'legendary' ? 'bg-amber-900/30 text-amber-400' :
+                        'bg-slate-800 text-slate-400'
+                      }`}>
+                        {selectedItem.rarity}
+                      </span>
+                    </div>
+                    
+                    {/* Logic for Modal Content */}
+                    {(!selectedItem.ingredients || selectedItem.ingredients.length === 0) ? (
+                      <div className="space-y-4">
+                         <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+                            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Where to find / Harvest</h3>
+                            <p className="text-emerald-300 font-medium text-lg">{selectedItem.source || 'Scavenge in Jungle'}</p>
+                         </div>
+                         <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+                            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Usage / Tactics</h3>
+                            <p className="text-slate-200">{selectedItem.usage || selectedItem.desc}</p>
+                         </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-700/50">
+                          <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Construction / Recipe</h3>
+                          <ul className="space-y-2">
+                            {selectedItem.ingredients.map((ing, idx) => (
+                              <li key={idx} className="flex items-center gap-3 text-slate-200">
+                                <div className="w-8 h-8 rounded bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-400 shrink-0">
+                                    {ing.includes('x') ? ing.split('x')[0] : '•'}
+                                </div>
+                                <span className="text-base">{ing.includes('x') ? ing.split('x')[1] : ing}</span>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
-                        <span className="text-base">{ing.includes('x') ? ing.split('x')[1] : ing}</span>
-                      </li>
-                    ))}
-                  </ul>
+                        <div className="prose prose-invert">
+                          <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Details</h3>
+                          <p className="text-slate-300 leading-relaxed">
+                            {selectedItem.desc}
+                          </p>
+                        </div>
+                      </>
+                    )}
+                    <button 
+                      onClick={() => setSelectedItem(null)}
+                      className="w-full mt-8 bg-slate-800 hover:bg-slate-700 text-white font-medium py-3 rounded-lg transition-colors border border-slate-700"
+                    >
+                      Done
+                    </button>
+                  </div>
                 </div>
-                <div className="prose prose-invert">
-                  <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Details</h3>
-                  <p className="text-slate-300 leading-relaxed">
-                    {selectedItem.desc}
-                  </p>
-                </div>
-              </>
-            )}
-            <button 
-              onClick={() => setSelectedItem(null)}
-              className="w-full mt-8 bg-slate-800 hover:bg-slate-700 text-white font-medium py-3 rounded-lg transition-colors border border-slate-700"
-            >
-              Done
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+              )}
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<GreenHellGuide />);
+    </script>
+</body>
+</html>
