@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Protocol v4.1 | Hybrid Edition</title>
+    <style>
+        :root {
+            /* Light Theme Defaults */
+            --bg: #f4f7f6;
+            --card: #ffffff;
+            --text: #2d3436;
+            --subtext: #636e72;
+            --accent: #2c3e50;
+            --accent-fg: #ffffff;
+            --border: #dfe6e9;
+            --highlight: #eef2f5;
+            --input-bg: #ffffff;
+            --input-border: #b2bec3;
+            --success: #00b894;
+            --alert: #d63031;
+            --btn-hover: #dfe6e9;
+        }
+
+        [data-theme="dark"] {
+            /* Dark Theme Overrides (Default) */
+            --bg: #1e1e1e;
+            --card: #252526;
+            --text: #d4d4d4;
+            --subtext: #a0a0a0;
+            --accent: #4ec9b0;
+            --accent-fg: #1e1e1e;
+            --border: #3e3e42;
+            --highlight: #2d2d30;
+            --input-bg: #3c3c3c;
+            --input-border: #555555;
+            --success: #4cd964;
+            --alert: #ff5f56;
+            --btn-hover: #3e3e42;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            transition: background 0.3s, color 0.3s;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: var(--card);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 50px; /* Space for footer */
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--accent);
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            gap: 15px;
+        }
+        
+        h1 { margin: 0; color: var(--accent); letter-spacing: -1px; }
+        
+        .header-controls { display: flex; gap: 10px; }
+
+        button.std-btn {
+            background: none;
+            border: 1px solid var(--accent);
+            color: var(--text);
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        
+        button.primary-btn {
+            background: var(--accent);
+            color: var(--accent-fg);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        button.primary-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* Calculator Section */
+        .calculator-section {
+            background: var(--highlight);
+            padding: 25px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            border-left: 5px solid var(--accent);
+        }
+
+        .input-row { display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; }
+        .input-group { flex: 1; min-width: 200px; }
+        
+        label { display: block; font-weight: bold; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 5px; color: var(--subtext); }
+        input, select { width: 100%; padding: 12px; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text); border-radius: 4px; font-size: 1rem; box-sizing: border-box; }
+
+        .alert-box { margin-top: 15px; font-weight: bold; color: var(--accent); font-size: 0.95rem; }
+
+        /* Mise en Place */
+        .mise-en-place { background: var(--highlight); border: 1px dashed var(--border); padding: 20px; border-radius: 6px; margin-bottom: 40px; }
+        .mise-en-place h3 { margin-top: 0; color: var(--subtext); font-size: 0.9rem; text-transform: uppercase; }
+        .total-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+        .total-item { display: flex; flex-direction: column; }
+        .total-item span:first-child { font-size: 0.8rem; color: var(--subtext); }
+        .total-item span:last-child { font-size: 1.2rem; font-weight: bold; color: var(--accent); }
+
+        /* Main Content Grid */
+        .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        @media (max-width: 768px) { .content-grid { grid-template-columns: 1fr; } }
+        
+        h2 { color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 5px; font-size: 1.2rem; margin-top: 0;}
+        .section-title { font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: var(--subtext); margin: 20px 0 5px 0; letter-spacing: 1px; }
+        ul { list-style: none; padding: 0; margin: 0; }
+        li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+        li span:last-child { font-weight: bold; }
+
+        /* Visual Steps & Timers */
+        .step { margin-bottom: 25px; }
+        .step-num { font-weight: bold; color: var(--accent); margin-right: 8px; font-size: 1.1rem; }
+        .step-desc { font-size: 0.95rem; line-height: 1.5; color: var(--text); }
+        
+        .timer-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            background: var(--highlight);
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .timer-display {
+            font-family: monospace;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent);
+            min-width: 60px;
+        }
+        button.action-btn {
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 5px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        button.action-btn:hover { background: var(--btn-hover); }
+
+        /* Footer */
+        footer { margin-top: 50px; text-align: center; border-top: 1px solid var(--border); padding-top: 20px; font-size: 0.9rem; }
+        footer a { color: var(--accent); text-decoration: none; font-weight: bold; }
+
+        /* --- SOUS-CHEF OVERLAY (Hidden by default) --- */
+        #focusOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg);
+            z-index: 9999;
+            display: none; 
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #focusHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 60px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        #focusContent {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            cursor: pointer; /* Tap anywhere */
+            user-select: none;
+        }
+
+        .focus-step-number { font-size: 1.5rem; color: var(--accent); opacity: 0.7; margin-bottom: 20px; }
+        .focus-instruction { font-size: 2.5rem; font-weight: bold; color: var(--text); line-height: 1.2; max-width: 800px; }
+        .focus-detail { font-size: 2rem; color: var(--success); margin-top: 20px; font-weight: bold; }
+
+        #focusControls {
+            height: 80px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .focus-btn {
+            background: var(--card);
+            border: 2px solid var(--accent);
+            color: var(--text);
+            font-size: 1.2rem;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            min-width: 120px;
+        }
+        
+        .focus-btn.main { background: var(--accent); color: var(--accent-fg); border: none; }
+        
+        #ttsToggle {
+            background: none; border: 1px solid var(--subtext); 
+            color: var(--subtext); padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; cursor: pointer;
+        }
+        #ttsToggle.active { background: var(--success); color: white; border-color: var(--success); }
+
+    </style>
+</head>
+<body data-theme="dark"> <div class="container">
+    <header>
+        <h1>The Protocol v4.1</h1>
+        <div class="header-controls">
+            <button class="primary-btn" onclick="startFocusMode()">
+                <span>▶</span> Start Sous-Chef
+            </button>
+            <button class="std-btn" onclick="toggleTheme()">☀/☾</button>
+        </div>
+    </header>
+
+    <div class="calculator-section">
+        <div class="input-row">
+            <div class="input-group">
+                <label>Mode</label>
+                <select id="calcMode" onchange="toggleMode()">
+                    <option value="rolls">Desired Output (Rolls)</option>
+                    <option value="ingredient">Limiting Factor (Inventory)</option>
+                </select>
+            </div>
+
+            <div id="modeRolls" class="input-group">
+                <label>Target Rolls</label>
+                <input type="number" id="targetRolls" value="12" min="12" oninput="calculate()">
+            </div>
+
+            <div id="modeIngredient" class="input-group" style="display:none;">
+                <label>I have (grams)</label>
+                <input type="number" id="ingAmount" value="500" oninput="calculate()">
+            </div>
+            
+            <div id="modeIngType" class="input-group" style="display:none;">
+                <label>Of Ingredient</label>
+                <select id="ingType" onchange="calculate()">
+                    <option value="flourTotal">Total Flour</option>
+                    <option value="milkTotal">Total Milk</option>
+                    <option value="butterTotal">Total Butter</option>
+                </select>
+            </div>
+        </div>
+        <div class="alert-box">
+            Multiplier: <span id="eggCount">1</span> Egg(s)
+            <span id="adjustmentNote" style="font-weight:normal; opacity:0.8;"></span>
+        </div>
+    </div>
+
+    <div class="mise-en-place">
+        <h3>Mise en Place (Total Shopping List)</h3>
+        <div class="total-grid" id="total-grid"></div>
+    </div>
+
+    <div class="content-grid">
+        <div>
+            <h2>Process Breakdown</h2>
+            
+            <div class="section-title">1. Tangzhong (Starter)</div>
+            <ul id="list-tangzhong"></ul>
+
+            <div class="section-title">2. Dough</div>
+            <ul id="list-dough"></ul>
+
+            <div class="section-title">3. Filling</div>
+            <ul id="list-filling"></ul>
+
+            <div class="section-title">4. Glaze (Standard Icing)</div>
+            <ul id="list-glaze"></ul>
+        </div>
+
+        <div>
+            <h2>Execution</h2>
+
+            <div class="step">
+                <span class="step-num">01</span>
+                <span class="step-desc"><strong>Tangzhong:</strong> Whisk ingredients over medium heat until thick paste. Cool to room temp.</span>
+            </div>
+
+            <div class="step">
+                <span class="step-num">02</span>
+                <span class="step-desc"><strong>Dough:</strong> Mix Tangzhong, cold milk, egg, butter, sugar, yeast. Add flour & salt. Knead 12 mins.</span>
+            </div>
+
+            <div class="step">
+                <span class="step-num">03</span>
+                <span class="step-desc">
+                    <strong>Bulk Proof:</strong> 90 Mins.
+                    <br><em>Note: Faster at 35°C, Slower/Better if cooled.</em>
+                </span>
+                <div class="timer-container">
+                    <span id="timer1" class="timer-display">90:00</span>
+                    <button class="action-btn" onclick="startTimer('timer1', 90)">Start</button>
+                </div>
+            </div>
+
+            <div class="step">
+                <span class="step-num">04</span>
+                <span class="step-desc"><strong>Shape:</strong> Roll 30x45cm. Spread butter, sugar/cinn mix. Roll tight. Cut with dental floss.</span>
+            </div>
+
+            <div class="step">
+                <span class="step-num">05</span>
+                <span class="step-desc"><strong>Second Proof:</strong> 45-60 Mins until touching.</span>
+                <div class="timer-container">
+                    <span id="timer2" class="timer-display">45:00</span>
+                    <button class="action-btn" onclick="startTimer('timer2', 45)">Start</button>
+                </div>
+            </div>
+
+            <div class="step">
+                <span class="step-num">06</span>
+                <span class="step-desc"><strong>Bake:</strong> 175°C (350°F). Aim for 88°C internal temp.</span>
+                <div class="timer-container">
+                    <span id="timer3" class="timer-display">20:00</span>
+                    <button class="action-btn" onclick="startTimer('timer3', 20)">Start</button>
+                    <button class="action-btn" onclick="addTime('timer3', 5)">+5 Min</button>
+                </div>
+            </div>
+
+            <div class="step">
+                <span class="step-num">07</span>
+                <span class="step-desc"><strong>The Glace Icing:</strong> While rolls bake, sift the icing sugar. Whisk in water slowly until you get a thick, pourable consistency. Drizzle over rolls when they are warm (not piping hot).</span>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <a href="https://1verysimple-lab.github.io/project-hub/" target="_blank">App by Blues</a>
+    </footer>
+</div>
+
+<div id="focusOverlay">
+    <div id="focusHeader">
+        <button id="ttsToggle" onclick="toggleTTS()">Sound: ON</button>
+        <button class="std-btn" onclick="exitFocusMode()">✕ EXIT</button>
+    </div>
+    
+    <div id="focusContent" onclick="nextStep()">
+        <div class="focus-step-number" id="fStepNum">Step 1</div>
+        <div class="focus-instruction" id="fInstruction">Prepare Tangzhong</div>
+        <div class="focus-detail" id="fDetail">Get a saucepan</div>
+    </div>
+
+    <div id="focusControls">
+        <button class="focus-btn" onclick="prevStep()">PREV</button>
+        <button class="focus-btn main" onclick="nextStep()">NEXT ➔</button>
+    </div>
+</div>
+
+<script>
+    // --- DATA ---
+    const base = {
+        rolls: 12,
+        tz_flour: 20, tz_milk: 90, tz_water: 30,
+        d_milk: 120, d_butter: 60, d_flour: 350, d_sugar: 50, d_yeast: 7, d_salt: 5,
+        f_butter: 60, f_sugar: 150, f_cinn: 15, f_flour: 15,
+        g_icing_sugar: 150, g_water: 25
+    };
+    const totalFlourPerEgg = base.tz_flour + base.d_flour + base.f_flour; 
+    const totalMilkPerEgg = base.tz_milk + base.d_milk; 
+    const totalButterPerEgg = base.d_butter + base.f_butter; 
+
+    let currentMultiplier = 1;
+    let generatedSteps = [];
+    let currentStepIndex = 0;
+    let ttsEnabled = true;
+
+    // --- CALCULATOR & UI UPDATE ---
+    function toggleMode() {
+        const mode = document.getElementById('calcMode').value;
+        document.getElementById('modeRolls').style.display = mode === 'rolls' ? 'block' : 'none';
+        document.getElementById('modeIngredient').style.display = mode === 'ingredient' ? 'block' : 'none';
+        document.getElementById('modeIngType').style.display = mode === 'ingredient' ? 'block' : 'none';
+        calculate();
+    }
+
+    function calculate() {
+        const mode = document.getElementById('calcMode').value;
+        let m = 1;
+        let note = "";
+
+        if (mode === 'rolls') {
+            const input = parseFloat(document.getElementById('targetRolls').value) || 0;
+            m = Math.max(1, Math.floor(input / base.rolls));
+            note = `(Snapped to ${m * base.rolls} rolls)`;
+        } else {
+            const amount = parseFloat(document.getElementById('ingAmount').value) || 0;
+            const type = document.getElementById('ingType').value;
+            let rawEggs = 0;
+            if (type === 'flourTotal') rawEggs = amount / totalFlourPerEgg;
+            if (type === 'milkTotal') rawEggs = amount / totalMilkPerEgg;
+            if (type === 'butterTotal') rawEggs = amount / totalButterPerEgg;
+            m = Math.max(1, Math.floor(rawEggs));
+            note = `(Inventory for ${m} batch(es))`;
+        }
+
+        currentMultiplier = m;
+        document.getElementById('eggCount').innerText = m;
+        document.getElementById('adjustmentNote').innerText = note;
+        updateUI(m);
+    }
+
+    function updateUI(m) {
+        // 1. Mise en Place
+        const totals = [
+            {n: 'Bread Flour', v: (base.tz_flour + base.d_flour + base.f_flour) * m},
+            {n: 'Whole Milk', v: (base.tz_milk + base.d_milk) * m},
+            {n: 'Butter', v: (base.d_butter + base.f_butter) * m},
+            {n: 'White Sugar', v: base.d_sugar * m},
+            {n: 'Icing Sugar', v: base.g_icing_sugar * m},
+            {n: 'Brown Sugar', v: base.f_sugar * m},
+            {n: 'Eggs', v: m, unit: ''},
+            {n: 'Yeast', v: base.d_yeast * m},
+            {n: 'Salt', v: base.d_salt * m},
+            {n: 'Cinnamon', v: base.f_cinn * m}
+        ];
+        
+        const totalGrid = document.getElementById('total-grid');
+        totalGrid.innerHTML = '';
+        totals.forEach(t => {
+            let val = t.unit === '' ? t.v : Math.round(t.v) + 'g';
+            totalGrid.innerHTML += `<div class="total-item"><span>${t.n}</span><span>${val}</span></div>`;
+        });
+
+        // 2. Ingredient Lists
+        const render = (id, items) => {
+            const el = document.getElementById(id);
+            el.innerHTML = '';
+            items.forEach(i => el.innerHTML += `<li><span>${i.n}</span><span>${Math.round(i.v)}g</span></li>`);
+        };
+
+        render('list-tangzhong', [
+            {n: 'Bread Flour', v: base.tz_flour * m}, {n: 'Milk', v: base.tz_milk * m}, {n: 'Water', v: base.tz_water * m}
+        ]);
+        
+        const dList = document.getElementById('list-dough');
+        dList.innerHTML = `<li><span>Large Eggs</span><span>${m}</span></li>`;
+        [
+            {n: 'Bread Flour', v: base.d_flour * m}, {n: 'Milk (Cold)', v: base.d_milk * m},
+            {n: 'Butter', v: base.d_butter * m}, {n: 'Sugar', v: base.d_sugar * m},
+            {n: 'Yeast', v: base.d_yeast * m}, {n: 'Salt', v: base.d_salt * m}
+        ].forEach(i => dList.innerHTML += `<li><span>${i.n}</span><span>${Math.round(i.v)}g</span></li>`);
+
+        render('list-filling', [
+            {n: 'Butter (Soft)', v: base.f_butter * m}, {n: 'Brown Sugar', v: base.f_sugar * m},
+            {n: 'Cinnamon', v: base.f_cinn * m}, {n: 'Flour', v: base.f_flour * m}
+        ]);
+
+        render('list-glaze', [
+            {n: 'Icing Sugar', v: base.g_icing_sugar * m}, {n: 'Water', v: base.g_water * m}
+        ]);
+    }
+
+    // --- TIMERS FOR VISUAL MODE ---
+    let intervals = {};
+    function startTimer(id, minutes) {
+        if(intervals[id]) clearInterval(intervals[id]);
+        const display = document.getElementById(id);
+        let seconds = minutes * 60;
+        display.style.color = "var(--success)";
+        intervals[id] = setInterval(() => {
+            seconds--;
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            display.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
+            if (seconds <= 0) {
+                clearInterval(intervals[id]);
+                display.textContent = "00:00";
+                display.style.color = "var(--alert)";
+                alert("Timer Complete!");
+            }
+        }, 1000);
+    }
+    function addTime(id, minsToAdd) { startTimer(id, minsToAdd); }
+
+    // --- SOUS-CHEF MODE LOGIC ---
+    function generateSteps(m) {
+        return [
+            // Tangzhong
+            { text: "Prepare Tangzhong", detail: "Get a small saucepan." },
+            { text: "Weigh Bread Flour", detail: `${Math.round(base.tz_flour * m)}g`, speak: `Weigh ${Math.round(base.tz_flour * m)} grams of flour into the pan.` },
+            { text: "Weigh Milk", detail: `${Math.round(base.tz_milk * m)}g`, speak: `Add ${Math.round(base.tz_milk * m)} grams of milk.` },
+            { text: "Weigh Water", detail: `${Math.round(base.tz_water * m)}g`, speak: `Add ${Math.round(base.tz_water * m)} grams of water.` },
+            { text: "Cook Tangzhong", detail: "Whisk over medium heat until it forms a thick paste (2-3 mins).", speak: "Cook over medium heat until thick." },
+            { text: "Cool Down", detail: "Remove from heat and transfer to your mixing bowl to cool.", speak: "Transfer to mixing bowl to cool." },
+            
+            // Dough
+            { text: "Dough Prep", detail: "Into the bowl with the cooled Tangzhong...", speak: "Now for the dough." },
+            { text: "Add Cold Milk", detail: `${Math.round(base.d_milk * m)}g`, speak: `Pour in ${Math.round(base.d_milk * m)} grams of cold milk.` },
+            { text: "Add Eggs", detail: `${m} Large Egg(s)`, speak: `Crack in ${m} large eggs.` },
+            { text: "Add Melted Butter", detail: `${Math.round(base.d_butter * m)}g`, speak: `Add ${Math.round(base.d_butter * m)} grams of melted butter.` },
+            { text: "Mix Wet", detail: "Whisk these wet ingredients together lightly.", speak: "Whisk the wet ingredients." },
+            
+            { text: "Weigh Bread Flour", detail: `${Math.round(base.d_flour * m)}g`, speak: `Add ${Math.round(base.d_flour * m)} grams of flour.` },
+            { text: "Add Sugar", detail: `${Math.round(base.d_sugar * m)}g`, speak: `Add ${Math.round(base.d_sugar * m)} grams of sugar.` },
+            { text: "Add Yeast", detail: `${Math.round(base.d_yeast * m)}g`, speak: `Add ${Math.round(base.d_yeast * m)} grams of yeast.` },
+            { text: "Add Salt", detail: `${Math.round(base.d_salt * m)}g`, speak: `Add ${Math.round(base.d_salt * m)} grams of salt.` },
+            
+            { text: "Knead", detail: "Mix on low to combine, then Medium-Low for 12 Minutes.", speak: "Knead for 12 minutes." },
+            { text: "First Proof", detail: "Cover and let rise for 90 Minutes.", speak: "Cover and proof for 90 minutes." },
+            
+            // Filling
+            { text: "Prepare Filling", detail: "In a small bowl, mix the following:", speak: "Let's make the filling." },
+            { text: "Brown Sugar", detail: `${Math.round(base.f_sugar * m)}g`, speak: `${Math.round(base.f_sugar * m)} grams of brown sugar.` },
+            { text: "Cinnamon", detail: `${Math.round(base.f_cinn * m)}g`, speak: `${Math.round(base.f_cinn * m)} grams of cinnamon.` },
+            { text: "Flour (for filling)", detail: `${Math.round(base.f_flour * m)}g`, speak: `${Math.round(base.f_flour * m)} grams of flour.` },
+            { text: "Butter (Soft)", detail: `Have ${Math.round(base.f_butter * m)}g ready to spread later.`, speak: `Have ${Math.round(base.f_butter * m)} grams of soft butter ready.` },
+            
+            // Assembly
+            { text: "Shape", detail: "Roll dough to 30x45cm rectangle.", speak: "Roll out the dough." },
+            { text: "Spread", detail: "Spread the soft butter, then sprinkle the sugar mix.", speak: "Spread butter and sprinkle sugar." },
+            { text: "Roll & Cut", detail: "Roll tight. Cut into 12 pieces using dental floss.", speak: "Roll it up and cut with floss." },
+            { text: "Second Proof", detail: "Place in pan. Cover. Rise 45-60 mins.", speak: "Proof again for 45 minutes." },
+            
+            // Bake
+            { text: "Bake", detail: "175°C (350°F) for 20-25 mins.", speak: "Bake at 175 degrees for 20 minutes." },
+            
+            // Glaze
+            { text: "Make Glaze", detail: "While baking...", speak: "Make the glaze." },
+            { text: "Sift Icing Sugar", detail: `${Math.round(base.g_icing_sugar * m)}g`, speak: `Sift ${Math.round(base.g_icing_sugar * m)} grams of icing sugar.` },
+            { text: "Add Water", detail: `Approx ${Math.round(base.g_water * m)}g (Add slowly)`, speak: "Add water slowly until thick." },
+            { text: "Finish", detail: "Drizzle over rolls while they are warm.", speak: "Drizzle over warm rolls. You are done, Chef." }
+        ];
+    }
+
+    function startFocusMode() {
+        generatedSteps = generateSteps(currentMultiplier);
+        currentStepIndex = 0;
+        document.getElementById('focusOverlay').style.display = 'flex';
+        renderStep();
+    }
+
+    function exitFocusMode() {
+        window.speechSynthesis.cancel();
+        document.getElementById('focusOverlay').style.display = 'none';
+    }
+
+    function renderStep() {
+        if(currentStepIndex < 0) currentStepIndex = 0;
+        if(currentStepIndex >= generatedSteps.length) currentStepIndex = generatedSteps.length - 1;
+
+        const step = generatedSteps[currentStepIndex];
+        
+        document.getElementById('fStepNum').innerText = `Step ${currentStepIndex + 1} / ${generatedSteps.length}`;
+        document.getElementById('fInstruction').innerText = step.text;
+        document.getElementById('fDetail').innerText = step.detail;
+
+        if(ttsEnabled) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(step.speak || step.text);
+            utterance.rate = 1.0;
+            // Try British
+            const voices = window.speechSynthesis.getVoices();
+            const gbVoice = voices.find(v => v.lang.includes('GB') || v.name.includes('UK'));
+            if(gbVoice) utterance.voice = gbVoice;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    function nextStep(e) {
+        if (e && e.target.closest('#focusControls')) return; 
+        if(currentStepIndex < generatedSteps.length - 1) {
+            currentStepIndex++;
+            renderStep();
+        }
+    }
+
+    function prevStep() {
+        if(currentStepIndex > 0) {
+            currentStepIndex--;
+            renderStep();
+        }
+    }
+
+    function toggleTTS() {
+        ttsEnabled = !ttsEnabled;
+        const btn = document.getElementById('ttsToggle');
+        btn.innerText = ttsEnabled ? "Sound: ON" : "Sound: OFF";
+        btn.classList.toggle('active', ttsEnabled);
+        if(!ttsEnabled) window.speechSynthesis.cancel();
+    }
+
+    function toggleTheme() {
+        const body = document.body;
+        const isDark = body.getAttribute('data-theme') === 'dark';
+        body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    }
+
+    // Init
+    calculate();
+    window.speechSynthesis.getVoices();
+</script>
+
+</body>
+</html>
