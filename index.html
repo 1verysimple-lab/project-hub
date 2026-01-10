@@ -91,7 +91,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold tracking-tight">Apps by Blues</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 font-mono tracking-wide">LAB_VERSION_2.5</p>
+                    <p id="app-version" class="text-xs text-slate-500 dark:text-slate-400 font-mono tracking-wide">LAB_VERSION_2.5</p>
                 </div>
             </div>
 
@@ -195,6 +195,11 @@
             try {
                 const response = await fetch('projects.json?v=' + new Date().getTime()); // Prevent caching
                 allProjects = await response.json();
+                
+                // Update Version with count
+                const vEl = document.getElementById('app-version');
+                if (vEl) vEl.textContent = `LAB_VERSION_2.5.${allProjects.length}`;
+
                 renderProjects(allProjects);
             } catch (error) {
                 console.error("Failed:", error);
