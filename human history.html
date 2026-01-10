@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human History</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Scripts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Config -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Base Styles -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        .glass:hover {
+            background: rgba(255, 255, 255, 0.85);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .dark .glass {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .dark .glass:hover {
+            background: rgba(30, 41, 59, 0.9);
+        }
+        
+        /* Timeline specific styles */
+        .timeline-line {
+            position: absolute;
+            left: 24px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #cbd5e1; /* slate-300 */
+            z-index: 0;
+        }
+        .dark .timeline-line {
+            background: #334155; /* slate-700 */
+        }
+        
+        /* Smooth expand/collapse */
+        .content-expand {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out, opacity 0.4s ease-out;
+            opacity: 0;
+        }
+        .content-expand.active {
+            max-height: 5000px; /* Increased to accommodate long content */
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-[#0f1117] text-slate-900 dark:text-slate-100 min-h-screen relative selection:bg-indigo-500 selection:text-white">
+
+    <!-- ATMOSPHERE BLOBS -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/10 rounded-full blur-[100px] animate-float"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-500/10 rounded-full blur-[100px] animate-float" style="animation-delay: -3s;"></div>
+    </div>
+
+    <!-- BLUES HUB NAVIGATION -->
+    <a href="https://1verysimple-lab.github.io/project-hub/" 
+       target="_blank"
+       style="position: fixed; top: 20px; left: 20px; z-index: 9999; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; text-decoration: none; color: #e2e8f0; font-family: system-ui, sans-serif; font-size: 13px; font-weight: 500; transition: all 0.2s ease; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);"
+       onmouseover="this.style.transform='translateY(-1px)'; this.style.background='rgba(15, 23, 42, 0.95)'"
+       onmouseout="this.style.transform='translateY(0)'; this.style.background='rgba(15, 23, 42, 0.8)'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="7" height="7" x="3" y="3" rx="1"/>
+            <rect width="7" height="7" x="14" y="3" rx="1"/>
+            <rect width="7" height="7" x="14" y="14" rx="1"/>
+            <rect width="7" height="7" x="3" y="14" rx="1"/>
+        </svg>
+        <span>Hub</span>
+    </a>
+
+    <!-- MAIN CONTENT -->
+    <main class="max-w-3xl mx-auto px-6 py-20 mb-20">
+        
+        <header class="mb-12 text-center animate-fade-in">
+            <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
+                Human History
+            </h1>
+            <p class="text-slate-600 dark:text-slate-400 text-lg max-w-xl mx-auto">
+                An interactive journey from the emergence of <span class="italic">Homo sapiens</span> to the digital age.
+            </p>
+        </header>
+
+        <div class="relative pl-4" id="timeline-container">
+            <!-- Timeline Line -->
+            <div class="timeline-line"></div>
+
+            <!-- Items will be injected here by JS -->
+        </div>
+
+        <footer class="mt-20 py-8 border-t border-slate-200 dark:border-slate-800 text-center">
+            <a href="https://1verysimple-lab.github.io/project-hub/" 
+               target="_blank"
+               class="text-xs font-medium text-slate-400 dark:text-slate-500 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">
+                App by Blues
+            </a>
+        </footer>
+
+    </main>
+
+    <script>
+        // Data from human history.md
+        const historyData = [
+            {
+                title: "Planetary Context: Earth's History",
+                period: "~4.54 Billion Years Ago – Present",
+                duration: 4540000000,
+                icon: "globe-2",
+                color: "blue",
+                events: [
+                    {
+                        title: "Formation & Hadean Eon",
+                        date: "4.54–4.0 Billion years ago",
+                        desc: "Earth forms from the solar nebula. The planet is molten, bombarded by asteroids, and the Moon is formed. No life exists."
+                    },
+                    {
+                        title: "Archean Eon (First Life)",
+                        date: "4.0–2.5 Billion years ago",
+                        desc: "Earth cools, oceans form. Single-celled life (prokaryotes) emerges. The atmosphere is rich in methane and ammonia, but lacks oxygen."
+                    },
+                    {
+                        title: "Proterozoic Eon (Oxygenation)",
+                        date: "2.5 Billion – 541 Million years ago",
+                        desc: "The Great Oxidation Event transforms the atmosphere. Complex eukaryotic cells and multicellular life (algae, sponges) evolve."
+                    },
+                    {
+                        title: "Phanerozoic Eon (Complex Life)",
+                        date: "541 Million years ago – Present",
+                        desc: "The current eon. Includes the explosion of diverse life forms, the reign of dinosaurs (Mesozoic), and the rise of mammals (Cenozoic)."
+                    },
+                    {
+                        title: "The Human Spark (Scale Comparison)",
+                        date: "Visualizing our place in time",
+                        desc: `<div class="bg-slate-100 dark:bg-slate-800 p-4 rounded-lg mt-2">
+                                <p class="font-semibold mb-2">If Earth's history were condensed into a single 24-hour day:</p>
+                                <ul class="list-disc list-inside space-y-1 text-sm font-mono text-slate-600 dark:text-slate-400">
+                                    <li>00:00:00 — Earth forms</li>
+                                    <li>04:00:00 — First life appears</li>
+                                    <li>21:04:00 — Dinosaurs appear</li>
+                                    <li>23:58:43 — <span class="text-indigo-500 font-bold">First Humans (Homo sapiens) emerge</span></li>
+                                </ul>
+                                <div class="mt-4 h-4 w-full bg-slate-300 dark:bg-slate-600 rounded-full overflow-hidden flex">
+                                    <div class="h-full bg-emerald-500" style="width: 88%" title="Pre-Human Earth"></div>
+                                    <div class="h-full bg-indigo-500" style="width: 12%" title="Complex Life (Dinos/Mammals)"></div>
+                                    <div class="h-full bg-fuchsia-500" style="width: 0.01%" title="Human History (Too small to see)"></div>
+                                </div>
+                                <p class="text-xs text-center mt-1 text-slate-500">Humans have existed for ~0.007% of Earth's history.</p>
+                               </div>`
+                    }
+                ]
+            },
+             {
+                title: "Hominin Ancestors",
+                period: "~7 Million – 300,000 years ago",
+                duration: 6700000,
+                icon: "dna",
+                color: "orange",
+                events: [
+                    {
+                        title: "Sahelanthropus & Ardipithecus",
+                        date: "~7–4.4 Million years ago",
+                        image: "ancestors.webp",
+                        desc: "Early bipedal hominins in Africa. Marks the divergence from the chimpanzee lineage."
+                    },
+                    {
+                        title: "Australopithecus",
+                        date: "~4–2 Million years ago",
+                        desc: "Fully bipedal, small brains. The 'Lucy' specimen belongs to this group."
+                    },
+                    {
+                        title: "Homo habilis ('Handy Man')",
+                        date: "~2.4–1.4 Million years ago",
+                        desc: "First use of stone tools (Oldowan). Brain size begins to increase."
+                    },
+                    {
+                        title: "Homo erectus",
+                        date: "~1.9 Million – 110,000 years ago",
+                        desc: "First to control fire and migrate out of Africa. Body proportions similar to modern humans."
+                    },
+                    {
+                        title: "Neanderthals & Denisovans",
+                        date: "~400,000–40,000 years ago",
+                        desc: "Our closest extinct relatives. Neanderthals evolved in Europe/Asia, Denisovans in Asia. Interbred with Homo sapiens."
+                    }
+                ]
+            },
+            {
+                title: "Prehistory and Origins",
+                period: "~315,000 – 12,000 years ago",
+                duration: 303000,
+                icon: "footprints",
+                color: "indigo",
+                events: [
+                    {
+                        title: "Emergence of Homo sapiens",
+                        date: "~315,000–200,000 years ago",
+                        image: "homo_sapiens.webp",
+                        desc: "Anatomically modern Homo sapiens emerge in Africa. The earliest known fossils come from Jebel Irhoud, Morocco (~315,000 years ago). Modern anatomy appears before modern behaviors."
+                    },
+                    {
+                        title: "Contextual Ancestry",
+                        date: "~773,000 years ago",
+                        desc: "Hominin fossils from Morocco provide deeper context for African hominin diversity and populations near the last common ancestor of H. sapiens, Neanderthals, and Denisovans."
+                    },
+                    {
+                        title: "Cultural Expansion (Upper Paleolithic)",
+                        date: "~50,000–12,000 years ago",
+                        desc: "Widespread use of complex tools, symbolic art, burials, long-distance exchange networks, and regional cultural traditions."
+                    }
+                ]
+            },
+            {
+                title: "The Evolution of Language",
+                period: "Thematic Insight",
+                duration: 100000, /* Abstract duration for visual scale */
+                icon: "languages",
+                color: "violet",
+                events: [
+                    {
+                        title: "1. The Hardware (~2M – 200k Years Ago)",
+                        date: "Proto-Language",
+                        desc: "Early hominins develop the physical biology (lowered larynx, hyoid bone) and cognitive capacity for complex sound. Communication is likely immediate and concrete (commands, warnings), lacking complex grammar."
+                    },
+                    {
+                        title: "2. The Infinite Combinator (~70k – 50k Years Ago)",
+                        date: "The Cognitive Revolution",
+                        desc: "A mutation or gradual shift allows for <strong>Recursive Syntax</strong>—the ability to combine finite words into infinite meanings. We can now talk about things that <em>don't exist</em> (myths, future plans, abstract concepts). This is the 'secret weapon' of Sapiens."
+                    },
+                    {
+                        title: "3. The Mother Tongues (~15k – 6k Years Ago)",
+                        date: "Ancestral Families",
+                        desc: "As humans migrate, languages diverge. Major families form, such as <strong>Proto-Indo-European (PIE)</strong> on the Pontic-Caspian steppe (~4000 BCE). PIE is the ancestor of English, Spanish, Hindi, Russian, and Persian—linking billions of people today."
+                    },
+                    {
+                        title: "4. Freezing Speech (~3400 BCE)",
+                        date: "The Invention of Writing",
+                        desc: "Language becomes physical. We move from 'Oral Tradition' (memory-based) to 'External Storage' (clay tablets, papyrus). Knowledge can now survive the death of the knower."
+                    },
+                    {
+                        title: "5. Global Convergence (Present)",
+                        date: "The Digital Tower of Babel",
+                        desc: "We are in an era of mass extinction and convergence. Of ~7,000 distinct languages, nearly half are endangered. English serves as a global <em>lingua franca</em> for trade and science, while AI translation promises to dissolve barriers entirely."
+                    }
+                ]
+            },
+            {
+                title: "Neolithic Revolution",
+                period: "~12,000 – 3000 BCE",
+                duration: 9000,
+                icon: "sprout",
+                color: "emerald",
+                events: [
+                    {
+                        title: "Origins of Agriculture",
+                        date: "~12,000–9000 BCE",
+                        desc: "Independent domestication of plants and animals begins in the Fertile Crescent, Yellow/Yangtze River basins, Mesoamerica, and the Andes."
+                    },
+                    {
+                        title: "Sedentary Societies",
+                        date: "c. 7000–3000 BCE",
+                        desc: "Permanent settlements, pottery, food storage, population growth, emerging social hierarchies, and increased environmental modification."
+                    }
+                ]
+            },
+            {
+                title: "Early Civilizations and Writing",
+                period: "c. 3400 – 500 BCE",
+                duration: 2900,
+                icon: "scroll",
+                color: "amber",
+                events: [
+                    {
+                        title: "Writing Systems & Early States",
+                        date: "c. 3400–3000 BCE",
+                        desc: "Cuneiform emerges in Mesopotamia alongside Egyptian hieroglyphs. Writing supports administration, law, and political centralization."
+                    },
+                    {
+                        title: "Urbanization & Early Empires",
+                        date: "c. 2500–500 BCE",
+                        desc: "Large cities, monumental architecture, codified law, and long-distance trade develop across Mesopotamia, Egypt, Indus Valley, China, and the Mediterranean."
+                    }
+                ]
+            },
+            {
+                title: "Classical & Postclassical",
+                period: "c. 800 BCE – 1500 CE",
+                duration: 2300,
+                icon: "landmark",
+                color: "rose",
+                events: [
+                    {
+                        title: "The Axial Age",
+                        date: "c. 800–200 BCE",
+                        desc: "Major intellectual traditions emerge: Confucianism, Daoism, Buddhism, Jainism, Zoroastrianism, Hebrew prophets, and Greek philosophy."
+                    },
+                    {
+                        title: "Interregional Connectivity",
+                        date: "c. 500–1500 CE",
+                        desc: "Silk Roads and Indian Ocean networks facilitate the spread of religions, technologies (paper, gunpowder), and scientific knowledge across Afro-Eurasia."
+                    }
+                ]
+            },
+            {
+                title: "Early Modern Globalization",
+                period: "15th – 18th Centuries",
+                duration: 400,
+                icon: "ship",
+                color: "cyan",
+                events: [
+                    {
+                        title: "Maritime Expansion",
+                        date: "15th–17th Centuries",
+                        desc: "European oceanic exploration connects the Americas, Africa, Europe, and Asia, accelerating the Columbian Exchange and global ecological change."
+                    },
+                    {
+                        title: "State Centralization",
+                        date: "c. 1600–1800",
+                        desc: "Growth of bureaucratic states, mercantilism, joint-stock companies, and early industrial practices."
+                    }
+                ]
+            },
+            {
+                title: "Industrial to Contemporary",
+                period: "Late 18th Century – Present",
+                duration: 250,
+                icon: "factory",
+                color: "slate",
+                events: [
+                    {
+                        title: "Industrial Revolution",
+                        date: "Late 18th–19th Centuries",
+                        desc: "Mechanized production, fossil-fuel energy, factory systems, and rapid urbanization reshape economies and global power structures."
+                    },
+                    {
+                        title: "Global Conflict & Interconnection",
+                        date: "20th–21st Centuries",
+                        desc: "World wars, Cold War, decolonization, human rights movements, and the digital revolution produce an unprecedentedly interconnected global system."
+                    }
+                ]
+            },
+            {
+                title: "Modern Generations (Gen Ego)",
+                period: "1883 – Present",
+                duration: 140,
+                icon: "users",
+                color: "fuchsia",
+                events: [
+                    {
+                        title: "The Logic of Etiquette",
+                        date: "Philosophy",
+                        desc: `<div class="bg-fuchsia-50 dark:bg-fuchsia-950/20 p-4 rounded-lg border border-fuchsia-200 dark:border-fuchsia-800/50 mb-4">
+                                <p class="text-sm italic mb-2">"Etiquette is not about being nice. It is a coordination system—a defensive design that optimizes around what a generation fears most."</p>
+                                <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+                                    <div class="text-fuchsia-600 dark:text-fuchsia-400">Fear of Chaos → Formality</div>
+                                    <div class="text-fuchsia-600 dark:text-fuchsia-400">Fear of Control → Autonomy</div>
+                                    <div class="text-fuchsia-600 dark:text-fuchsia-400">Fear of Misinterpretation → Clarification</div>
+                                    <div class="text-fuchsia-600 dark:text-fuchsia-400">Fear of Coercion → Consent</div>
+                                </div>
+                               </div>`
+                    },
+                    { 
+                        title: "Silent Generation", 
+                        date: "1928–1945", 
+                        desc: `<strong>Logic:</strong> Order prevents collapse. Scarcity & Stability.<br>
+                               <strong>Norms:</strong> Do not interrupt, keep struggles private, assume authority is legitimate.<br>
+                               <strong>Posture:</strong> The self is subordinate to duty. Visibility is dangerous.` 
+                    },
+                    { 
+                        title: "Baby Boomers", 
+                        date: "1946–1964", 
+                        desc: `<strong>Logic:</strong> Confidence equals credibility. Status & Performance.<br>
+                               <strong>Norms:</strong> Firm handshakes, eye contact, phone calls preferred, meetings as proof of productivity.<br>
+                               <strong>Posture:</strong> The self must be projected. Success should be visible.` 
+                    },
+                    { 
+                        title: "Generation X", 
+                        date: "1965–1980", 
+                        desc: `<strong>Logic:</strong> Autonomy prevents control. Boundary Etiquette.<br>
+                               <strong>Norms:</strong> Institutional distrust, cynicism as realism, "latchkey" independence, work-life boundaries.<br>
+                               <strong>Posture:</strong> The self is an island. Skepticism is a survival tool.` 
+                    },
+                    { 
+                        title: "Millennials (Gen Y)", 
+                        date: "1981–1996", 
+                        desc: `<strong>Logic:</strong> Collaboration prevents isolation. Connection & Vulnerability.<br>
+                               <strong>Norms:</strong> Text over call, purpose-driven work, authenticity, vulnerability as a strength.<br>
+                               <strong>Posture:</strong> The self is a project. Meaning must be curated.` 
+                    },
+                    { 
+                        title: "Generation Z", 
+                        date: "1997–2012", 
+                        desc: `<strong>Logic:</strong> Truth prevents manipulation. Radical Transparency.<br>
+                               <strong>Norms:</strong> Irony as a shield, digital boundaries, social justice as etiquette, "vibe checks."<br>
+                               <strong>Posture:</strong> The self is a performance. Authenticity is a weapon against the fake.` 
+                    },
+                    { 
+                        title: "Generation Alpha", 
+                        date: "2013–Mid 2020s", 
+                        desc: `<strong>Logic:</strong> Fluidity prevents rigidity. AI-Native logic.<br>
+                               <strong>Norms:</strong> Gamified social interaction, hyper-niche identity, blurred physical/digital boundaries.<br>
+                               <strong>Posture:</strong> The self is a node. Constant evolution is the only stability.` 
+                    }
+                ]
+            }
+        ];
+
+        function renderTimeline() {
+            const container = document.getElementById('timeline-container');
+            
+            // Calculate scale factors (Logarithmic)
+            // We use Math.log10 to squash the huge numbers.
+            const maxDuration = Math.max(...historyData.map(d => d.duration));
+            const minDuration = Math.min(...historyData.map(d => d.duration));
+            
+            // Function to normalize duration to a 0-100 scale for UI
+            const getRelativeScale = (duration) => {
+                // Logarithmic scaling: (log(x) - log(min)) / (log(max) - log(min))
+                // Adding a small buffer to min to avoid 0 width
+                const logVal = Math.log10(duration);
+                const logMax = Math.log10(maxDuration);
+                const logMin = Math.log10(minDuration);
+                
+                // If max == min (1 item), return 100
+                if (logMax === logMin) return 100;
+
+                const percent = ((logVal - logMin) / (logMax - logMin)) * 100;
+                
+                // Ensure a minimum visual size (e.g., 20%) so small eras aren't invisible
+                return Math.max(percent, 15);
+            };
+
+            historyData.forEach((era, index) => {
+                const isLast = index === historyData.length - 1;
+                const scalePercent = getRelativeScale(era.duration);
+                
+                const item = document.createElement('div');
+                item.className = 'relative pl-8 pb-12 group';
+                if (isLast) item.classList.remove('pb-12');
+
+                // Color mapping for Tailwind classes
+                const colorClasses = {
+                    indigo: 'bg-indigo-500 ring-indigo-200 text-indigo-500',
+                    emerald: 'bg-emerald-500 ring-emerald-200 text-emerald-500',
+                    amber: 'bg-amber-500 ring-amber-200 text-amber-500',
+                    rose: 'bg-rose-500 ring-rose-200 text-rose-500',
+                    cyan: 'bg-cyan-500 ring-cyan-200 text-cyan-500',
+                    slate: 'bg-slate-500 ring-slate-200 text-slate-500',
+                    orange: 'bg-orange-500 ring-orange-200 text-orange-500',
+                    fuchsia: 'bg-fuchsia-500 ring-fuchsia-200 text-fuchsia-500'
+                };
+                // Extract bg color class specifically for the dot/bar
+                const bgClass = (colorClasses[era.color] || colorClasses.indigo).split(' ')[0];
+                const textClass = (colorClasses[era.color] || colorClasses.indigo).split(' ').pop();
+                const ringClass = (colorClasses[era.color] || colorClasses.indigo).split(' ')[1];
+                
+                const textColor = `text-${era.color}-600 dark:text-${era.color}-400`;
+
+                item.innerHTML = `
+                    <!-- Dot on the line -->
+                    <div class="absolute left-[15px] top-[24px] w-5 h-5 rounded-full ${bgClass} ${ringClass} ring-4 ring-opacity-30 dark:ring-opacity-20 z-10 transition-transform group-hover:scale-110"></div>
+                    
+                    <!-- Card -->
+                    <div class="glass rounded-2xl p-6 shadow-sm hover:shadow-md cursor-pointer transition-all duration-300 transform" onclick="toggleEra(this)">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-center gap-3 mb-2">
+                                <i data-lucide="${era.icon}" class="w-6 h-6 ${textColor}"></i>
+                                <h2 class="text-xl font-bold text-slate-900 dark:text-white">${era.title}</h2>
+                            </div>
+                            <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transition-transform duration-300 chevron"></i>
+                        </div>
+                        
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">${era.period}</p>
+                        </div>
+                        
+                        <!-- Duration Visualizer -->
+                        <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 mb-4 overflow-hidden" title="Approx. Duration: ${era.duration.toLocaleString()} years">
+                            <div class="${bgClass} h-1.5 rounded-full" style="width: ${scalePercent}%"></div>
+                        </div>
+
+                        <!-- Expandable Content -->
+                        <div class="content-expand mt-0">
+                            <div class="pt-4 border-t border-slate-200 dark:border-slate-700 mt-4 space-y-6">
+                                ${era.events.map(event => `
+                                    <div class="pl-4 border-l-2 border-slate-200 dark:border-slate-700">
+                                        <h3 class="font-bold text-slate-800 dark:text-slate-200">${event.title}</h3>
+                                        <span class="text-xs font-mono text-slate-500 dark:text-slate-500 block mb-1">${event.date}</span>
+                                        ${event.image ? `
+                                            <div class="mt-3 mb-3">
+                                                <img src="${event.image}" alt="${event.title}" class="w-full max-w-[500px] h-auto rounded-lg shadow-md border border-slate-200 dark:border-slate-700">
+                                            </div>
+                                        ` : ''}
+                                        <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">${event.desc}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(item);
+            });
+            
+            lucide.createIcons();
+        }
+
+        function toggleEra(card) {
+            const content = card.querySelector('.content-expand');
+            const chevron = card.querySelector('.chevron');
+            
+            // Toggle active class
+            const isActive = content.classList.contains('active');
+            
+            if (isActive) {
+                content.classList.remove('active');
+                chevron.style.transform = 'rotate(0deg)';
+            } else {
+                content.classList.add('active');
+                chevron.style.transform = 'rotate(180deg)';
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', renderTimeline);
+
+    </script>
+</body>
+</html>
