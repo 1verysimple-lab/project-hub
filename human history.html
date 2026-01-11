@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="An interactive deep-time timeline of human history, exploring the evolution of energy, information, and society from the Hadean Eon to Generation Alpha.">
+    <meta name="keywords" content="history, timeline, anthropology, sociology, evolution, homo sapiens, interactive, education">
     <title>Human History</title>
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -84,8 +86,18 @@
             opacity: 0;
         }
         .content-expand.active {
-            max-height: 5000px; /* Increased to accommodate long content */
             opacity: 1;
+            /* max-height handled by JS */
+        }
+
+        /* Filter Buttons */
+        .filter-btn.active {
+            background-color: #4f46e5; /* indigo-600 */
+            color: white;
+        }
+        .dark .filter-btn.active {
+            background-color: #6366f1; /* indigo-500 */
+            color: white;
         }
     </style>
 </head>
@@ -123,6 +135,15 @@
                 An interactive journey from the emergence of <span class="italic">Homo sapiens</span> to the digital age.
             </p>
         </header>
+
+        <!-- Filter Controls -->
+        <div class="sticky top-4 z-40 mb-12 flex flex-wrap justify-center gap-2 p-2 glass rounded-xl max-w-fit mx-auto transition-all duration-300" id="filter-bar">
+            <button onclick="setFilter(null)" class="filter-btn active px-4 py-1.5 rounded-lg text-sm font-medium transition-all hover:bg-slate-200 dark:hover:bg-slate-800" data-filter="all">All</button>
+            <button onclick="setFilter('energy')" class="filter-btn px-4 py-1.5 rounded-lg text-sm font-medium transition-all hover:bg-amber-100 dark:hover:bg-amber-900/30 text-slate-600 dark:text-slate-400" data-filter="energy">Energy</button>
+            <button onclick="setFilter('information')" class="filter-btn px-4 py-1.5 rounded-lg text-sm font-medium transition-all hover:bg-blue-100 dark:hover:bg-blue-900/30 text-slate-600 dark:text-slate-400" data-filter="information">Information</button>
+            <button onclick="setFilter('social')" class="filter-btn px-4 py-1.5 rounded-lg text-sm font-medium transition-all hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-slate-600 dark:text-slate-400" data-filter="social">Social</button>
+            <button onclick="setFilter('psychology')" class="filter-btn px-4 py-1.5 rounded-lg text-sm font-medium transition-all hover:bg-purple-100 dark:hover:bg-purple-900/30 text-slate-600 dark:text-slate-400" data-filter="psychology">Psychology</button>
+        </div>
 
         <div class="relative pl-4" id="timeline-container">
             <!-- Timeline Line -->
@@ -246,10 +267,29 @@
                         desc: "Hominin fossils from Morocco provide deeper context for African hominin diversity and populations near the last common ancestor of H. sapiens, Neanderthals, and Denisovans."
                     },
                     {
+                        title: "Global Dispersals (Sahul & Americas)",
+                        date: "~65,000 & ~20,000+ years ago",
+                        desc: "Humans reach Sahul (Australia/New Guinea) ~65kya, requiring early maritime tech. Much later, populations enter the Americas via Beringia, rapidly adapting to diverse environments from the Arctic to the Andes."
+                    },
+                    {
                         title: "Cultural Expansion (Upper Paleolithic)",
                         date: "~50,000–12,000 years ago",
                         desc: "Widespread use of complex tools, symbolic art, burials, long-distance exchange networks, and regional cultural traditions."
                     }
+                ],
+                themes: {
+                    energy: "Solely somatic (human muscle) and fire (external digestion, warmth). Low density, high mobility.",
+                    information: "Genetic transmission + Oral/Gestural tradition. Knowledge dies with the holder unless successfully mimicked or told.",
+                    social: "Band-level societies (~20–150 individuals). Egalitarian ethos enforced by leveling mechanisms.",
+                    psychology: "Immediate-return orientation. Animistic worldview (nature as subject, not object)."
+                },
+                pov: {
+                    title: "The Hunter's Focus",
+                    text: "You are sharpening a flint scraper. It has taken three hours. If it breaks, you have no knife for the antelope your kin are tracking. You feel the cold wind; fire is miles away."
+                },
+                prompts: [
+                    "How did the mastery of fire alter the caloric budget of early humans, and what did that allow the brain to do?",
+                    "What social mechanisms prevented the emergence of hierarchy in hunter-gatherer bands for ~290,000 years?"
                 ]
             },
             {
@@ -303,6 +343,20 @@
                         date: "c. 7000–3000 BCE",
                         desc: "Permanent settlements, pottery, food storage, population growth, emerging social hierarchies, and increased environmental modification."
                     }
+                ],
+                themes: {
+                    energy: "Photosynthetic capture (crops) and animal muscle. Significant increase in energy density per acre.",
+                    information: "Tokens, proto-writing, and monumental symbolism. Memory moves from 'collective mind' to 'physical object'.",
+                    social: "Transition from tribes to chiefdoms. Rise of specialist classes (priests, warriors, artisans).",
+                    psychology: "Delayed-return orientation (planting vs. harvesting). Concept of 'property' and 'territory' crystallizes."
+                },
+                pov: {
+                    title: "The Farmer's Anxiety",
+                    text: "You wake before dawn to check the irrigation ditch. If the silt is blocked, the barley dies. If the barley dies, your children starve. You envy the hill-people who still hunt, but you have walls."
+                },
+                prompts: [
+                    "Does the surplus created by agriculture inevitably lead to inequality, or were there egalitarian farming societies?",
+                    "How did the psychological shift from 'finding food' to 'producing food' alter humanity's relationship with time?"
                 ]
             },
             {
@@ -322,6 +376,20 @@
                         date: "c. 2500–500 BCE",
                         desc: "Large cities, monumental architecture, codified law, and long-distance trade develop across Mesopotamia, Egypt, Indus Valley, China, and the Mediterranean."
                     }
+                ],
+                themes: {
+                    energy: "Human labor (corvée, slavery), charcoal, wind (sails). Mobilization of mass energy for state projects.",
+                    information: "Script (Cuneiform, Hieroglyphs). Bureaucracy allows control at a distance. Law becomes codified.",
+                    social: "Sharp stratification. Divine kingship. The State claims a monopoly on violence.",
+                    psychology: "Subjecthood. The individual defines themselves in relation to the hierarchy and the city-state's god."
+                },
+                pov: {
+                    title: "The Subject's Duty",
+                    text: "You stand in line to deliver your grain tax to the Temple. The scribe does not look at you, only weighs your sack and marks a clay tablet. You have never seen the King, but you own his seal."
+                },
+                prompts: [
+                    "Was writing invented primarily for poetry/religion or for tax/accounting? (Evidence suggests the latter).",
+                    "How did the 'State' convince thousands of people to submit to the will of one ruler for the first time?"
                 ]
             },
             {
@@ -341,6 +409,20 @@
                         date: "c. 500–1500 CE",
                         desc: "Silk Roads and Indian Ocean networks facilitate the spread of religions, technologies (paper, gunpowder), and scientific knowledge across Afro-Eurasia."
                     }
+                ],
+                themes: {
+                    energy: "Water wheels, iron tools, advanced sailing rigs. More efficient extraction of resources.",
+                    information: "Alphabets (democratizing literacy), Scrolls, later Paper. Universalizing religions carry memes across borders.",
+                    social: "Multi-ethnic Empires. Citizenship concepts (Rome/Greece) vs. Subjects. Meritocracy (Chinese Exams).",
+                    psychology: "Universal Ethics. The 'Golden Rule' appears in almost all Axial traditions. Internalization of conscience."
+                },
+                pov: {
+                    title: "The Citizen's Doubt",
+                    text: "You sit in a marketplace listening to a man argue that 'virtue is its own reward.' It is a strange thought. Previously, you only sacrificed to gods to avoid storms. Now, you wonder if your soul is clean."
+                },
+                prompts: [
+                    "Why did the 'Axial Age' happen simultaneously in Greece, India, and China without direct contact?",
+                    "How did the invention of the alphabet change who could hold power compared to complex hieroglyphic systems?"
                 ]
             },
             {
@@ -360,6 +442,20 @@
                         date: "c. 1600–1800",
                         desc: "Growth of bureaucratic states, mercantilism, joint-stock companies, and early industrial practices."
                     }
+                ],
+                themes: {
+                    energy: "Global wind currents mapped and exploited. Wood scarcity in Europe drives early coal adoption.",
+                    information: "The Printing Press. Information becomes reproducible, cheap, and uncontrollable. The Scientific Revolution.",
+                    social: "The Merchant Class rises to challenge the Aristocracy. Chattel slavery industrializes human commodification.",
+                    psychology: "Individualism. The 'self' as a distinct, autonomous observer (Descartes). Disenchantment of the world."
+                },
+                pov: {
+                    title: "The Reader's Awakening",
+                    text: "You hold a printed pamphlet. It says the stars are other suns. The ink is fresh, smelling of oil. Fifty years ago, this paper would have cost a village's ransom; now you bought it for a penny."
+                },
+                prompts: [
+                    "How did the Printing Press make the Protestant Reformation and the Scientific Revolution possible?",
+                    "Compare the 'Columbian Exchange' to the earlier Silk Road—how was this integration different?"
                 ]
             },
             {
@@ -379,6 +475,20 @@
                         date: "20th–21st Centuries",
                         desc: "World wars, Cold War, decolonization, human rights movements, and the digital revolution produce an unprecedentedly interconnected global system."
                     }
+                ],
+                themes: {
+                    energy: "Fossil Fuels (Coal -> Oil -> Gas). Breaking the solar limit. Nuclear.",
+                    information: "Instantaneous communication (Telegraph -> Radio -> Internet). The 'Noosphere'.",
+                    social: "Mass Society. Urbanization. Democracy vs. Totalitarianism. The collapse of traditional family structures.",
+                    psychology: "Alienation. Acceleration. The 'Global Village'. Anxiety of abundance."
+                },
+                pov: {
+                    title: "The Worker's Rhythm",
+                    text: "The whistle blows. You have attached the same bolt to the same wheel six hundred times today. The noise is deafening, but the wages bought meat for Sunday dinner. You have forgotten the smell of rain."
+                },
+                prompts: [
+                    "Did the end of slavery correlate with the rise of fossil fuels (energy substitute)?",
+                    "How has the shift from 'scarcity' to 'information overload' rewired the modern human brain?"
                 ]
             },
             {
@@ -405,6 +515,7 @@
                         title: "Silent Generation", 
                         date: "1928–1945", 
                         desc: `<strong>Logic:</strong> Order prevents collapse. Scarcity & Stability.<br>
+                               <strong>Context:</strong> Born during the Great Depression and WWII. Their 'keep your head down' ethos was a survival strategy against global totalitarianism and economic ruin.<br>
                                <strong>Norms:</strong> Do not interrupt, keep struggles private, assume authority is legitimate.<br>
                                <strong>Posture:</strong> The self is subordinate to duty. Visibility is dangerous.` 
                     },
@@ -447,8 +558,26 @@
             }
         ];
 
+        let currentFilter = null;
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            
+            // Update buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if(btn.dataset.filter === (filter || 'all')) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            renderTimeline();
+        }
+
         function renderTimeline() {
             const container = document.getElementById('timeline-container');
+            container.innerHTML = '<div class="timeline-line"></div>'; // Reset, keep line
             
             // Calculate scale factors (Logarithmic)
             // We use Math.log10 to squash the huge numbers.
@@ -457,18 +586,11 @@
             
             // Function to normalize duration to a 0-100 scale for UI
             const getRelativeScale = (duration) => {
-                // Logarithmic scaling: (log(x) - log(min)) / (log(max) - log(min))
-                // Adding a small buffer to min to avoid 0 width
                 const logVal = Math.log10(duration);
                 const logMax = Math.log10(maxDuration);
                 const logMin = Math.log10(minDuration);
-                
-                // If max == min (1 item), return 100
                 if (logMax === logMin) return 100;
-
                 const percent = ((logVal - logMin) / (logMax - logMin)) * 100;
-                
-                // Ensure a minimum visual size (e.g., 20%) so small eras aren't invisible
                 return Math.max(percent, 15);
             };
 
@@ -476,8 +598,34 @@
                 const isLast = index === historyData.length - 1;
                 const scalePercent = getRelativeScale(era.duration);
                 
+                // FILTER LOGIC
+                let opacityClass = 'opacity-100';
+                let hasTheme = false;
+                let themePreview = '';
+
+                if (currentFilter) {
+                    if (era.themes && era.themes[currentFilter]) {
+                        hasTheme = true;
+                        // Create preview snippet for filtered content
+                        const themeValue = era.themes[currentFilter];
+                        themePreview = `
+                            <div class="mt-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-800/50 flex gap-3 animate-fade-in">
+                                <div class="shrink-0 pt-1">
+                                    <i data-lucide="zap" class="w-4 h-4 text-indigo-500"></i>
+                                </div>
+                                <div>
+                                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-500 block mb-1">${currentFilter} Layer</span>
+                                    <p class="text-sm text-indigo-900 dark:text-indigo-200 leading-snug">${themeValue}</p>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        opacityClass = 'opacity-40 grayscale'; // Dim non-matching eras
+                    }
+                }
+
                 const item = document.createElement('div');
-                item.className = 'relative pl-8 pb-12 group';
+                item.className = `relative pl-8 pb-12 group transition-opacity duration-500 ${opacityClass}`;
                 if (isLast) item.classList.remove('pb-12');
 
                 // Color mapping for Tailwind classes
@@ -489,12 +637,14 @@
                     cyan: 'bg-cyan-500 ring-cyan-200 text-cyan-500',
                     slate: 'bg-slate-500 ring-slate-200 text-slate-500',
                     orange: 'bg-orange-500 ring-orange-200 text-orange-500',
-                    fuchsia: 'bg-fuchsia-500 ring-fuchsia-200 text-fuchsia-500'
+                    fuchsia: 'bg-fuchsia-500 ring-fuchsia-200 text-fuchsia-500',
+                    blue: 'bg-blue-500 ring-blue-200 text-blue-500'
                 };
-                // Extract bg color class specifically for the dot/bar
-                const bgClass = (colorClasses[era.color] || colorClasses.indigo).split(' ')[0];
-                const textClass = (colorClasses[era.color] || colorClasses.indigo).split(' ').pop();
-                const ringClass = (colorClasses[era.color] || colorClasses.indigo).split(' ')[1];
+                
+                const safeColor = colorClasses[era.color] || colorClasses.indigo;
+                const bgClass = safeColor.split(' ')[0];
+                const textClass = safeColor.split(' ').pop();
+                const ringClass = safeColor.split(' ')[1];
                 
                 const textColor = `text-${era.color}-600 dark:text-${era.color}-400`;
 
@@ -516,14 +666,19 @@
                             <p class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">${era.period}</p>
                         </div>
                         
-                        <!-- Duration Visualizer -->
+                        <!-- Duration Visualizer (Hide if filtered to reduce noise? No, keep context) -->
                         <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 mb-4 overflow-hidden" title="Approx. Duration: ${era.duration.toLocaleString()} years">
                             <div class="${bgClass} h-1.5 rounded-full" style="width: ${scalePercent}%"></div>
                         </div>
 
+                        <!-- FILTER PREVIEW (Only shows if filter is active) -->
+                        ${themePreview}
+
                         <!-- Expandable Content -->
                         <div class="content-expand mt-0">
                             <div class="pt-4 border-t border-slate-200 dark:border-slate-700 mt-4 space-y-6">
+                                
+                                <!-- Events -->
                                 ${era.events.map(event => `
                                     <div class="pl-4 border-l-2 border-slate-200 dark:border-slate-700">
                                         <h3 class="font-bold text-slate-800 dark:text-slate-200">${event.title}</h3>
@@ -536,6 +691,47 @@
                                         <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">${event.desc}</p>
                                     </div>
                                 `).join('')}
+
+                                <!-- Human POV -->
+                                ${era.pov ? `
+                                    <div class="mt-6 mb-6">
+                                        <div class="bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-800/50 p-5 rounded-xl border border-slate-200 dark:border-slate-700 relative overflow-hidden">
+                                            <i data-lucide="eye" class="absolute top-4 right-4 w-12 h-12 text-slate-900/5 dark:text-white/5 -rotate-12"></i>
+                                            <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Human Experience: ${era.pov.title}</h3>
+                                            <p class="text-slate-700 dark:text-slate-300 italic font-serif text-lg leading-relaxed">"${era.pov.text}"</p>
+                                        </div>
+                                    </div>
+                                ` : ''}
+
+                                <!-- Thematic Layers -->
+                                ${era.themes ? `
+                                    <div class="mt-6 mb-4">
+                                        <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">Thematic Layers</h3>
+                                        <div class="grid gap-3 text-sm">
+                                            ${Object.entries(era.themes).map(([key, value]) => `
+                                                <div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded border border-slate-100 dark:border-slate-700/50 ${currentFilter === key ? 'ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900' : ''}">
+                                                    <span class="font-semibold capitalize text-${era.color}-600 dark:text-${era.color}-400">${key}:</span>
+                                                    <span class="text-slate-600 dark:text-slate-300 ml-1">${value}</span>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                ` : ''}
+
+                                <!-- Research Prompts -->
+                                ${era.prompts ? `
+                                    <div class="mt-6 p-4 bg-indigo-50 dark:bg-indigo-950/20 rounded-lg border border-indigo-100 dark:border-indigo-900/30">
+                                        <h3 class="text-xs font-bold uppercase tracking-widest text-indigo-500 mb-2 flex items-center gap-2">
+                                            <i data-lucide="help-circle" class="w-3 h-3"></i>
+                                            Critical Questions
+                                        </h3>
+                                        <ul class="space-y-2">
+                                            ${era.prompts.map(prompt => `
+                                                <li class="text-indigo-800 dark:text-indigo-300 italic text-sm">"${prompt}"</li>
+                                            `).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
                             </div>
                         </div>
                     </div>
@@ -555,10 +751,12 @@
             const isActive = content.classList.contains('active');
             
             if (isActive) {
+                content.style.maxHeight = null;
                 content.classList.remove('active');
                 chevron.style.transform = 'rotate(0deg)';
             } else {
                 content.classList.add('active');
+                content.style.maxHeight = content.scrollHeight + "px";
                 chevron.style.transform = 'rotate(180deg)';
             }
         }
