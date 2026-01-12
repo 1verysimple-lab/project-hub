@@ -99,6 +99,22 @@
             background-color: #6366f1; /* indigo-500 */
             color: white;
         }
+
+        /* Audio Player Styling Override */
+        audio {
+            height: 32px;
+            border-radius: 8px;
+        }
+        audio::-webkit-media-controls-panel {
+            background-color: rgb(241 245 249); /* slate-100 */
+        }
+        .dark audio::-webkit-media-controls-panel {
+            background-color: rgb(51 65 85); /* slate-700 */
+        }
+        .dark audio::-webkit-media-controls-current-time-display,
+        .dark audio::-webkit-media-controls-time-remaining-display {
+            color: white;
+        }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-[#0f1117] text-slate-900 dark:text-slate-100 min-h-screen relative selection:bg-indigo-500 selection:text-white">
@@ -171,6 +187,8 @@
                 duration: 4540000000,
                 icon: "globe-2",
                 color: "blue",
+                audioSrc: "the 1.mp3",
+                audioTranscript: "Imagine a story that begins long before any of us existed — 4.5 billion years ago. A swirling cloud of gas and dust collapses, and Earth is born in fire — a molten world under constant bombardment, the Hadean eon, where oceans boil and continents don't yet exist.<br><br>Then, slowly, things cool. In the Archean, the first simple life appears — tiny microbes that learn to survive in a world without oxygen. They spend billions of years quietly transforming the planet, releasing oxygen that eventually poisons their own environment… but opens the door for everything that follows.<br><br>The Proterozoic sees the rise of complex cells, while the Phanerozoic explodes with animals, plants, forests, dinosaurs, and mass extinctions.<br><br>And through all of this vast, dramatic history — 99.99% of Earth's timeline — humans don't appear until the very last second. We're not the main character of Earth's story… we're just the newest, tiniest spark. A brief, bright flicker in an almost endless night.",
                 events: [
                     {
                         title: "Formation & Hadean Eon",
@@ -219,6 +237,8 @@
                 duration: 6700000,
                 icon: "dna",
                 color: "orange",
+                audioSrc: "the 2.mp3",
+                audioTranscript: "Seven million years ago, in the forests of Africa, our story quietly begins. A creature called Sahelanthropus — maybe our earliest ancestor — takes its first uncertain steps toward walking upright.<br><br>Then come Ardipithecus, still at home in trees, followed by the famous Australopithecus — think Lucy — small, upright walkers with brains not much bigger than a chimp's.<br><br>About two and a half million years ago, a new line emerges: Homo habilis, the 'handy man', who starts making simple stone tools. Then Homo erectus — taller, smarter, the first to control fire, the first to leave Africa, spreading across Asia and reaching as far as Indonesia.<br><br>Hundreds of thousands of years later, in colder Europe and Asia, we meet our close cousins: the Neanderthals — stocky, skilled hunters who buried their dead — and the mysterious Denisovans. They weren't just distant relatives… they met us, lived alongside us, and even left tiny pieces of their DNA in many of us today.<br><br>We come from a wide, tangled family tree — not a straight ladder, but a bush full of branches.",
                 events: [
                     {
                         title: "Sahelanthropus & Ardipithecus",
@@ -254,6 +274,8 @@
                 duration: 303000,
                 icon: "footprints",
                 color: "indigo",
+                audioSrc: "the 3.mp3",
+                audioTranscript: "About 300,000 years ago, in Africa, a new kind of human quietly appears — us, Homo sapiens. At first, we're just one more hominin among others. But something changes around 70,000–50,000 years ago… a cognitive revolution.<br><br>Suddenly we can imagine things that don't exist — gods, nations, money, the future. We create art, music, stories. We invent ever more clever tools and strategies.<br><br>Then we move. Out of Africa, across deserts, along coasts, reaching Australia 65,000 years ago, the Americas maybe 20,000 years ago or earlier. Everywhere we go, the world changes — megafauna disappear, new ecosystems emerge.<br><br>For tens of thousands of years we live as hunter-gatherers — small bands, deep knowledge of nature, time for storytelling around the fire. Life was hard, but also rich in connection, wonder, and focus. This long morning of humanity lasted until very recently… until we decided to settle down.",
                 events: [
                     {
                         title: "Emergence of Homo sapiens",
@@ -285,7 +307,7 @@
                 },
                 pov: {
                     title: "The Hunter's Focus",
-                    text: "You are sharpening a flint scraper. It has taken three hours. If it breaks, you have no knife for the antelope your kin are tracking. You feel the cold wind; fire is miles away."
+                    text: "You are sharpening a flint scraper. It has taken three hours. If the stone breaks, you have no knife for the antelope your kin are tracking. You feel the cold wind; fire is miles away."
                 },
                 prompts: [
                     "How did the mastery of fire alter the caloric budget of early humans, and what did that allow the brain to do?",
@@ -298,6 +320,8 @@
                 duration: 100000, /* Abstract duration for visual scale */
                 icon: "languages",
                 color: "violet",
+                audioSrc: "the 4.mp3",
+                audioTranscript: "Language is humanity's greatest invention — and it didn't happen all at once.<br><br>First came the hardware: a descended larynx, a flexible tongue, a brain wired for sound — all evolving over millions of years.<br><br>Then, maybe 70,000 years ago, the real magic: recursive syntax. Suddenly we could combine words infinitely — 'the hunter who killed the lion that ate the child' — stories, plans, lies, dreams.<br><br>After the Ice Age, as groups grew larger, hundreds of mother tongues spread across the world. Then came the big freeze — writing. Around 3400 BCE in Mesopotamia, people started scratching symbols on clay to record debts, laws, stories. Speech became permanent.<br><br>Today we live in the age of convergence: thousands of languages are disappearing, while global English, machine translation, and digital communication pull us toward a single, shared conversation. Language once divided us… now it's starting to unite us again.",
                 events: [
                     {
                         title: "1. The Hardware (~2M – 200k Years Ago)",
@@ -332,6 +356,8 @@
                 duration: 9000,
                 icon: "sprout",
                 color: "emerald",
+                audioSrc: "the 5.mp3",
+                audioTranscript: "Twelve thousand years ago, the world warmed. And humans made their most fateful choice.<br><br>Instead of following the herds, some groups started staying put — planting seeds, taming goats, building permanent homes. Agriculture was born, independently in many places.<br><br>Life became predictable… but also harder. More food, yes — but also more mouths, more work, more inequality. Hierarchies appeared. Kings, priests, and warriors rose above the farmers who fed them.<br><br>People traded freedom for security, wandering for settlement, wild nature for cultivated fields. Anxiety replaced the hunter's sharp focus — now you worried about drought, pests, next year's harvest.<br><br>This quiet revolution changed everything: energy, society, psychology, even the land itself. We became farmers… and the world would never be the same.",
                 events: [
                     {
                         title: "Origins of Agriculture",
@@ -365,6 +391,8 @@
                 duration: 2900,
                 icon: "scroll",
                 color: "amber",
+                audioSrc: "the 6.mp3",
+                audioTranscript: "Five thousand five hundred years ago, in the hot river valleys of Mesopotamia and Egypt, something new emerged: cities, states… and writing.<br><br>Clay tablets and papyrus recorded taxes, laws, poems, prayers. Knowledge could now outlive the person who knew it.<br><br>With writing came power — kings could command distant provinces, priests could standardize rituals, merchants could track debts across generations.<br><br>Huge monuments rose: ziggurats, pyramids. Millions labored under new ideas of duty, obedience, cosmic order. Life became structured, hierarchical, often harsh — but also awe-inspiring.<br><br>For the first time, humans lived inside systems bigger than any single lifetime. We became subjects.",
                 events: [
                     {
                         title: "Writing Systems & Early States",
@@ -398,6 +426,8 @@
                 duration: 2300,
                 icon: "landmark",
                 color: "rose",
+                audioSrc: "the 7.mp3",
+                audioTranscript: "Around 800 BCE, a strange wave swept the world — the Axial Age. In China, Confucius taught harmony and duty. In India, Buddha offered escape from suffering. In Greece, Socrates asked dangerous questions. People began to wonder: what is the good life? What is universal truth?<br><br>Then came the great connections: Silk Roads, Indian Ocean trade, empires rising and falling. Ideas, spices, religions, technologies flowed between distant peoples.<br><br>For centuries, humanity wrestled with doubt, ethics, and how to live together on a suddenly larger planet. We became citizens — of cities, of philosophies, of something bigger than tribe.",
                 events: [
                     {
                         title: "The Axial Age",
@@ -431,6 +461,8 @@
                 duration: 400,
                 icon: "ship",
                 color: "cyan",
+                audioSrc: "the 8.mp3",
+                audioTranscript: "In the 1400s, Europe woke up to the sea. Ships sailed farther, maps improved, cannons roared. Columbus, Vasco da Gama, Magellan — suddenly the world was connected in ways no one had imagined.<br><br>The Columbian Exchange mixed ecosystems: potatoes to Europe, horses to America, diseases everywhere. Millions died. New wealth flowed to Europe.<br><br>Printing presses spread ideas faster than ever. States grew stronger, bureaucracies deeper. People began to read, to question, to dream of rights and revolutions. The old medieval world cracked open — and the modern age rushed in.",
                 events: [
                     {
                         title: "Maritime Expansion",
@@ -464,6 +496,8 @@
                 duration: 250,
                 icon: "factory",
                 color: "slate",
+                audioSrc: "the 9.mp3",
+                audioTranscript: "Two hundred fifty years ago, everything accelerated. Steam engines, factories, coal, then oil — humanity tapped ancient sunlight stored underground. Population exploded. Cities swelled.<br><br>The 20th century became an age of extremes: world wars, genocides, but also moon landings, antibiotics, instant global communication.<br><br>Then came the digital revolution — computers, internet, smartphones. Information became infinite and instant. We moved from scarcity to abundance… and strangely, to new kinds of loneliness. Today we live in a hyper-connected, fast-moving, uncertain world — still figuring out what it means to be human in the machine age.",
                 events: [
                     {
                         title: "Industrial Revolution",
@@ -497,6 +531,8 @@
                 duration: 140,
                 icon: "users",
                 color: "fuchsia",
+                audioSrc: "the 10.mp3",
+                audioTranscript: "Finally, let's zoom right in — the last century of human etiquette and identity.<br><br>Each generation is shaped by its fears and its tools. The Silent Generation learned obedience after depression and war. Boomers grew up in optimism, prosperity, and rebellion. Gen X became the skeptical latchkey kids. Millennials searched for meaning amid economic crashes and social media. Gen Z grew up online, anxious, pragmatic, and socially conscious. Generation Alpha is being raised by screens and climate awareness.<br><br>Every generation thinks the world is ending in its own way — and every generation is right, in a sense. But we keep adapting, redefining what it means to be polite, successful, connected… ourselves.",
                 events: [
                     {
                         title: "The Logic of Etiquette",
@@ -524,7 +560,7 @@
                         date: "1946–1964", 
                         desc: `<strong>Logic:</strong> Confidence equals credibility. Status & Performance.<br>
                                <strong>Norms:</strong> Firm handshakes, eye contact, phone calls preferred, meetings as proof of productivity.<br>
-                               <strong>Posture:</strong> The self must be projected. Success should be visible.` 
+                               <strong>Posture:</strong> The self is projected. Success should be visible.` 
                     },
                     { 
                         title: "Generation X", 
@@ -666,7 +702,7 @@
                             <p class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">${era.period}</p>
                         </div>
                         
-                        <!-- Duration Visualizer (Hide if filtered to reduce noise? No, keep context) -->
+                        <!-- Duration Visualizer -->
                         <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 mb-4 overflow-hidden" title="Approx. Duration: ${era.duration.toLocaleString()} years">
                             <div class="${bgClass} h-1.5 rounded-full" style="width: ${scalePercent}%"></div>
                         </div>
@@ -677,6 +713,26 @@
                         <!-- Expandable Content -->
                         <div class="content-expand mt-0">
                             <div class="pt-4 border-t border-slate-200 dark:border-slate-700 mt-4 space-y-6">
+
+                                <!-- AUDIO PLAYER & TRANSCRIPT SECTION -->
+                                ${era.audioSrc ? `
+                                    <div class="p-4 bg-slate-100 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700" onclick="event.stopPropagation()">
+                                        <div class="flex flex-col gap-3">
+                                            <div class="flex items-center justify-between">
+                                                 <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                                                    <i data-lucide="headphones" class="w-4 h-4"></i> Audio Guide
+                                                 </h3>
+                                                 <button onclick="toggleTranscript(this)" class="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline hover:text-indigo-700">Read Transcript</button>
+                                            </div>
+                                            
+                                            <audio controls class="w-full h-8" src="${era.audioSrc}"></audio>
+                                            
+                                            <div class="transcript hidden mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-serif">
+                                                ${era.audioTranscript}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ` : ''}
                                 
                                 <!-- Events -->
                                 ${era.events.map(event => `
@@ -754,10 +810,46 @@
                 content.style.maxHeight = null;
                 content.classList.remove('active');
                 chevron.style.transform = 'rotate(0deg)';
+                
+                // Also pause audio if collapsing?
+                const audio = card.querySelector('audio');
+                if(audio) audio.pause();
+
             } else {
                 content.classList.add('active');
                 content.style.maxHeight = content.scrollHeight + "px";
                 chevron.style.transform = 'rotate(180deg)';
+            }
+        }
+
+        function toggleTranscript(btn) {
+            // Find the transcript sibling
+            // Structure: btn -> parent -> parent -> audio -> transcript
+            // The button is inside the header div. The transcript is a sibling of that header's parent container... 
+            // Wait, in my template:
+            /*
+            <div class="flex flex-col gap-3">
+                <div class="flex items-center justify-between">... <button> ... </div>
+                <audio ...>
+                <div class="transcript ...">
+            </div>
+            */
+            // So btn.closest('.flex-col').querySelector('.transcript')
+            
+            const container = btn.closest('.flex-col');
+            const transcript = container.querySelector('.transcript');
+            
+            if (transcript.classList.contains('hidden')) {
+                transcript.classList.remove('hidden');
+                btn.textContent = "Hide Transcript";
+                
+                // Recalculate max-height for the expanded era card
+                const eraContent = btn.closest('.content-expand');
+                eraContent.style.maxHeight = eraContent.scrollHeight + "px";
+                
+            } else {
+                transcript.classList.add('hidden');
+                btn.textContent = "Read Transcript";
             }
         }
 
