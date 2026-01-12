@@ -1,5 +1,12 @@
 [
     {
+        "filename": "human_history/human history.html",
+        "title": "The History of Humanity(short)",
+        "description": "A short audio-visual narrative of where we come from",
+        "type": "Guide",
+        "date_added": "2026-01-12"
+    },
+    {
         "filename": "human history.html",
         "title": "The History of Humanity",
         "description": "Learn about from where you come",
