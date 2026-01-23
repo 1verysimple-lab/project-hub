@@ -7,81 +7,11 @@
         "date_added": "2026-01-23"
     },
     {
-        "filename": "HC_Andersen.html",
-        "title": "HC ANDERSEN READER",
-        "description": "the story of taellelyset",
-        "type": "Other",
-        "date_added": "2026-01-18"
-    },
-    {
-        "filename": "recipesaver/recipesaver.html",
-        "title": "Recipe Saver",
-        "description": "a tool to write and save cooking recipes",
-        "type": "Tool",
-        "date_added": "2026-01-16"
-    },
-    {
-        "filename": "shoot3r/shoot3r.html",
-        "title": "Shoot Him",
-        "description": "A small tactical shooter",
-        "type": "Game",
-        "date_added": "2026-01-16"
-    },
-    {
         "filename": "samsung25.html",
         "title": "Samsung Guide",
         "description": "learn to use the Samsung 25 camera functions",
         "type": "Guide",
         "date_added": "2026-01-15"
-    },
-    {
-        "filename": "test_olla_l.html",
-        "title": "test ol lla",
-        "description": "",
-        "type": "Other",
-        "date_added": "2026-01-14"
-    },
-    {
-        "filename": "test_ola_q.html",
-        "title": "test ola q",
-        "description": "",
-        "type": "Other",
-        "date_added": "2026-01-14"
-    },
-    {
-        "filename": "test_gemi.html",
-        "title": "test gem",
-        "description": "",
-        "type": "Other",
-        "date_added": "2026-01-14"
-    },
-    {
-        "filename": "test_copil.html",
-        "title": "test copilot",
-        "description": "",
-        "type": "Other",
-        "date_added": "2026-01-14"
-    },
-    {
-        "filename": "test_o_hf.html",
-        "title": "test ollama hf",
-        "description": "",
-        "type": "Other",
-        "date_added": "2026-01-14"
-    },
-    {
-        "filename": "test_chatgpt.html",
-        "title": "test html chat",
-        "description": "small web test",
-        "type": "Other",
-        "date_added": "2026-01-14"
-    },
-    {
-        "filename": "Lyddville/Lyddville.html",
-        "title": "Lydd Town Info",
-        "description": "A page about Lydd UK",
-        "type": "Guide",
-        "date_added": "2026-01-13"
     },
     {
         "filename": "human_history/human history.html",
@@ -117,13 +47,6 @@
         "description": "for the game",
         "type": "Tool",
         "date_added": "2026-01-05"
-    },
-    {
-        "filename": "green hell guide.html",
-        "title": "A guide",
-        "description": "A guide to green hell",
-        "type": "Guide",
-        "date_added": "2026-01-04"
     },
     {
         "filename": "FAN_SIM.html",
