@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scrabble Word Calculator</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #f9f9f9;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .container {
+            border: 2px solid #333;
+            border-radius: 0;
+            box-shadow: none;
+            margin: auto;
+            width: fit-content;
+            max-width: 500px;
+            padding: 20px;
+        }
+
+        input, button {
+            border: 2px solid #333;
+            padding: 10px;
+            font-size: 18px;
+            text-align: center;
+            width: calc(100% - 24px);
+            margin: 5px 0;
+        }
+
+        .display-area {
+            background-color: #121212;
+            color: #f9f9f9;
+            border-radius: 0;
+            padding: 10px;
+            font-size: 20px;
+            width: calc(100% - 24px);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <input type="text" id="word-input" placeholder="Enter your word here" />
+    <button id="calculate-button">CALCULATE</button>
+    <div class="display-area" id="score-display"></div>
+</div>
+
+<script>
+    const wordInput = document.getElementById('word-input');
+    const calculateButton = document.getElementById('calculate-button');
+    const scoreDisplay = document.getElementById('score-display');
+
+    calculateButton.addEventListener('click', () => {
+        const inputWord = wordInput.value.toUpperCase();
+        let score = 0;
+
+        for (let i = 0; i < inputWord.length; i++) {
+            const charCode = inputWord.charCodeAt(i);
+            if ((charCode >= 65 && charCode <= 90) || 
+                (charCode >= 97 && charCode <= 122)) { // handle uppercase/lowercase
+                score += getLetterValue(inputWord[i]);
+            }
+        }
+
+        scoreDisplay.textContent = `Score: ${score}`;
+    });
+
+    function getLetterValue(char) {
+        switch (char) {
+            case 'A':
+            case 'E':
+            case 'I':
+            case 'O':
+            case 'U': return 1;
+            case 'K':
+            case 'J':
+            case 'X':
+            case 'Q':
+            case 'Z': return 10;
+            default: return 2;
+        }
+    }
+</script>
+
+</body>
+</html>
+

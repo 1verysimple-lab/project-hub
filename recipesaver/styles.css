@@ -1,0 +1,63 @@
+/* Basic Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body, html {
+    font-family: 'Inter', sans-serif;
+    background-color: #121218;
+    color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    width: 90%;
+    max-width: 600px;
+    background-color: #24242c;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+h1 {
+    margin-bottom: 20px;
+    color: #a4d9f7;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+label, input, textarea, button {
+    font-size: 18px;
+    color: white;
+}
+
+input, textarea {
+    padding: 15px;
+    border-radius: 4px;
+    background-color: #3c3c45;
+}
+
+button {
+    padding: 10px 20px;
+    border: none;
+    background-color: #6ab7d6;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #4e9ca5;
+}
+
+#recipesList {
+    margin-top: 20px;
+}

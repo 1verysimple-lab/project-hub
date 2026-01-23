@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Gold Standard | Waffle Edition v1.2</title>
+    <style>
+        :root {
+            /* Light Theme Defaults */
+            --bg: #f4f7f6;
+            --card: #ffffff;
+            --text: #2d3436;
+            --subtext: #636e72;
+            --accent: #d35400; /* Burnt Orange for Waffles */
+            --accent-fg: #ffffff;
+            --border: #dfe6e9;
+            --highlight: #eef2f5;
+            --input-bg: #ffffff;
+            --input-border: #b2bec3;
+            --success: #00b894;
+            --alert: #d63031;
+            --btn-hover: #dfe6e9;
+        }
+
+        [data-theme="dark"] {
+            /* Dark Theme Overrides (Default) */
+            --bg: #1e1e1e;
+            --card: #252526;
+            --text: #d4d4d4;
+            --subtext: #a0a0a0;
+            --accent: #e67e22;
+            --accent-fg: #1e1e1e;
+            --border: #3e3e42;
+            --highlight: #2d2d30;
+            --input-bg: #3c3c3c;
+            --input-border: #555555;
+            --success: #4cd964;
+            --alert: #ff5f56;
+            --btn-hover: #3e3e42;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            transition: background 0.3s, color 0.3s;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: var(--card);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 50px; /* Space for footer */
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--accent);
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            gap: 15px;
+        }
+        
+        h1 { margin: 0; color: var(--accent); letter-spacing: -1px; }
+        
+        .header-controls { display: flex; gap: 10px; }
+
+        button.std-btn {
+            background: none;
+            border: 1px solid var(--accent);
+            color: var(--text);
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        
+        button.primary-btn {
+            background: var(--accent);
+            color: var(--accent-fg);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        button.primary-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* Calculator Section */
+        .calculator-section {
+            background: var(--highlight);
+            padding: 25px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            border-left: 5px solid var(--accent);
+        }
+
+        .input-row { display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; }
+        .input-group { flex: 1; min-width: 200px; }
+        
+        label { display: block; font-weight: bold; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 5px; color: var(--subtext); }
+        input, select { width: 100%; padding: 12px; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text); border-radius: 4px; font-size: 1rem; box-sizing: border-box; }
+
+        .alert-box { 
+            margin-top: 15px; 
+            font-weight: bold; 
+            color: var(--accent); 
+            font-size: 1.1rem; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .result-pill {
+            background: var(--card);
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: 0.9rem;
+        }
+
+        /* Mise en Place */
+        .mise-en-place { background: var(--highlight); border: 1px dashed var(--border); padding: 20px; border-radius: 6px; margin-bottom: 40px; }
+        .mise-en-place h3 { margin-top: 0; color: var(--subtext); font-size: 0.9rem; text-transform: uppercase; }
+        .total-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+        .total-item { display: flex; flex-direction: column; }
+        .total-item span:first-child { font-size: 0.8rem; color: var(--subtext); }
+        .total-item span:last-child { font-size: 1.2rem; font-weight: bold; color: var(--accent); }
+
+        /* Main Content Grid */
+        .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        @media (max-width: 768px) { .content-grid { grid-template-columns: 1fr; } }
+        
+        h2 { color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 5px; font-size: 1.2rem; margin-top: 0;}
+        .section-title { font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: var(--subtext); margin: 20px 0 5px 0; letter-spacing: 1px; }
+        ul { list-style: none; padding: 0; margin: 0; }
+        li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+        li span:last-child { font-weight: bold; }
+
+        /* Visual Steps & Timers */
+        .step { margin-bottom: 25px; }
+        .step-num { font-weight: bold; color: var(--accent); margin-right: 8px; font-size: 1.1rem; }
+        .step-desc { font-size: 0.95rem; line-height: 1.5; color: var(--text); }
+        
+        .timer-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            background: var(--highlight);
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .timer-display {
+            font-family: monospace;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent);
+            min-width: 60px;
+        }
+        button.action-btn {
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 5px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        button.action-btn:hover { background: var(--btn-hover); }
+
+        /* Footer */
+        footer { margin-top: 50px; text-align: center; border-top: 1px solid var(--border); padding-top: 20px; font-size: 0.9rem; }
+        footer a { color: var(--accent); text-decoration: none; font-weight: bold; }
+
+        /* --- SOUS-CHEF OVERLAY (Hidden by default) --- */
+        #focusOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg);
+            z-index: 9999;
+            display: none; 
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #focusHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 60px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        #focusContent {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            cursor: pointer; /* Tap anywhere */
+            user-select: none;
+        }
+
+        .focus-step-number { font-size: 1.5rem; color: var(--accent); opacity: 0.7; margin-bottom: 20px; }
+        .focus-instruction { font-size: 2.5rem; font-weight: bold; color: var(--text); line-height: 1.2; max-width: 800px; }
+        .focus-detail { font-size: 2rem; color: var(--success); margin-top: 20px; font-weight: bold; }
+
+        #focusControls {
+            height: 80px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .focus-btn {
+            background: var(--card);
+            border: 2px solid var(--accent);
+            color: var(--text);
+            font-size: 1.2rem;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            min-width: 120px;
+        }
+        
+        .focus-btn.main { background: var(--accent); color: var(--accent-fg); border: none; }
+        
+        #ttsToggle {
+            background: none; border: 1px solid var(--subtext); 
+            color: var(--subtext); padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; cursor: pointer;
+        }
+        #ttsToggle.active { background: var(--success); color: white; border-color: var(--success); }
+
+    </style>
+</head>
+<body data-theme="dark">
+
+<div class="container">
+    <header>
+        <h1>Gold Standard Waffles</h1>
+        <div class="header-controls">
+            <button class="primary-btn" onclick="startFocusMode()">
+                <span>▶</span> Start Sous-Chef
+            </button>
+            <button class="std-btn" onclick="toggleTheme()">☀/☾</button>
+        </div>
+    </header>
+
+    <div class="calculator-section">
+        <div class="input-row">
+            <div class="input-group">
+                <label>Mode</label>
+                <select id="calcMode" onchange="toggleMode()">
+                    <option value="waffles">Desired Output (Count)</option>
+                    <option value="ingredient">Limiting Factor (Inventory)</option>
+                </select>
+            </div>
+
+            <div id="modeWaffles" class="input-group">
+                <label>Target Waffles</label>
+                <input type="number" id="targetWaffles" value="7" min="1" oninput="calculate()">
+            </div>
+
+            <div id="modeIngredient" class="input-group" style="display:none;">
+                <label>I have (Amount)</label>
+                <input type="number" id="ingAmount" value="3" oninput="calculate()">
+            </div>
+            
+            <div id="modeIngType" class="input-group" style="display:none;">
+                <label>Of Ingredient</label>
+                <select id="ingType" onchange="calculate()">
+                    <option value="eggs">Eggs (Count)</option>
+                    <option value="flour">Total Flour (g)</option>
+                    <option value="milk">Total Milk (g)</option>
+                    <option value="butter">Total Butter (g)</option>
+                </select>
+            </div>
+        </div>
+        <div class="alert-box">
+            <span>Multiplier: <span id="batchCount">1</span>x</span>
+            <span class="result-pill">Yields: ~<span id="yieldOutput">7</span> Waffles</span>
+        </div>
+    </div>
+
+    <div class="mise-en-place">
+        <h3>Mise en Place (Total Shopping List)</h3>
+        <div class="total-grid" id="total-grid"></div>
+    </div>
+
+    <div class="content-grid">
+        <div>
+            <h2>Process Breakdown</h2>
+            
+            <div class="section-title">1. Dry Mix</div>
+            <ul id="list-dry"></ul>
+
+            <div class="section-title">2. Wet Mix</div>
+            <ul id="list-wet"></ul>
+
+            <div class="section-title">3. The Finish (Post-Rise)</div>
+            <ul id="list-finish"></ul>
+        </div>
+
+        <div>
+            <h2>Execution</h2>
+
+            <div class="step">
+                <span class="step-num">01</span>
+                <span class="step-desc"><strong>Dry Mix:</strong> Whisk flour, sugar, yeast, and salt in a large bowl.</span>
+            </div>
+
+            <div class="step">
+                <span class="step-num">02</span>
+                <span class="step-desc"><strong>Wet Mix:</strong> Gradually whisk in warm milk (40°C), melted butter, and vanilla until smooth.</span>
+            </div>
+
+            <div class="step">
+                <span class="step-num">03</span>
+                <span class="step-desc">
+                    <strong>The Rise:</strong> Cover bowl. Let sit at room temp.
+                    <br><em>Tip: For sourdough-like depth, fridge overnight after this hour.</em>
+                </span>
+                <div class="timer-container">
+                    <span id="timer1" class="timer-display">60:00</span>
+                    <button class="action-btn" onclick="startTimer('timer1', 60)">Start Rise</button>
+                </div>
+            </div>
+
+            <div class="step">
+                <span class="step-num">04</span>
+                <span class="step-desc"><strong>Final Mix:</strong> Whisk in eggs and baking soda just before cooking. Batter will be thin.</span>
+            </div>
+
+            <div class="step">
+                <span class="step-num">05</span>
+                <span class="step-desc"><strong>Cook:</strong> Preheat iron. Pour batter (don't overfill). Cook until steam stops rising.</span>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <a href="#">App by Blues</a>
+    </footer>
+</div>
+
+<div id="focusOverlay">
+    <div id="focusHeader">
+        <button id="ttsToggle" onclick="toggleTTS()">Sound: ON</button>
+        <button class="std-btn" onclick="exitFocusMode()">✕ EXIT</button>
+    </div>
+    
+    <div id="focusContent" onclick="nextStep()">
+        <div class="focus-step-number" id="fStepNum">Step 1</div>
+        <div class="focus-instruction" id="fInstruction">Prepare Dry Mix</div>
+        <div class="focus-detail" id="fDetail">Get a large bowl</div>
+    </div>
+
+    <div id="focusControls">
+        <button class="focus-btn" onclick="prevStep()">PREV</button>
+        <button class="focus-btn main" onclick="nextStep()">NEXT ➔</button>
+    </div>
+</div>
+
+<script>
+    // --- DATA ---
+    // Base is 1 Batch (Yields approx 7 waffles)
+    const base = {
+        yield: 7, // avg
+        flour: 225,
+        sugar: 15, // approx 1 tbsp
+        yeast: 5,  // approx 1.5 tsp
+        salt: 3,   // approx 0.5 tsp
+        milk: 350,
+        butter: 115,
+        vanilla: 5, // approx 1 tsp
+        eggs: 2,
+        soda: 1    // approx 0.25 tsp
+    };
+
+    let currentMultiplier = 1;
+    let generatedSteps = [];
+    let currentStepIndex = 0;
+    let ttsEnabled = true;
+
+    // --- CALCULATOR & UI UPDATE ---
+    function toggleMode() {
+        const mode = document.getElementById('calcMode').value;
+        document.getElementById('modeWaffles').style.display = mode === 'waffles' ? 'block' : 'none';
+        document.getElementById('modeIngredient').style.display = mode === 'ingredient' ? 'block' : 'none';
+        document.getElementById('modeIngType').style.display = mode === 'ingredient' ? 'block' : 'none';
+        
+        // Update input label defaults if needed
+        const type = document.getElementById('ingType').value;
+        if(mode === 'ingredient' && document.getElementById('ingAmount').value == "") {
+             if (type === 'eggs') document.getElementById('ingAmount').value = 3;
+             else document.getElementById('ingAmount').value = 500;
+        }
+        
+        calculate();
+    }
+
+    function calculate() {
+        const mode = document.getElementById('calcMode').value;
+        let m = 1;
+        let note = "";
+
+        if (mode === 'waffles') {
+            const input = parseFloat(document.getElementById('targetWaffles').value) || 0;
+            // Linear scaling for specific output
+            m = input / base.yield; 
+        } else {
+            const amount = parseFloat(document.getElementById('ingAmount').value) || 0;
+            const type = document.getElementById('ingType').value;
+            let rawBatches = 0;
+            
+            if (type === 'eggs') {
+                rawBatches = amount / base.eggs;
+            } else {
+                if (type === 'flour') rawBatches = amount / base.flour;
+                if (type === 'milk') rawBatches = amount / base.milk;
+                if (type === 'butter') rawBatches = amount / base.butter;
+            }
+            m = rawBatches; 
+        }
+
+        // Clean up math (avoid 1.0000004)
+        m = Math.round(m * 100) / 100;
+        if (m < 0.1) m = 0.1;
+
+        // --- NEW: Calculate Estimated Waffles ---
+        const estimatedYield = Math.round((m * base.yield) * 10) / 10; // Round to 1 decimal
+
+        currentMultiplier = m;
+        document.getElementById('batchCount').innerText = m;
+        document.getElementById('yieldOutput').innerText = estimatedYield; // Shows waffle count
+        
+        updateUI(m);
+    }
+
+    function updateUI(m) {
+        // 1. Mise en Place
+        const totals = [
+            {n: 'AP Flour', v: base.flour * m},
+            {n: 'Milk (Warm)', v: base.milk * m},
+            {n: 'Butter (Melted)', v: base.butter * m},
+            {n: 'Sugar', v: base.sugar * m},
+            {n: 'Eggs', v: base.eggs * m, unit: ''},
+            {n: 'Yeast (Instant)', v: base.yeast * m},
+            {n: 'Salt', v: base.salt * m},
+            {n: 'Baking Soda', v: base.soda * m},
+            {n: 'Vanilla', v: base.vanilla * m}
+        ];
+        
+        const totalGrid = document.getElementById('total-grid');
+        totalGrid.innerHTML = '';
+        totals.forEach(t => {
+            // For eggs, if it's close to an integer, show integer, else 1 decimal
+            let val;
+            if (t.unit === '') {
+                val = Number.isInteger(t.v) ? t.v : t.v.toFixed(1);
+            } else {
+                val = Math.round(t.v) + 'g';
+            }
+            totalGrid.innerHTML += `<div class="total-item"><span>${t.n}</span><span>${val}</span></div>`;
+        });
+
+        // 2. Ingredient Lists
+        const render = (id, items) => {
+            const el = document.getElementById(id);
+            el.innerHTML = '';
+            items.forEach(i => {
+                let val;
+                if (i.unit === '') {
+                     val = Number.isInteger(i.v) ? i.v : i.v.toFixed(1);
+                } else {
+                     val = Math.round(i.v) + 'g';
+                }
+                el.innerHTML += `<li><span>${i.n}</span><span>${val}</span></li>`;
+            });
+        };
+
+        render('list-dry', [
+            {n: 'AP Flour', v: base.flour * m}, 
+            {n: 'Sugar', v: base.sugar * m}, 
+            {n: 'Instant Yeast', v: base.yeast * m},
+            {n: 'Salt', v: base.salt * m}
+        ]);
+        
+        render('list-wet', [
+            {n: 'Milk (40°C)', v: base.milk * m}, 
+            {n: 'Butter (Melted)', v: base.butter * m},
+            {n: 'Vanilla', v: base.vanilla * m}
+        ]);
+
+        render('list-finish', [
+            {n: 'Large Eggs', v: base.eggs * m, unit: ''}, 
+            {n: 'Baking Soda', v: base.soda * m}
+        ]);
+    }
+
+    // --- TIMERS FOR VISUAL MODE ---
+    let intervals = {};
+    function startTimer(id, minutes) {
+        if(intervals[id]) clearInterval(intervals[id]);
+        const display = document.getElementById(id);
+        let seconds = minutes * 60;
+        display.style.color = "var(--success)";
+        intervals[id] = setInterval(() => {
+            seconds--;
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            display.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
+            if (seconds <= 0) {
+                clearInterval(intervals[id]);
+                display.textContent = "00:00";
+                display.style.color = "var(--alert)";
+                alert("Timer Complete!");
+            }
+        }, 1000);
+    }
+
+    // --- SOUS-CHEF MODE LOGIC ---
+    function generateSteps(m) {
+        // Helper to format text
+        const fmt = (val) => Math.round(val);
+        
+        return [
+            // Dry Mix
+            { text: "Prepare Dry Mix", detail: "Get a large mixing bowl.", speak: "Grab a large mixing bowl." },
+            { text: "Weigh Flour", detail: `${fmt(base.flour * m)}g All-Purpose Flour`, speak: `Add ${fmt(base.flour * m)} grams of flour.` },
+            { text: "Add Sugar", detail: `${fmt(base.sugar * m)}g`, speak: `Add ${fmt(base.sugar * m)} grams of sugar.` },
+            { text: "Add Yeast", detail: `${fmt(base.yeast * m)}g (Instant)`, speak: `Add ${fmt(base.yeast * m)} grams of yeast.` },
+            { text: "Add Salt", detail: `${fmt(base.salt * m)}g`, speak: `Add ${fmt(base.salt * m)} grams of salt. Whisk it all together.` },
+
+            // Wet Mix
+            { text: "Prepare Wet Ingredients", detail: "Melt the butter & warm the milk.", speak: "Melt the butter and warm the milk." },
+            { text: "Combine Wet", detail: "In the main bowl, gradually whisk in liquids.", speak: "Time to combine." },
+            { text: "Add Warm Milk", detail: `${fmt(base.milk * m)}g (Approx 40°C)`, speak: `Whisk in ${fmt(base.milk * m)} grams of warm milk.` },
+            { text: "Add Melted Butter", detail: `${fmt(base.butter * m)}g`, speak: `Pour in ${fmt(base.butter * m)} grams of melted butter.` },
+            { text: "Add Vanilla", detail: `${fmt(base.vanilla * m)}g`, speak: "Splash in the vanilla. Whisk until smooth." },
+
+            // The Rise
+            { text: "The Rise", detail: "Cover bowl. Let sit at room temp for 1 hour.", speak: "Cover it up. Let it rise for one hour." },
+            { text: "Wait...", detail: "Wait until bubbly.", speak: "Take a break, Chef." },
+            
+            // Final Mix
+            { text: "Preheat", detail: "Plug in your waffle iron.", speak: "Preheat the waffle iron." },
+            { text: "The Finish", detail: "Uncover the batter.", speak: "Let's finish the batter." },
+            { text: "Add Eggs", detail: `${(base.eggs * m).toFixed(1).replace('.0','')} Large Egg(s)`, speak: `Whisk in ${(base.eggs * m).toFixed(1).replace('.0','')} eggs.` },
+            { text: "Add Baking Soda", detail: `${fmt(base.soda * m)}g`, speak: "Whisk in the baking soda." },
+
+            // Cook
+            { text: "Cook", detail: "Pour batter. Don't overfill.", speak: "Pour the batter. Careful not to overfill." },
+            { text: "Visual Cue", detail: "Cook until steam stops rising.", speak: "Cook until the steam stops rising. Then serve." }
+        ];
+    }
+
+    function startFocusMode() {
+        generatedSteps = generateSteps(currentMultiplier);
+        currentStepIndex = 0;
+        document.getElementById('focusOverlay').style.display = 'flex';
+        renderStep();
+    }
+
+    function exitFocusMode() {
+        window.speechSynthesis.cancel();
+        document.getElementById('focusOverlay').style.display = 'none';
+    }
+
+    function renderStep() {
+        if(currentStepIndex < 0) currentStepIndex = 0;
+        if(currentStepIndex >= generatedSteps.length) currentStepIndex = generatedSteps.length - 1;
+
+        const step = generatedSteps[currentStepIndex];
+        
+        document.getElementById('fStepNum').innerText = `Step ${currentStepIndex + 1} / ${generatedSteps.length}`;
+        document.getElementById('fInstruction').innerText = step.text;
+        document.getElementById('fDetail').innerText = step.detail;
+
+        if(ttsEnabled) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(step.speak || step.text);
+            utterance.rate = 1.0;
+            // Try British
+            const voices = window.speechSynthesis.getVoices();
+            const gbVoice = voices.find(v => v.lang.includes('GB') || v.name.includes('UK'));
+            if(gbVoice) utterance.voice = gbVoice;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    function nextStep(e) {
+        if (e && e.target.closest('#focusControls')) return; 
+        if(currentStepIndex < generatedSteps.length - 1) {
+            currentStepIndex++;
+            renderStep();
+        }
+    }
+
+    function prevStep() {
+        if(currentStepIndex > 0) {
+            currentStepIndex--;
+            renderStep();
+        }
+    }
+
+    function toggleTTS() {
+        ttsEnabled = !ttsEnabled;
+        const btn = document.getElementById('ttsToggle');
+        btn.innerText = ttsEnabled ? "Sound: ON" : "Sound: OFF";
+        btn.classList.toggle('active', ttsEnabled);
+        if(!ttsEnabled) window.speechSynthesis.cancel();
+    }
+
+    function toggleTheme() {
+        const body = document.body;
+        const isDark = body.getAttribute('data-theme') === 'dark';
+        body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    }
+
+    // Init
+    // Force default calculation on load
+    document.getElementById('ingType').value = 'eggs';
+    toggleMode(); // To set initial visibility if cached
+    calculate();
+    window.speechSynthesis.getVoices();
+</script>
+
+</body>
+</html>
