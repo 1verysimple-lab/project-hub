@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protocol: Pizza</title>
+    <style>
+        :root {
+            --bg: #1a1a1a;
+            --surface: #262626;
+            --text: #e5e5e5;
+            --accent: #d4d4d4;
+            --muted: #888;
+            --border: #404040;
+            --font-mono: 'Menlo', 'Monaco', 'Courier New', monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-sans);
+            margin: 0;
+            padding: 2rem;
+            line-height: 1.5;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1, h2, h3 {
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        h1 { border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+
+        .container {
+            display: grid;
+            gap: 2rem;
+        }
+
+        /* Controls */
+        .controls {
+            background: var(--surface);
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        label {
+            font-weight: 500;
+            min-width: 120px;
+        }
+
+        input[type="number"] {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.5rem;
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            width: 80px;
+            border-radius: 4px;
+        }
+
+        .meta-info {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-top: 0.5rem;
+        }
+
+        /* Recipe Cards */
+        .recipe-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 600px) {
+            .recipe-grid { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--surface);
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+
+        .card-header {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+            margin-bottom: 1rem;
+            font-family: var(--font-mono);
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+            font-family: var(--font-mono);
+        }
+
+        li:last-child { border-bottom: none; }
+
+        .val { color: var(--accent); font-weight: 700; }
+
+        /* Protocol Steps */
+        .steps {
+            counter-reset: step;
+        }
+        
+        .step {
+            margin-bottom: 1.5rem;
+            padding-left: 2.5rem;
+            position: relative;
+        }
+
+        .step::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 1.5rem;
+            height: 1.5rem;
+            background: var(--border);
+            color: var(--text);
+            text-align: center;
+            line-height: 1.5rem;
+            border-radius: 50%;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .tips {
+            background: #2a2218;
+            border: 1px solid #5c4626;
+            padding: 1.5rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .tip-title {
+            color: #dcb16d;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>Protocol: Pizza</h1>
+
+    <div class="container">
+        
+        <div class="controls">
+            <div class="input-group">
+                <label for="pizzas">Total Pizzas</label>
+                <input type="number" id="pizzas" value="4" min="1" oninput="calculate()">
+            </div>
+            <div class="meta-info">
+                <strong>Logic:</strong> 1 Pizza = 250g Dough Ball.<br>
+                <em>Recommendation: 1 per Adult, 0.5–1 per Child. Always round up for leftovers.</em>
+            </div>
+        </div>
+
+        <div class="recipe-grid">
+            
+            <div class="card">
+                <div class="card-header">Target: 65% Hydration Dough</div>
+                <ul id="dough-list">
+                    <li><span>Strong Flour</span> <span class="val" id="flour">0 g</span></li>
+                    <li><span>Water (Cold)</span> <span class="val" id="water">0 ml</span></li>
+                    <li><span>Salt</span> <span class="val" id="salt">0 g</span></li>
+                    <li><span>Fresh Yeast</span> <span class="val" id="yeast">0 g</span></li>
+                </ul>
+                <div class="meta-info" style="margin-top:1rem;">
+                    *Use 1/3 weight if using Dry Instant Yeast.
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Target: Raw Neapolitan Sauce</div>
+                <ul id="sauce-list">
+                    <li><span>San Marzano Tomatoes</span> <span class="val" id="tomatoes">0 g</span></li>
+                    <li><span>Sea Salt</span> <span class="val" id="sauce-salt">0 g</span></li>
+                    <li><span>Fresh Basil Leaves</span> <span class="val" id="basil">0</span></li>
+                    <li><span>Olive Oil</span> <span class="val">Splash</span></li>
+                </ul>
+                <div class="meta-info" style="margin-top:1rem;">
+                    *Approx. 80-90g sauce per pizza.
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h2>Execution</h2>
+            <div class="steps">
+                <div class="step">
+                    <strong>Mix & Autolyse:</strong> Dissolve yeast in water. Mix with flour until combined. Let sit for 30 mins.
+                </div>
+                <div class="step">
+                    <strong>Knead:</strong> Add salt. Knead 10 mins until smooth and tacky.
+                </div>
+                <div class="step">
+                    <strong>Bulk Ferment:</strong> Cover airtight. Room temp for 18–24 hours.
+                </div>
+                <div class="step">
+                    <strong>The Balling:</strong> Divide into 250g portions. Shape into tight balls. Rest 2–4 hours.
+                </div>
+                <div class="step">
+                    <strong>The Sauce:</strong> Hand-crush tomatoes (remove hard stems). Stir in salt and basil. Do not cook.
+                </div>
+                <div class="step">
+                    <strong>The Bake:</strong> Stretch dough. Apply sauce. Top. Bake at max heat (Steel: 2-3 mins / Stone: 5-7 mins).
+                </div>
+            </div>
+        </div>
+
+        <div class="tips">
+            <span class="tip-title">OPTIMIZATION NOTES</span>
+            <p><strong>Topping Strategy:</strong> Less is more. Heavy toppings prevent the rise. Use low-moisture mozzarella (Fior di Latte) to avoid "soup pizza".</p>
+            <p><strong>The "Leopard" Effect:</strong> If your home oven lacks heat, use the "Frying Pan Hack": Cook base in a scorching dry frying pan for 2 mins (to crisp bottom), then transfer to the very top shelf under the grill/broiler for 1-2 mins (to char crust).</p>
+            <p><strong>Variation (The White Pie):</strong> Ditch the tomato. Use a base of ricotta, garlic oil, thyme, and lemon zest. Finished with pistachio.</p>
+        </div>
+
+    </div>
+
+    <script>
+        function calculate() {
+            const count = document.getElementById('pizzas').value;
+            
+            // Dough constants per ball (approx 250g total weight)
+            // Based on 150g flour base calculation
+            const flourPer = 150; 
+            const waterPer = 97.5; // 65%
+            const saltPer = 4.5;   // 3%
+            const yeastPer = 0.5;  // varies, but low for 24h
+
+            // Sauce constants per pizza
+            const tomatoPer = 90;
+            const sauceSaltPer = 1; 
+            const basilPer = 1.5;
+
+            // DOM Updates - Dough
+            document.getElementById('flour').innerText = Math.round(count * flourPer) + " g";
+            document.getElementById('water').innerText = Math.round(count * waterPer) + " ml";
+            document.getElementById('salt').innerText = (count * saltPer).toFixed(1) + " g";
+            document.getElementById('yeast').innerText = (count * yeastPer).toFixed(1) + " g";
+
+            // DOM Updates - Sauce
+            document.getElementById('tomatoes').innerText = Math.round(count * tomatoPer) + " g";
+            document.getElementById('sauce-salt').innerText = (count * sauceSaltPer).toFixed(1) + " g";
+            document.getElementById('basil').innerText = Math.round(count * basilPer) + " leaves";
+        }
+
+        // Init
+        calculate();
+    </script>
+
+<!-- BLUES HUB NAVIGATION -->
+<a href="https://1verysimple-lab.github.io/project-hub/" 
+   target="_blank"
+   style="position: fixed; top: 20px; left: 20px; z-index: 9999; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; text-decoration: none; color: #e2e8f0; font-family: system-ui, sans-serif; font-size: 13px; font-weight: 500; transition: all 0.2s ease; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);"
+   onmouseover="this.style.transform='translateY(-1px)'; this.style.background='rgba(15, 23, 42, 0.95)'"
+   onmouseout="this.style.transform='translateY(0)'; this.style.background='rgba(15, 23, 42, 0.8)'">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"></rect><rect width="7" height="7" x="14" y="3" rx="1"></rect><rect width="7" height="7" x="14" y="14" rx="1"></rect><rect width="7" height="7" x="3" y="14" rx="1"></rect></svg>
+    <span>Hub</span>
+</a>
+<!-- END BLUES HUB NAVIGATION -->
+
+</body>
+</html>

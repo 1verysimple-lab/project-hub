@@ -1,5 +1,12 @@
 [
     {
+        "filename": "PizzaRecipe/PizzaRecipe.html",
+        "title": "Pizza lets go",
+        "description": "Recipe for nice pizza at home",
+        "type": "Guide",
+        "date_added": "2026-01-26"
+    },
+    {
         "filename": "High_Tea/High_Tea.html",
         "title": "High Tea",
         "description": "Recipes for High Tea Pastry",
