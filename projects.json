@@ -1,5 +1,12 @@
 [
     {
+        "filename": "gnocchi/gnocchi.html",
+        "title": "gnocchi and salsa",
+        "description": "a guide to make gnocchi",
+        "type": "Guide",
+        "date_added": "2026-01-30"
+    },
+    {
         "filename": "PizzaRecipe/PizzaRecipe.html",
         "title": "Pizza lets go",
         "description": "Recipe for nice pizza at home",

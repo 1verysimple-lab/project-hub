@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amb Gust | Brava Italiana Calculator</title>
+    <style>
+        :root {
+            --bg: #1a1a1a;
+            --text: #e0e0e0;
+            --accent: #ff4757; /* Chistorra Red */
+            --accent-dim: #5c282c;
+            --panel: #2d2d2d;
+            --border: #404040;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace; /* Terminal vibe */
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+        }
+
+        h1 { margin: 0; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 2px; }
+        h2 { border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-top: 30px; color: var(--accent); }
+        h3 { font-size: 1rem; margin-bottom: 5px; color: #888; text-transform: uppercase; }
+
+        .controls {
+            background: var(--panel);
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        label { font-weight: bold; }
+        
+        input[type="number"] {
+            background: var(--bg);
+            border: 1px solid var(--accent);
+            color: var(--text);
+            padding: 10px;
+            font-family: inherit;
+            font-size: 1.2rem;
+            width: 100px;
+            text-align: center;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--panel);
+            padding: 20px;
+            border: 1px solid var(--border);
+        }
+
+        ul { list-style: none; padding: 0; }
+        li { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #333; }
+        li span:first-child { color: #aaa; }
+        li span:last-child { font-weight: bold; color: #fff; }
+
+        .pro-tip {
+            margin-top: 15px;
+            font-size: 0.85rem;
+            color: #ffd700;
+            border-left: 3px solid #ffd700;
+            padding-left: 10px;
+        }
+
+        .workflow {
+            background: var(--bg);
+            border: 1px dashed var(--border);
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        .warning { color: var(--accent); font-weight: bold; margin-top: 10px; display: none; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>Amb Gust // Ops</h1>
+            <div style="font-size: 0.8rem; color: #666;">Tapa a Tapa 2026 Production Tool</div>
+        </div>
+        <div style="text-align: right; font-size: 0.8rem;">
+            Station: Hot Kitchen<br>
+            Chef: Blues
+        </div>
+    </header>
+
+    <div class="controls">
+        <div>
+            <label for="portions">Tapas Count (Portions)</label><br>
+            <input type="number" id="portions" value="50" min="10" step="10">
+        </div>
+        <div>
+            <div style="font-size: 0.8rem; color: #888;">Yield Projection:</div>
+            <div id="total-weight" style="font-size: 1.2rem; font-weight: bold;">-- kg</div>
+        </div>
+        <div id="batch-warning" class="warning">
+            ⚠️ LARGE BATCH: Split dough into multiple mixes.
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h2>1. The Base (Gnocchi)</h2>
+            <h3>Ingredients</h3>
+            <ul id="list-gnocchi">
+                </ul>
+            
+            <div class="pro-tip">
+                <strong>AMB GUST TECH:</strong> Bake potatoes whole on a bed of salt in the pizza oven (residual heat ~200°C). Do NOT boil. Baking = dry potato = crispy fry.
+            </div>
+
+            <div class="workflow">
+                1. Bake potatoes until tender (45-60m).<br>
+                2. Peel & riced while HOT (Crucial).<br>
+                3. Mix ingredients. Do not overwork.<br>
+                4. Roll to 2cm thick slab. Cut 2x2cm squares.<br>
+                5. Blanch in boiling water until they float.<br>
+                6. Shock in ice water. Oil & Store.
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>2. Salsa Chistorra-Sambal</h2>
+            <h3>Ingredients</h3>
+            <ul id="list-salsa">
+                </ul>
+
+            <div class="pro-tip">
+                <strong>FLAVOR HACK:</strong> Render chistorra starting from a COLD pan to get maximum fat extraction before adding onions.
+            </div>
+
+            <div class="workflow">
+                1. Render chistorra meat (skin off).<br>
+                2. Add onion/garlic -> Sofrito.<br>
+                3. Deglaze w/ Vinegar.<br>
+                4. Add Tomato, Sambal, Spices.<br>
+                5. Simmer 20m. Blitz smooth.
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>3. Parmesan Alioli</h2>
+            <h3>Ingredients</h3>
+            <ul id="list-alioli">
+                </ul>
+
+            <div class="pro-tip">
+                <strong>TEXTURE:</strong> Microplane the parmesan into "dust" so it doesn't clog the squeeze bottle nozzle.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- BASE RATIOS (Per 1 Portion) ---
+    // Assuming 1 portion = 4 gnocchi squares (approx 80g dough)
+    // Ratios based on standard rigorous recipes
+    
+    const RATIOS = {
+        gnocchi: {
+            potato: 60, // grams raw potato per portion
+            flour: 18,  // roughly 30% of potato weight for frying durability
+            egg: 5,     // grams (approx 0.1 egg)
+            nutmeg: 0.1,
+            salt: 0.5
+        },
+        salsa: {
+            chistorra: 10, // grams
+            onion: 8,
+            tomato: 25,
+            sambal: 1,     // grams
+            vinegar: 1     // ml
+        },
+        alioli: {
+            mayo: 10,      // grams base mayo
+            garlic: 0.5,
+            parm: 2        // grams
+        }
+    };
+
+    const DOM = {
+        input: document.getElementById('portions'),
+        totalWeight: document.getElementById('total-weight'),
+        warning: document.getElementById('batch-warning'),
+        lists: {
+            gnocchi: document.getElementById('list-gnocchi'),
+            salsa: document.getElementById('list-salsa'),
+            alioli: document.getElementById('list-alioli')
+        }
+    };
+
+    function formatNum(num) {
+        // If > 1000g, show kg
+        if (num >= 1000) return (num / 1000).toFixed(2) + ' kg';
+        return Math.round(num) + ' g';
+    }
+
+    function formatUnit(num, unit) {
+        if (unit === 'eggs') return Math.ceil(num / 55) + ' pcs (L)';
+        return formatNum(num);
+    }
+
+    function renderItem(name, amount, unit = 'g') {
+        return `<li><span>${name}</span><span>${formatUnit(amount, unit)}</span></li>`;
+    }
+
+    function calculate() {
+        const p = parseInt(DOM.input.value) || 0;
+        
+        // 1. Gnocchi Calcs
+        let g_potato = p * RATIOS.gnocchi.potato;
+        let g_flour = p * RATIOS.gnocchi.flour;
+        let g_egg = p * RATIOS.gnocchi.egg;
+        
+        let html_gnocchi = '';
+        html_gnocchi += renderItem('Russet/Starchy Potato', g_potato);
+        html_gnocchi += renderItem('00 Flour (approx)', g_flour);
+        html_gnocchi += renderItem('Whole Eggs', g_egg, 'eggs');
+        html_gnocchi += renderItem('Nutmeg', p * RATIOS.gnocchi.nutmeg);
+        html_gnocchi += renderItem('Fine Salt', p * RATIOS.gnocchi.salt);
+        DOM.lists.gnocchi.innerHTML = html_gnocchi;
+
+        // 2. Salsa Calcs
+        let html_salsa = '';
+        html_salsa += renderItem('Chistorra (Clean)', p * RATIOS.salsa.chistorra);
+        html_salsa += renderItem('Onion', p * RATIOS.salsa.onion);
+        html_salsa += renderItem('Canned Tomato', p * RATIOS.salsa.tomato);
+        html_salsa += renderItem('Sambal Oelek', p * RATIOS.salsa.sambal);
+        html_salsa += renderItem('Sherry Vinegar', p * RATIOS.salsa.vinegar, 'ml');
+        DOM.lists.salsa.innerHTML = html_salsa;
+
+        // 3. Alioli Calcs
+        let html_alioli = '';
+        html_alioli += renderItem('Base Mayonnaise', p * RATIOS.alioli.mayo);
+        html_alioli += renderItem('Parmesan (Dust)', p * RATIOS.alioli.parm);
+        html_alioli += renderItem('Garlic', p * RATIOS.alioli.garlic);
+        DOM.lists.alioli.innerHTML = html_alioli;
+
+        // Total Batch Weight (Approx)
+        let total = (g_potato + g_flour) / 1000;
+        DOM.totalWeight.innerText = total.toFixed(1) + ' kg (Dough)';
+
+        // Warning logic
+        if (g_potato > 5000) {
+            DOM.warning.style.display = 'block';
+        } else {
+            DOM.warning.style.display = 'none';
+        }
+    }
+
+    // Init
+    DOM.input.addEventListener('input', calculate);
+    calculate();
+
+</script>
+
+<!-- BLUES HUB NAVIGATION -->
+<a href="https://1verysimple-lab.github.io/project-hub/" 
+   target="_blank"
+   style="position: fixed; top: 20px; left: 20px; z-index: 9999; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; text-decoration: none; color: #e2e8f0; font-family: system-ui, sans-serif; font-size: 13px; font-weight: 500; transition: all 0.2s ease; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);"
+   onmouseover="this.style.transform='translateY(-1px)'; this.style.background='rgba(15, 23, 42, 0.95)'"
+   onmouseout="this.style.transform='translateY(0)'; this.style.background='rgba(15, 23, 42, 0.8)'">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"></rect><rect width="7" height="7" x="14" y="3" rx="1"></rect><rect width="7" height="7" x="14" y="14" rx="1"></rect><rect width="7" height="7" x="3" y="14" rx="1"></rect></svg>
+    <span>Hub</span>
+</a>
+<!-- END BLUES HUB NAVIGATION -->
+
+</body>
+</html>
