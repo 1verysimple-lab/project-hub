@@ -1,5 +1,12 @@
 [
     {
+        "filename": "cs2mapselector.html",
+        "title": "Cs2Mapselector",
+        "description": "Restored project",
+        "type": "Other",
+        "date_added": "2026-02-03"
+    },
+    {
         "filename": "gnocchi/gnocchi.html",
         "title": "gnocchi and salsa",
         "description": "a guide to make gnocchi",
