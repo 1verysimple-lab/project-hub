@@ -1,6 +1,6 @@
 [
     {
-        "filename": "cs2mapselector.html",
+        "filename": "mapSelector/cs2mapselector.html",
         "title": "Cs2Mapselector",
         "description": "Restored project",
         "type": "Other",
@@ -73,12 +73,6 @@
         "filename": "FAN_SIM.html",
         "title": "Void Fan",
         "description": "An interactive fan simulation with realistic physics and sound. Experience the void.",
-        "type": "Tool"
-    },
-    {
-        "filename": "https://1verysimple-lab.github.io/cs2mapselector/",
-        "title": "Counter Strike Random Map Selector",
-        "description": "A tool to pick a random map when you cant decide",
         "type": "Tool"
     },
     {
