@@ -1,5 +1,12 @@
 [
     {
+        "filename": "chickensup/chickensup.html",
+        "title": "Chicken sup",
+        "description": "a guide to chicken soup",
+        "type": "Guide",
+        "date_added": "2026-02-04"
+    },
+    {
         "filename": "mapSelector/cs2mapselector.html",
         "title": "Cs2Mapselector",
         "description": "Restored project",
@@ -104,12 +111,6 @@
         "title": "Record and Play audio in reverse",
         "description": "Should be a default on all audio apps",
         "type": "Tool"
-    },
-    {
-        "filename": "vitaminer.html",
-        "title": "Vitamin guide",
-        "description": "a idea",
-        "type": "Guide"
     },
     {
         "filename": "magne5.html",
