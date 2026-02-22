@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alexander Moskvitin Josephsen | Developer & Operator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        obsidian: '#111111',
+                        charcoal: '#1a1a1a',
+                        ghost: '#e5e5e5',
+                        signal: '#3b82f6' 
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #111111; color: #e5e5e5; }
+        ::selection { background: #3b82f6; color: #111111; }
+        .hover-underline-animation {
+            display: inline-block;
+            position: relative;
+        }
+        .hover-underline-animation::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            transform: scaleX(0);
+            height: 1px;
+            bottom: 0;
+            left: 0;
+            background-color: #3b82f6;
+            transform-origin: bottom right;
+            transition: transform 0.25s ease-out;
+        }
+        .hover-underline-animation:hover::after {
+            transform: scaleX(1);
+            transform-origin: bottom left;
+        }
+    </style>
+</head>
+<body class="font-mono antialiased max-w-3xl mx-auto px-6 py-12 md:py-20 selection:bg-blue-500 selection:text-black">
+
+    <header class="mb-16 border-b border-gray-800 pb-8">
+        <h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-2">Alexander "Blues" Moskvitin</h1>
+        <div class="text-gray-400 text-sm md:text-base flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
+            <span>Developer. Operator. Solver.</span>
+            <span class="hidden md:inline text-gray-700">|</span>
+            <span>Sitges, Spain</span>
+        </div>
+        
+        <div class="mt-6 flex gap-6 text-sm">
+            <a href="https://github.com/1verysimple-lab" target="_blank" class="hover-underline-animation text-gray-300 hover:text-white transition-colors">GitHub</a>
+            <button onclick="copyEmail()" id="emailBtn" class="hover-underline-animation text-gray-300 hover:text-white transition-colors cursor-pointer">
+                Email Me
+            </button>
+            <span id="copyFeedback" class="text-green-500 text-xs hidden animate-pulse">Copied!</span>
+        </div>
+    </header>
+
+    <section class="mb-20">
+        <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-6">The Narrative</h2>
+        <div class="prose prose-invert max-w-none text-gray-300 leading-relaxed space-y-4">
+            <p>
+                <span class="text-white font-semibold">I don't just write code. I build operational stability.</span>
+            </p>
+            <p>
+                For 20+ years, I’ve managed the high-pressure environment of professional kitchens. I understand logistics, immediate deadlines, and the cost of inefficiency. I have pivoted that operational mindset into software development.
+            </p>
+            <p>
+                I don't build "flashy" apps. I build tools that solve genuine business friction—inventory systems that actually work, interfaces that simplify complex models, and workflows that respect the user's time. 
+            </p>
+            <p>
+                My stack is modern (AI-integrated, Full-Stack), but my philosophy is old-school: <span class="text-white border-b border-gray-700">It has to work.</span>
+            </p>
+        </div>
+    </section>
+
+    <section class="mb-20">
+        <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-8">Selected Work</h2>
+        
+        <div class="space-y-10">
+            <div class="group">
+                <div class="flex items-baseline justify-between mb-2">
+                    <h3 class="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">B2B Supply Protocol</h3>
+                    <span class="text-xs border border-green-900 text-green-500 px-2 py-1 rounded bg-green-900/10">In Beta</span>
+                </div>
+                <p class="text-gray-400 text-sm mb-3">
+                    A custom-built logistics platform managing the communication and ordering flow between restaurants and providers. Solves the chaos of WhatsApp orders and lost invoices.
+                </p>
+                <div class="text-xs text-gray-600">Status: Live testing in high-volume venue</div>
+            </div>
+
+            <div class="group">
+                <div class="flex items-baseline justify-between mb-2">
+                    <h3 class="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
+                        <a href="https://www.blues-lab.pro/" target="_blank">Blues-Lab Interface ↗</a>
+                    </h3>
+                    <span class="text-xs border border-blue-900 text-blue-500 px-2 py-1 rounded bg-blue-900/10">Live</span>
+                </div>
+                <p class="text-gray-400 text-sm mb-3">
+                    A custom interface for Qwen 3, designed for high-precision prompting and adaptive workflows. Demonstrates API fluency and state management.
+                </p>
+            </div>
+
+            <div class="group">
+                <div class="flex items-baseline justify-between mb-2">
+                    <h3 class="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
+                        <a href="https://1verysimple-lab.github.io/project-hub/" target="_blank">Project Hub ↗</a>
+                    </h3>
+                    <span class="text-xs border border-gray-700 text-gray-500 px-2 py-1 rounded bg-gray-800/20">R&D</span>
+                </div>
+                <p class="text-gray-400 text-sm mb-3">
+                    A collection of rapid prototypes, game logic experiments, and single-page applications. The proving ground for new concepts.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="mb-12 border-t border-gray-800 pt-12">
+        <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-6">Open For</h2>
+        <div class="bg-charcoal p-6 rounded-sm border-l-2 border-blue-500">
+            <p class="text-gray-300 mb-4">
+                I am looking for roles or partnerships where <strong class="text-white">technical skill meets operational reality.</strong>
+            </p>
+            <ul class="list-disc list-inside text-gray-400 space-y-2 text-sm">
+                <li><span class="text-gray-200">Remote Development Roles:</span> Hospitality Tech, Logistics, Internal Tooling.</li>
+                <li><span class="text-gray-200">Independent Contracts:</span> Bespoke automation for SMEs.</li>
+            </ul>
+        </div>
+    </section>
+
+    <footer class="text-center text-xs text-gray-700 pb-8">
+        <p>&copy; 2026 Alexander Moskvitin. Built with 100% human intent.</p>
+    </footer>
+
+    <script>
+        // Copy email functionality
+        function copyEmail() {
+            const email = "1verysimple@gmail.com"; 
+            
+            navigator.clipboard.writeText(email).then(() => {
+                const feedback = document.getElementById('copyFeedback');
+                feedback.classList.remove('hidden');
+                setTimeout(() => {
+                    feedback.classList.add('hidden');
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,5 +1,19 @@
 [
     {
+        "filename": "healthguide/healthguide.html",
+        "title": "This is your health",
+        "description": "Theory about health",
+        "type": "Other",
+        "date_added": "2026-02-22"
+    },
+    {
+        "filename": "aboutme/aboutme.html",
+        "title": "aboutme",
+        "description": "A little info about me",
+        "type": "Other",
+        "date_added": "2026-02-06"
+    },
+    {
         "filename": "chickensup/chickensup.html",
         "title": "Chicken sup",
         "description": "a guide to chicken soup",
