@@ -1,5 +1,26 @@
 [
     {
+        "filename": "layout.html",
+        "title": "rr2 lay",
+        "description": "red dead 2",
+        "type": "Other",
+        "date_added": "2026-03-15"
+    },
+    {
+        "filename": "tetris/tetris.html",
+        "title": "Tetris Q",
+        "description": "a ai generated tetris",
+        "type": "Game",
+        "date_added": "2026-03-08"
+    },
+    {
+        "filename": "diceroll/diceroll.html",
+        "title": "dice roll",
+        "description": "simple dice roll",
+        "type": "Game",
+        "date_added": "2026-02-24"
+    },
+    {
         "filename": "healthguide/healthguide.html",
         "title": "This is your health",
         "description": "Theory about health",

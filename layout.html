@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RDR2 Control Guide – Arrow Keys + Razer Naga X</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #0b0c10;
+      --panel: #151821;
+      --accent: #00ffa8;
+      --accent-soft: #00ffa822;
+      --text-main: #f5f7ff;
+      --text-soft: #c3c7d9;
+      --border-subtle: #262a36;
+      --mono: "SF Mono", "JetBrains Mono", Consolas, monospace;
+      --sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 32px 16px 48px;
+      font-family: var(--sans);
+      background: radial-gradient(circle at top left, #151821 0, #05060a 55%, #000 100%);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 980px;
+      background: linear-gradient(145deg, #10131c 0, #090b11 40%, #05060a 100%);
+      border-radius: 18px;
+      border: 1px solid #1f2330;
+      box-shadow:
+        0 24px 60px rgba(0, 0, 0, 0.85),
+        0 0 0 1px rgba(0, 0, 0, 0.8);
+      padding: 28px 28px 32px;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .title-block h1 {
+      margin: 0 0 6px;
+      font-size: 1.6rem;
+      letter-spacing: 0.03em;
+    }
+
+    .title-block p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--text-soft);
+    }
+
+    .tagline {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--accent-soft);
+      background: radial-gradient(circle at top left, #1b222f 0, #0b0f18 60%);
+      font-size: 0.8rem;
+      color: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .tag-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    h2 {
+      margin: 24px 0 10px;
+      font-size: 1.1rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #e5e8ff;
+    }
+
+    h3 {
+      margin: 18px 0 8px;
+      font-size: 0.98rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #d0d4f5;
+    }
+
+    p {
+      margin: 6px 0 10px;
+      font-size: 0.9rem;
+      color: var(--text-soft);
+      line-height: 1.5;
+    }
+
+    .note {
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+      background: #10131f;
+      padding: 10px 12px;
+      font-size: 0.85rem;
+      color: var(--text-soft);
+      margin: 10px 0 4px;
+    }
+
+    .note strong {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr);
+      gap: 18px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 800px) {
+      .grid-2 {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .panel {
+      background: radial-gradient(circle at top left, #181c28 0, #0b0e16 55%, #05060a 100%);
+      border-radius: 14px;
+      border: 1px solid var(--border-subtle);
+      padding: 14px 14px 16px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }
+
+    .panel-title {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #f0f3ff;
+    }
+
+    .panel-sub {
+      font-size: 0.78rem;
+      color: var(--text-soft);
+    }
+
+    .kbd-grid {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+      font-size: 0.86rem;
+    }
+
+    .kbd-grid th,
+    .kbd-grid td {
+      border-bottom: 1px solid #202433;
+      padding: 6px 6px;
+      vertical-align: top;
+    }
+
+    .kbd-grid th {
+      text-align: left;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #aeb3d0;
+    }
+
+    .kbd-grid tr:last-child th,
+    .kbd-grid tr:last-child td {
+      border-bottom: none;
+    }
+
+    .key {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px 7px;
+      border-radius: 6px;
+      border: 1px solid #2a3042;
+      background: linear-gradient(145deg, #181c28 0, #0c0f18 60%);
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: #f5f7ff;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.03),
+        0 2px 0 rgba(0, 0, 0, 0.7);
+      margin: 1px 2px 1px 0;
+      white-space: nowrap;
+    }
+
+    .key-small {
+      font-size: 0.72rem;
+      padding: 2px 6px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #283046;
+      font-size: 0.75rem;
+      color: #c3c7d9;
+      background: #10131f;
+      margin-left: 4px;
+    }
+
+    .pill span {
+      color: var(--accent);
+      margin-right: 4px;
+      font-size: 0.7rem;
+    }
+
+    ul {
+      margin: 6px 0 4px 18px;
+      padding: 0;
+      font-size: 0.86rem;
+      color: var(--text-soft);
+    }
+
+    li {
+      margin: 2px 0 2px;
+    }
+
+    .tip {
+      margin-top: 14px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px dashed #2b3347;
+      background: #0c101a;
+      font-size: 0.85rem;
+      color: var(--text-soft);
+    }
+
+    .tip strong {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .footer-line {
+      margin-top: 20px;
+      border-top: 1px solid #1f2330;
+      padding-top: 10px;
+      font-size: 0.78rem;
+      color: #7f8499;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div class="title-block">
+        <h1>RDR2 Controls: Arrow Keys + Razer Naga X</h1>
+        <p>Left hand moves. Right thumb does everything else. No finger gymnastics, no panic key-hunting.</p>
+      </div>
+      <div class="tagline">
+        <span class="tag-dot"></span>
+        <span>Optimized layout for comfort, speed, and clarity</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Core idea</h2>
+      <p>
+        The Razer Naga X gives you a 12‑button thumb grid. You use that grid to move almost all
+        actions, weapons, and inventory off the keyboard and onto your right thumb. Your left hand
+        is then free to do one job only: <strong>movement and basic interaction on the arrow cluster</strong>.
+      </p>
+      <p>
+        The result: your brain has a simple rule—<strong>left hand = move, right thumb = do</strong>.
+      </p>
+    </section>
+
+    <section>
+      <h2>Step 1 – Razer Synapse setup</h2>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Naga X side panel</div>
+          <div class="panel-sub">12 thumb buttons → clean, separated bindings</div>
+        </div>
+        <p>
+          By default, the Naga X side buttons output the top number row:
+          <span class="key">1</span><span class="key">2</span><span class="key">3</span>…<span class="key">0</span><span class="key">-</span><span class="key">=</span>.
+        </p>
+        <ul>
+          <li><strong>Recommended:</strong> remap them in Razer Synapse to act as <strong>Numpad keys</strong> instead.</li>
+          <li>This keeps your mouse bindings logically separate from the normal number row.</li>
+        </ul>
+        <div class="note">
+          <strong>Synapse glitch fix:</strong> if Synapse refuses to apply your new Numpad bindings,
+          restart Synapse or reboot your PC. That usually restores proper mapping.
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Step 2 – Left hand: keyboard & arrow keys</h2>
+      <p>
+        Your left hand should only worry about movement, sprinting, jumping, crouching, and basic interaction.
+        No weapon juggling, no inventory hunting.
+      </p>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Movement cluster</div>
+          <div class="panel-sub">Foot, horse, and wagon</div>
+        </div>
+        <table class="kbd-grid">
+          <tr>
+            <th>Action</th>
+            <th>Key</th>
+            <th>Notes</th>
+          </tr>
+          <tr>
+            <td>Move forward / back / left / right</td>
+            <td>
+              <span class="key">↑</span>
+              <span class="key">↓</span>
+              <span class="key">←</span>
+              <span class="key">→</span>
+            </td>
+            <td>
+              Rebind movement for <strong>all three</strong>:
+              foot, horse, and wagon. If you skip one, the game will fall back to
+              <span class="key key-small">WASD</span>.
+            </td>
+          </tr>
+          <tr>
+            <td>Sprint / Spur horse</td>
+            <td>
+              <span class="key">Right&nbsp;Ctrl</span>
+              or
+              <span class="key">Right&nbsp;Shift</span>
+            </td>
+            <td>Pick whichever feels more natural under your pinky.</td>
+          </tr>
+          <tr>
+            <td>Jump / Vault</td>
+            <td><span class="key">Numpad&nbsp;0</span></td>
+            <td>Reachable with left pinky or thumb, depending on keyboard position.</td>
+          </tr>
+          <tr>
+            <td>Crouch</td>
+            <td>
+              <span class="key">End</span>
+              or
+              <span class="key">Page&nbsp;Down</span>
+            </td>
+            <td>Choose whichever lines up better with your hand angle.</td>
+          </tr>
+          <tr>
+            <td>Primary interact / Loot</td>
+            <td>
+              <span class="key">Enter</span>
+              or
+              <span class="key">Delete</span>
+            </td>
+            <td>Use the one that feels more “confirm / interact” to you.</td>
+          </tr>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Step 3 – Right hand: Razer Naga X thumb grid</h2>
+      <p>
+        All the “do something now” actions live under your right thumb. That includes weapon swaps,
+        melee, Dead Eye, reload, horse whistle, and your core menus (satchel, journal, map).
+      </p>
+
+      <div class="grid-2">
+        <!-- Weapons & combat -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Weapons & combat</div>
+            <div class="panel-sub">Fast reactions without leaving movement</div>
+          </div>
+          <table class="kbd-grid">
+            <tr>
+              <th>Button</th>
+              <th>Bind</th>
+              <th>Purpose</th>
+            </tr>
+            <tr>
+              <td><span class="key">1</span></td>
+              <td>Quick weapon 1</td>
+              <td>For example: left sidearm.</td>
+            </tr>
+            <tr>
+              <td><span class="key">2</span></td>
+              <td>Quick weapon 2</td>
+              <td>For example: dual wield.</td>
+            </tr>
+            <tr>
+              <td><span class="key">3</span></td>
+              <td>Quick weapon 3</td>
+              <td>For example: right sidearm.</td>
+            </tr>
+            <tr>
+              <td><span class="key">4</span></td>
+              <td>Unarmed / Fists</td>
+              <td>Instantly drop to fists without touching the keyboard.</td>
+            </tr>
+            <tr>
+              <td><span class="key">5</span></td>
+              <td>Melee / Grapple / Takedown</td>
+              <td>
+                Highly recommended on a thumb button so you never leave the arrow keys
+                during close‑quarters fights.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="key">6</span></td>
+              <td>Dead Eye</td>
+              <td>
+                Much cleaner than clicking the middle mouse wheel, which can accidentally scroll
+                and change weapons.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="key">7</span></td>
+              <td>Reload</td>
+              <td>Reload is always under your thumb, no hunting for a keyboard key.</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Weapons wheel, horse, menus -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Weapon wheel, horse & menus</div>
+            <div class="panel-sub">Holster control + world access</div>
+          </div>
+          <table class="kbd-grid">
+            <tr>
+              <th>Button</th>
+              <th>Bind</th>
+              <th>Purpose</th>
+            </tr>
+            <tr>
+              <td><span class="key">8</span></td>
+              <td>Weapon wheel / Holster</td>
+              <td>
+                Bind your “Put Away / Take Out” here.
+                <span class="pill"><span>!</span>Tip</span>
+                In tense moments, players often hold the key too long and open the weapon wheel by mistake.
+                On the mouse, you get much finer control over tap vs hold.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="key">9</span></td>
+              <td>Call / Whistle for horse</td>
+              <td>Always reachable without moving your left hand off movement.</td>
+            </tr>
+            <tr>
+              <td><span class="key">10</span></td>
+              <td>Satchel</td>
+              <td>Quick access to items.</td>
+            </tr>
+            <tr>
+              <td><span class="key">11</span></td>
+              <td>Journal</td>
+              <td>Story and mission notes at your thumb.</td>
+            </tr>
+            <tr>
+              <td><span class="key">12</span></td>
+              <td>Map</td>
+              <td>Open the map without ever leaving the movement cluster.</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Mouse performance tip</h2>
+      <div class="tip">
+        <strong>Problem:</strong> when you hold your Sprint key
+        (<span class="key key-small">Right&nbsp;Ctrl</span> or
+        <span class="key key-small">Right&nbsp;Shift</span>) and move the mouse to look around,
+        you notice tiny micro‑stutters.
+        <br><br>
+        <strong>Fix:</strong> in the RDR2 control settings, change mouse input from
+        <span class="key key-small">Raw&nbsp;Input</span> to
+        <span class="key key-small">DirectInput</span>. This is a known solution for mouse‑look
+        stuttering on PC.
+      </div>
+    </section>
+
+    <footer class="footer-line">
+      <span>Summary: left hand = movement & interaction · right thumb = weapons, actions, menus.</span>
+      <span>Adjust any single key, but keep the division of labor the same.</span>
+    </footer>
+  </main>
+</body>
+</html>
+

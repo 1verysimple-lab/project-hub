@@ -1,0 +1,648 @@
+Here’s the complete upgraded HTML with **dice size control + roll history panel** fully integrated and mobile‑optimized:
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>Enhanced 3D Dice – Mobile Optimized</title>
+
+<style>
+:root{
+  --size: 150px;
+  --face-radius: 18px;
+  --dice:#ffffff;
+  --pip:#111111;
+  --accent:#3b82f6;
+  --bg1:#0f172a;
+  --bg2:#1e293b;
+}
+
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; height:100%; }
+body{
+  font-family:Inter,system-ui,sans-serif;
+  background:linear-gradient(135deg,var(--bg1),var(--bg2));
+  color:white;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:12px;
+  gap:20px;
+  height:100dvh;
+  overflow-x:hidden;
+}
+
+h1{
+  margin:0;
+  font-size:22px;
+  font-weight:600;
+  opacity:.9;
+}
+
+.container{
+  width:100%;
+  max-width:1000px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  align-items:center;
+}
+
+.main-row{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+
+.scenes{
+  display:flex;
+  flex-wrap:wrap;
+  gap:20px;
+  justify-content:center;
+  width:100%;
+}
+
+.scene{
+  width:var(--size);
+  height:var(--size);
+  min-width:var(--size);
+  min-height:var(--size);
+  perspective:1100px;
+  position:relative;
+  user-select:none;
+  touch-action:pan-y;
+}
+
+.floor{
+  position:absolute;
+  bottom:-35px;
+  left:50%;
+  transform:translateX(-50%);
+  width:calc(var(--size) * 1);
+  height:50px;
+  background:radial-gradient(ellipse at center, rgba(0,0,0,.55), transparent 60%);
+  filter:blur(8px);
+  opacity:.6;
+  pointer-events:none;
+}
+
+.cube{
+  width:100%;
+  height:100%;
+  position:relative;
+  transform-style:preserve-3d;
+  -webkit-transform-style:preserve-3d;
+  backface-visibility:visible;
+  -webkit-backface-visibility:visible;
+  will-change:transform;
+}
+
+.face{
+  position:absolute;
+  width:100%;
+  height:100%;
+  border-radius:var(--face-radius);
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.45), transparent 60%),
+              linear-gradient(145deg, rgba(0,0,0,.22), transparent 60%),
+              var(--dice);
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  grid-template-rows:repeat(3,1fr);
+  padding:18px;
+  box-shadow:
+    inset -10px -12px 26px rgba(0,0,0,.35),
+    inset 8px 10px 18px rgba(255,255,255,.35),
+    0 18px 28px rgba(0,0,0,.45);
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+}
+
+.pip{
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:var(--pip);
+  justify-self:center;
+  align-self:center;
+  box-shadow:inset -4px -4px 8px rgba(0,0,0,.5);
+}
+
+.heart{
+  font-size:42px;
+  grid-column:2;
+  grid-row:2;
+}
+
+.front  { transform:rotateY(0deg)   translateZ(calc(var(--size)/2)); }
+.back   { transform:rotateY(180deg) translateZ(calc(var(--size)/2)); }
+.right  { transform:rotateY(90deg)  translateZ(calc(var(--size)/2)); }
+.left   { transform:rotateY(-90deg) translateZ(calc(var(--size)/2)); }
+.top    { transform:rotateX(90deg)  translateZ(calc(var(--size)/2)); }
+.bottom { transform:rotateX(-90deg) translateZ(calc(var(--size)/2)); }
+
+.panel{
+  width:100%;
+  max-width:420px;
+  padding:20px;
+  border-radius:16px;
+  background:rgba(255,255,255,.06);
+  backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.08);
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.panel h2{
+  margin:0;
+  font-size:18px;
+  font-weight:600;
+  opacity:.9;
+}
+
+.control{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  font-size:14px;
+}
+
+input[type=range]{
+  appearance:none;
+  height:6px;
+  background:rgba(255,255,255,.2);
+  border-radius:6px;
+}
+
+input[type=range]::-webkit-slider-thumb{
+  appearance:none;
+  width:16px;
+  height:16px;
+  background:var(--accent);
+  border-radius:50%;
+}
+
+input[type=color]{
+  height:40px;
+  border:none;
+  border-radius:8px;
+}
+
+.row{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.btn{
+  background:linear-gradient(180deg,var(--accent),#2563eb);
+  border:none;
+  padding:10px 14px;
+  border-radius:10px;
+  color:white;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.btn.secondary{
+  background:transparent;
+  border:1px solid rgba(255,255,255,.2);
+}
+
+.result-badge{
+  min-width:48px;
+  height:48px;
+  border-radius:12px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.1);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+  font-weight:700;
+  color:var(--accent);
+}
+
+.history-panel{
+  width:100%;
+  max-width:420px;
+  padding:16px;
+  border-radius:16px;
+  background:rgba(15,23,42,.7);
+  border:1px solid rgba(255,255,255,.08);
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.history-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:14px;
+}
+
+.history-list{
+  max-height:180px;
+  overflow-y:auto;
+  padding-right:4px;
+  font-size:13px;
+  line-height:1.4;
+}
+
+.history-item{
+  opacity:0;
+  transform:translateY(4px);
+  animation:history-in 220ms ease-out forwards;
+  padding:4px 0;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+
+.history-item:last-child{
+  border-bottom:none;
+}
+
+.history-time{
+  opacity:.7;
+  margin-right:6px;
+}
+
+.history-sum{
+  color:var(--accent);
+  font-weight:600;
+}
+
+@keyframes history-in{
+  to{ opacity:1; transform:translateY(0); }
+}
+
+@media (min-width:900px){
+  .container{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .main-row{
+    flex-direction:row;
+    align-items:flex-start;
+  }
+  .scenes{
+    flex:1;
+    justify-content:flex-start;
+  }
+  .side-column{
+    width:360px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  :root{
+    --size:200px;
+    --face-radius:22px;
+  }
+  body{ padding:30px; }
+}
+</style>
+</head>
+
+<body>
+<h1>3D Dice</h1>
+
+<div class="container">
+  <div class="main-row">
+    <div style="flex:1;display:flex;flex-direction:column;gap:10px;align-items:center;">
+      <div class="scenes" id="scenes"></div>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <button class="btn" id="rollAllBtn">Roll All</button>
+        <div class="result-badge" id="globalResult">—</div>
+      </div>
+    </div>
+
+    <div class="side-column">
+      <aside class="panel">
+        <h2>Controls</h2>
+
+        <div class="control">
+          Spin Duration (seconds)
+          <input id="duration" type="range" min="1" max="10" value="4">
+        </div>
+
+        <div class="control">
+          Spin Intensity
+          <input id="intensity" type="range" min="1" max="20" value="8">
+        </div>
+
+        <div class="control">
+          Dice Size
+          <input id="diceSize" type="range" min="80" max="260" value="150">
+        </div>
+
+        <div class="control">
+          Dice Color
+          <input id="diceColor" type="color" value="#ffffff">
+        </div>
+
+        <div class="control">
+          Pip Color
+          <input id="pipColor" type="color" value="#111111">
+        </div>
+
+        <div class="control row">
+          <label>Dice</label>
+          <input id="diceCount" type="number" min="1" max="6" value="2" style="width:60px;">
+          <button class="btn secondary" id="applyCount">Apply</button>
+        </div>
+
+        <div class="control row">
+          <button class="btn secondary" id="toggleSound">Sound: On</button>
+          <button class="btn secondary" id="resetBtn">Reset</button>
+        </div>
+      </aside>
+
+      <section class="history-panel">
+        <div class="history-header">
+          <span>Roll History</span>
+          <button class="btn secondary" id="clearHistory" style="padding:4px 8px;font-size:12px;">Clear</button>
+        </div>
+        <div id="historyList" class="history-list">
+          <!-- entries injected here -->
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+const randInt = (a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const randChoice = arr => arr[Math.floor(Math.random()*arr.length)];
+
+const FACE_ROT = {
+  1:[0,0], 2:[90,0], 3:[0,-90],
+  4:[0,90], 5:[-90,0], 6:[0,180]
+};
+
+const EASINGS = [
+  'cubic-bezier(.2,.8,.2,1)',
+  'cubic-bezier(.22,.9,.3,1)',
+  'cubic-bezier(.18,.85,.25,1)',
+  'cubic-bezier(.25,.7,.35,1)'
+];
+
+class Clack{
+  constructor(){ this.enabled=true; this.ctx=null; }
+  ensure(){
+    if(!this.ctx){
+      try{ this.ctx=new (window.AudioContext||window.webkitAudioContext)(); }
+      catch(e){ this.ctx=null; }
+    }
+  }
+  toggle(){ this.enabled=!this.enabled; return this.enabled; }
+  play(){
+    if(!this.enabled) return;
+    this.ensure();
+    if(!this.ctx) return;
+    const ctx=this.ctx;
+    const o=ctx.createOscillator();
+    const g=ctx.createGain();
+    o.type='square';
+    o.frequency.value=800+Math.random()*200;
+    g.gain.value=0.0001;
+    o.connect(g); g.connect(ctx.destination);
+    const now=ctx.currentTime;
+    g.gain.setValueAtTime(0.0001,now);
+    g.gain.exponentialRampToValueAtTime(0.12,now+0.01);
+    g.gain.exponentialRampToValueAtTime(0.001,now+0.18);
+    o.start(now); o.stop(now+0.2);
+  }
+}
+const clack=new Clack();
+
+class Die{
+  constructor(i){
+    this.index=i;
+    this.rolling=false;
+    this.result=null;
+    this.element=this.build();
+    this.cube=this.element.querySelector('.cube');
+    this.initEvents();
+  }
+
+  build(){
+    const scene=document.createElement('div');
+    scene.className='scene';
+
+    const cube=document.createElement('div');
+    cube.className='cube';
+
+    const faces=['front','back','right','left','top','bottom'];
+    faces.forEach(cls=>{
+      const f=document.createElement('div');
+      f.className='face '+cls;
+      cube.appendChild(f);
+    });
+
+    const floor=document.createElement('div');
+    floor.className='floor';
+
+    scene.appendChild(cube);
+    scene.appendChild(floor);
+
+    const order=[1,6,3,4,5,2];
+    const faceEls=cube.querySelectorAll('.face');
+    order.forEach((n,i)=>this.createPips(faceEls[i],n));
+
+    document.getElementById('scenes').appendChild(scene);
+    return scene;
+  }
+
+  createPips(face,n){
+    face.innerHTML='';
+    if(n===1){
+      const h=document.createElement('div');
+      h.className='heart';
+      h.textContent='❤️';
+      face.appendChild(h);
+      return;
+    }
+    const pos={
+      2:[[1,1],[3,3]],
+      3:[[1,1],[2,2],[3,3]],
+      4:[[1,1],[1,3],[3,1],[3,3]],
+      5:[[1,1],[1,3],[2,2],[3,1],[3,3]],
+      6:[[1,1],[1,2],[1,3],[3,1],[3,2],[3,3]]
+    };
+    pos[n].forEach(([r,c])=>{
+      const p=document.createElement('div');
+      p.className='pip';
+      p.style.gridRow=r;
+      p.style.gridColumn=c;
+      face.appendChild(p);
+    });
+  }
+
+  initEvents(){
+    this.element.addEventListener('click',()=>{ if(!this.rolling) this.roll(); });
+  }
+
+  async roll(){
+    if(this.rolling) return;
+    this.rolling=true;
+
+    const duration=Number(document.getElementById('duration').value)*1000;
+    const intensity=Number(document.getElementById('intensity').value);
+
+    const result=randInt(1,6);
+    this.result=result;
+
+    const base=FACE_ROT[result];
+    const spinX=base[0]+360*intensity+randInt(0,360);
+    const spinY=base[1]+360*intensity+randInt(0,360);
+
+    const easing=randChoice(EASINGS);
+
+    this.cube.style.transition=`transform ${duration}ms ${easing}`;
+    requestAnimationFrame(()=>{
+      this.cube.style.transform=`rotateX(${spinX}deg) rotateY(${spinY}deg)`;
+    });
+
+    await new Promise(res=>setTimeout(res,duration));
+
+    this.cube.style.transition='none';
+    this.cube.style.transform=`rotateX(${base[0]}deg) rotateY(${base[1]}deg)`;
+
+    clack.play();
+    this.updateBadge();
+
+    setTimeout(()=>this.rolling=false,120);
+    return result;
+  }
+
+  updateBadge(){
+    const badge=document.getElementById('globalResult');
+    badge.textContent=this.result;
+    badge.animate(
+      [{transform:'scale(1)'},{transform:'scale(1.1)'},{transform:'scale(1)'}],
+      {duration:300,easing:'ease-out'}
+    );
+  }
+}
+
+class DiceApp{
+  constructor(){
+    this.dice=[];
+    this.historyList=document.getElementById('historyList');
+    this.init();
+  }
+
+  init(){
+    this.rollAllBtn=document.getElementById('rollAllBtn');
+    this.diceColor=document.getElementById('diceColor');
+    this.pipColor=document.getElementById('pipColor');
+    this.diceCount=document.getElementById('diceCount');
+    this.applyCount=document.getElementById('applyCount');
+    this.toggleSound=document.getElementById('toggleSound');
+    this.resetBtn=document.getElementById('resetBtn');
+    this.diceSize=document.getElementById('diceSize');
+    this.clearHistoryBtn=document.getElementById('clearHistory');
+
+    this.createDice(Number(this.diceCount.value));
+
+    this.rollAllBtn.addEventListener('click',()=>this.rollAll());
+    this.applyCount.addEventListener('click',()=>this.setDiceCount(Number(this.diceCount.value)));
+    this.diceColor.addEventListener('input',e=>document.documentElement.style.setProperty('--dice',e.target.value));
+    this.pipColor.addEventListener('input',e=>document.documentElement.style.setProperty('--pip',e.target.value));
+    this.toggleSound.addEventListener('click',()=>{
+      const on=clack.toggle();
+      this.toggleSound.textContent=on?'Sound: On':'Sound: Off';
+    });
+    this.resetBtn.addEventListener('click',()=>this.reset());
+    this.clearHistoryBtn.addEventListener('click',()=>this.clearHistory());
+
+    this.diceSize.addEventListener('input',e=>{
+      const px = Number(e.target.value);
+      document.documentElement.style.setProperty('--size', px + 'px');
+      document.documentElement.style.setProperty('--face-radius', Math.round(px * 0.12) + 'px');
+    });
+
+    const startPx = Number(this.diceSize.value);
+    document.documentElement.style.setProperty('--size', startPx + 'px');
+    document.documentElement.style.setProperty('--face-radius', Math.round(startPx * 0.12) + 'px');
+  }
+
+  createDice(n){
+    const scenes=document.getElementById('scenes');
+    scenes.innerHTML='';
+    this.dice=[];
+    for(let i=0;i<n;i++){
+      this.dice.push(new Die(i));
+    }
+  }
+
+  setDiceCount(n){
+    n=clamp(n,1,6);
+    this.diceCount.value=n;
+    this.createDice(n);
+  }
+
+  async rollAll(){
+    const results=[];
+    for(const d of this.dice){
+      const r=await d.roll();
+      results.push(r);
+    }
+    this.updateGlobalResult(results);
+    this.addHistoryEntry(results);
+  }
+
+  updateGlobalResult(results){
+    const badge=document.getElementById('globalResult');
+    if(results.length===0){ badge.textContent='—'; return; }
+    if(results.length===1) badge.textContent=results[0];
+    else badge.textContent=results.join(' + ');
+  }
+
+  reset(){
+    document.getElementById('globalResult').textContent='—';
+    this.createDice(Number(this.diceCount.value));
+  }
+
+  addHistoryEntry(results){
+    if(!results || !results.length) return;
+    const now=new Date();
+    const hh=String(now.getHours()).padStart(2,'0');
+    const mm=String(now.getMinutes()).padStart(2,'0');
+    const time=`${hh}:${mm}`;
+    const sum=results.reduce((a,b)=>a+b,0);
+
+    const item=document.createElement('div');
+    item.className='history-item';
+
+    const timeSpan=document.createElement('span');
+    timeSpan.className='history-time';
+    timeSpan.textContent=time;
+
+    const text=document.createElement('span');
+    const diceLabel = results.length===1 ? 'die' : 'dice';
+    text.innerHTML = `— ${results.length} ${diceLabel} → ${results.join(' + ')} = <span class="history-sum">${sum}</span>`;
+
+    item.appendChild(timeSpan);
+    item.appendChild(text);
+
+    this.historyList.appendChild(item);
+    this.historyList.scrollTop=this.historyList.scrollHeight;
+  }
+
+  clearHistory(){
+    this.historyList.innerHTML='';
+  }
+}
+
+document.addEventListener('DOMContentLoaded',()=>new DiceApp());
+</script>
+
+</body>
+</html>
+```
