@@ -15,7 +15,7 @@
 
         * {
             -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
+            box-sizing: border-box;
         }
 
         body { 
@@ -24,28 +24,33 @@
             overflow: hidden; 
             font-family: 'Plus Jakarta Sans', sans-serif; 
             margin: 0;
+            position: fixed;
+            width: 100%;
         }
         
-        .map-container {
+        /* Map Container - Touch action none to take full control of gestures */
+        .map-viewport {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            overflow: auto; 
-            cursor: grab; 
-            user-select: none;
+            overflow: hidden; 
             background: #cbd5e1;
-            scroll-behavior: smooth;
             z-index: 1;
+            touch-action: none;
         }
-        .map-container:active { cursor: grabbing; }
         
         .map-wrapper { 
-            position: relative; 
+            position: absolute; 
             transform-origin: 0 0; 
-            transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1); 
+            will-change: transform;
             width: fit-content;
             height: fit-content;
         }
-        #park-map { display: block; max-width: none; height: auto; }
+        #park-map { 
+            display: block; 
+            max-width: none; 
+            height: auto; 
+            pointer-events: none; /* Let touches fall through to wrapper/viewport */
+        }
 
         /* Spotlight Visuals */
         .spotlight-pin {
@@ -74,43 +79,34 @@
             z-index: 101; pointer-events: none;
         }
 
-        /* Glass UI */
+        /* Glass UI Components */
         .glass-ui {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
         }
 
-        #toast {
-            position: fixed; top: 1rem; left: 50%; transform: translate(-50%, -200%);
-            padding: 0.75rem 1.5rem; background: #1e293b; color: white; border-radius: 99px;
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.3);
-            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            z-index: 2000; font-size: 0.875rem; font-weight: 600; width: max-content;
-        }
-        #toast.show { transform: translate(-50%, 0); }
-
-        /* Search Bar Overlay */
+        /* Search Interface */
         .search-container {
             position: fixed;
-            top: 1rem;
+            top: env(safe-area-inset-top, 1rem);
             left: 50%;
             transform: translateX(-50%);
-            width: calc(100% - 2rem);
-            max-width: 500px;
-            z-index: 100;
+            width: calc(100% - 1.5rem);
+            max-width: 450px;
+            z-index: 200;
         }
 
         .results-overlay {
-            max-height: 50vh;
+            max-height: 60vh;
             overflow-y: auto;
             border-radius: 1.5rem;
             margin-top: 0.5rem;
         }
 
-        /* Floating Actions */
+        /* Floating Controls */
         .floating-controls {
             position: fixed;
             right: 1rem;
@@ -118,20 +114,19 @@
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
-            z-index: 50;
-            transition: bottom 0.3s ease;
+            z-index: 100;
+            transition: transform 0.3s ease;
         }
 
         .floating-btn {
-            width: 3.5rem;
-            height: 3.5rem;
-            border-radius: 1.25rem;
+            width: 3.25rem;
+            height: 3.25rem;
+            border-radius: 1rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             color: #475569;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
         /* Bottom Info Sheet */
@@ -140,92 +135,97 @@
             bottom: -100%;
             left: 0;
             right: 0;
-            z-index: 150;
-            transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 300;
+            transition: bottom 0.4s cubic-bezier(0.1, 0.7, 0.1, 1);
         }
         .bottom-sheet.active {
             bottom: 0;
         }
+
+        #toast {
+            position: fixed; top: 5rem; left: 50%; transform: translate(-50%, -200%);
+            padding: 0.6rem 1.25rem; background: #1e293b; color: white; border-radius: 99px;
+            box-shadow: 0 10px 15px rgba(0,0,0,0.2);
+            transition: transform 0.5s ease; 
+            z-index: 2000; font-size: 0.8rem; font-weight: 600; width: max-content;
+        }
+        #toast.show { transform: translate(-50%, 0); }
     </style>
 </head>
 <body>
 
-    <!-- Floating Search Bar -->
+    <!-- Search Bar -->
     <div class="search-container">
-        <div class="glass-ui rounded-3xl p-2 flex items-center shadow-lg">
+        <div class="glass-ui rounded-[1.75rem] p-1.5 flex items-center">
             <div class="w-10 h-10 bg-red-500 rounded-2xl flex items-center justify-center text-white shrink-0 ml-1">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             </div>
-            <input type="text" id="searchInput" placeholder="Search house # or facility..." 
+            <input type="text" id="searchInput" placeholder="Search house #..." 
                 class="bg-transparent border-none focus:ring-0 w-full px-4 font-bold text-slate-700 text-base" autocomplete="off">
-            <button onclick="autoZoomToFit()" class="p-2 mr-1 text-slate-400 hover:text-red-500">
+            <button onclick="autoZoomToFit()" class="p-2 mr-1 text-slate-400">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
             </button>
         </div>
-        
-        <!-- Search Results -->
         <div id="searchResults" class="results-overlay glass-ui hidden"></div>
     </div>
 
-    <!-- Floating Controls -->
+    <!-- Zoom Controls (Still useful for one-hand precision) -->
     <div class="floating-controls" id="floatingControls">
-        <button onclick="zoomMap(1.4)" class="floating-btn glass-ui font-black">＋</button>
-        <button onclick="zoomMap(0.7)" class="floating-btn glass-ui font-black">－</button>
+        <button onclick="zoomMap(1.5)" class="floating-btn glass-ui font-black">＋</button>
+        <button onclick="zoomMap(0.6)" class="floating-btn glass-ui font-black">－</button>
     </div>
 
     <!-- Info Sheet -->
     <div id="selectionCard" class="bottom-sheet">
         <div class="mx-auto max-w-xl">
-            <div class="glass-ui rounded-t-[2.5rem] p-6 pb-10 shadow-2xl relative">
-                <!-- Pull Handle -->
+            <div class="glass-ui rounded-t-[2.5rem] p-6 pb-12 shadow-2xl">
                 <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6"></div>
-                
                 <div class="flex items-start justify-between">
                     <div>
-                        <span id="cardCategory" class="text-[10px] font-black text-red-500 uppercase tracking-widest bg-red-50 px-2.5 py-1 rounded-full mb-2 inline-block">LOCATION</span>
+                        <span id="cardCategory" class="text-[10px] font-black text-red-500 uppercase tracking-widest bg-red-50 px-2.5 py-1 rounded-full mb-2 inline-block">CARAVAN</span>
                         <h2 id="cardTitle" class="text-4xl font-black text-slate-800 tracking-tighter leading-none">--</h2>
                     </div>
                     <button onclick="clearSelection()" class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
-
-                <div class="mt-8 grid grid-cols-2 gap-4">
-                    <div class="bg-slate-50 p-4 rounded-3xl border border-slate-100">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Status</p>
-                        <p class="text-xs font-black text-slate-600">PINPOINT ACTIVE</p>
-                    </div>
-                    <div class="bg-slate-50 p-4 rounded-3xl border border-slate-100">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Database</p>
-                        <p id="dbLabel" class="text-xs font-black text-slate-600 truncate">LOCAL SYNC</p>
-                    </div>
+                <div class="mt-6 p-4 bg-slate-50 rounded-3xl border border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Status</p>
+                    <p class="text-xs font-black text-slate-600">PINPOINT ACTIVE • Center map to find</p>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Main Viewport -->
-    <main class="map-container" id="container">
+    <main class="map-viewport" id="viewport">
         <div class="map-wrapper" id="wrapper">
             <img src="cambersands.jpg" id="park-map" alt="Camber Sands Map">
             <div id="markerLayer"></div>
         </div>
     </main>
 
-    <!-- Invisible Sync Input -->
     <input type="file" id="fileInput" class="hidden" accept=".json" onchange="handleManualUpload(event)">
-
     <div id="toast"></div>
 
     <script>
         let dynamicData = [];
         let selectedItem = null;
-        let zoom = 1.0;
-        let isDragging = false;
-        let startX, startY, scrollLeft, scrollTop;
+        
+        // Transform State
+        let scale = 1.0;
+        let translateX = 0;
+        let translateY = 0;
+        
+        // Gesture State
+        let lastTouchX = 0;
+        let lastTouchY = 0;
+        let initialDistance = 0;
+        let initialScale = 1.0;
+        let isGesturing = false;
 
         const el = {
-            container: document.getElementById('container'),
+            viewport: document.getElementById('viewport'),
             wrapper: document.getElementById('wrapper'),
             markerLayer: document.getElementById('markerLayer'),
             searchInput: document.getElementById('searchInput'),
@@ -234,14 +234,14 @@
             selectionCard: document.getElementById('selectionCard'),
             cardTitle: document.getElementById('cardTitle'),
             cardCategory: document.getElementById('cardCategory'),
-            dbLabel: document.getElementById('dbLabel'),
             controls: document.getElementById('floatingControls'),
             toast: document.getElementById('toast')
         };
 
         window.onload = () => {
-            initInteraction();
+            setupGestures();
             attemptAutoSync();
+            
             if (el.parkMap.complete) autoZoomToFit();
             else el.parkMap.onload = autoZoomToFit;
         };
@@ -252,32 +252,17 @@
                 if (!response.ok) throw new Error();
                 const json = await response.json();
                 processJsonData(json);
-                el.dbLabel.innerText = "AUTO SYNCED";
-                showToast("✓ Database loaded.");
+                showToast("✓ Map data synced.");
             } catch (err) {
-                el.dbLabel.innerText = "MANUAL SYNC REQ";
-                showToast("Data file not found. Tap to sync.", 6000);
-                el.dbLabel.parentElement.onclick = () => document.getElementById('fileInput').click();
+                showToast("JSON not found. Tap to sync manually.", 5000);
+                el.searchInput.onclick = () => {
+                    if (dynamicData.length === 0) document.getElementById('fileInput').click();
+                };
             }
-        }
-
-        function handleManualUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    processJsonData(JSON.parse(e.target.result));
-                    el.dbLabel.innerText = "MANUAL SYNCED";
-                    showToast("✓ Sync successful.");
-                } catch (err) { showToast("Error: Invalid JSON."); }
-            };
-            reader.readAsText(file);
         }
 
         function processJsonData(json) {
             dynamicData = Array.isArray(json) ? json : [...(json.caravans || []), ...(json.facilities || []), ...(json.all_locations || [])];
-            // Deduplicate
             const seen = new Set();
             dynamicData = dynamicData.filter(i => {
                 const k = (i.label || '') + i.normalized_x + i.normalized_y;
@@ -285,56 +270,106 @@
             });
         }
 
-        function autoZoomToFit() {
-            const nw = el.parkMap.naturalWidth, nh = el.parkMap.naturalHeight;
-            const cw = el.container.clientWidth, ch = el.container.clientHeight;
-            if (!nw || !nh) return;
-            const fitZoom = Math.min(cw / nw, ch / nh) * 0.95;
-            zoomMapTo(fitZoom);
-            el.container.scrollLeft = (nw * zoom - cw) / 2;
-            el.container.scrollTop = (nh * zoom - ch) / 2;
+        function applyTransform() {
+            el.wrapper.style.transform = `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`;
         }
 
-        function initInteraction() {
-            // Drag handling
-            el.container.onmousedown = (e) => {
-                isDragging = true;
-                startX = e.pageX - el.container.offsetLeft;
-                startY = e.pageY - el.container.offsetTop;
-                scrollLeft = el.container.scrollLeft;
-                scrollTop = el.container.scrollTop;
-            };
-            window.onmouseup = () => isDragging = false;
-            el.container.onmousemove = (e) => {
-                if (!isDragging) return;
-                el.container.scrollLeft = scrollLeft - (e.pageX - el.container.offsetLeft - startX);
-                el.container.scrollTop = scrollTop - (e.pageY - el.container.offsetTop - startY);
-            };
+        function autoZoomToFit() {
+            const nw = el.parkMap.naturalWidth, nh = el.parkMap.naturalHeight;
+            const vw = el.viewport.clientWidth, vh = el.viewport.clientHeight;
+            if (!nw || !nh) return;
 
-            // Touch support for dragging
-            el.container.ontouchstart = (e) => {
-                isDragging = true;
-                startX = e.touches[0].pageX - el.container.offsetLeft;
-                startY = e.touches[0].pageY - el.container.offsetTop;
-                scrollLeft = el.container.scrollLeft;
-                scrollTop = el.container.scrollTop;
-            };
-            el.container.ontouchend = () => isDragging = false;
-            el.container.ontouchmove = (e) => {
-                if (!isDragging) return;
-                el.container.scrollLeft = scrollLeft - (e.touches[0].pageX - el.container.offsetLeft - startX);
-                el.container.scrollTop = scrollTop - (e.touches[0].pageY - el.container.offsetTop - startY);
-            };
+            scale = Math.min(vw / nw, vh / nh);
+            translateX = (vw - nw * scale) / 2;
+            translateY = (vh - nh * scale) / 2;
+            applyTransform();
+        }
 
-            // Wheel zoom
-            el.container.addEventListener('wheel', (e) => {
-                if (e.ctrlKey || e.metaKey) {
-                    e.preventDefault();
-                    zoomMap(e.deltaY > 0 ? 0.8 : 1.25);
+        function setupGestures() {
+            // Mouse Drag (Desktop Support)
+            let isMouseDown = false;
+            el.viewport.addEventListener('mousedown', (e) => {
+                isMouseDown = true;
+                lastTouchX = e.clientX;
+                lastTouchY = e.clientY;
+            });
+            window.addEventListener('mousemove', (e) => {
+                if (!isMouseDown) return;
+                translateX += e.clientX - lastTouchX;
+                translateY += e.clientY - lastTouchY;
+                lastTouchX = e.clientX;
+                lastTouchY = e.clientY;
+                applyTransform();
+            });
+            window.addEventListener('mouseup', () => isMouseDown = false);
+
+            // Touch Gestures (Pinch & Pan)
+            el.viewport.addEventListener('touchstart', (e) => {
+                isGesturing = true;
+                if (e.touches.length === 2) {
+                    initialDistance = Math.hypot(
+                        e.touches[0].pageX - e.touches[1].pageX,
+                        e.touches[0].pageY - e.touches[1].pageY
+                    );
+                    initialScale = scale;
+                } else if (e.touches.length === 1) {
+                    lastTouchX = e.touches[0].pageX;
+                    lastTouchY = e.touches[0].pageY;
                 }
             }, { passive: false });
 
-            // Search
+            el.viewport.addEventListener('touchmove', (e) => {
+                if (!isGesturing) return;
+                e.preventDefault();
+
+                if (e.touches.length === 2) {
+                    // Handle Pinch
+                    const currentDistance = Math.hypot(
+                        e.touches[0].pageX - e.touches[1].pageX,
+                        e.touches[0].pageY - e.touches[1].pageY
+                    );
+                    const touchScale = currentDistance / initialDistance;
+                    const newScale = Math.min(Math.max(initialScale * touchScale, 0.05), 10);
+                    
+                    // Zoom towards the midpoint of the fingers
+                    const midX = (e.touches[0].pageX + e.touches[1].pageX) / 2;
+                    const midY = (e.touches[0].pageY + e.touches[1].pageY) / 2;
+                    
+                    const mouseX = (midX - translateX) / scale;
+                    const mouseY = (midY - translateY) / scale;
+                    
+                    scale = newScale;
+                    translateX = midX - mouseX * scale;
+                    translateY = midY - mouseY * scale;
+
+                } else if (e.touches.length === 1) {
+                    // Handle Pan
+                    translateX += e.touches[0].pageX - lastTouchX;
+                    translateY += e.touches[0].pageY - lastTouchY;
+                    lastTouchX = e.touches[0].pageX;
+                    lastTouchY = e.touches[0].pageY;
+                }
+                applyTransform();
+            }, { passive: false });
+
+            el.viewport.addEventListener('touchend', () => isGesturing = false);
+
+            // Wheel zoom
+            el.viewport.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const factor = e.deltaY > 0 ? 0.9 : 1.1;
+                const newScale = Math.min(Math.max(scale * factor, 0.05), 10);
+                
+                const mouseX = (e.clientX - translateX) / scale;
+                const mouseY = (e.clientY - translateY) / scale;
+                
+                scale = newScale;
+                translateX = e.clientX - mouseX * scale;
+                translateY = e.clientY - mouseY * scale;
+                applyTransform();
+            }, { passive: false });
+
+            // Search Logic
             el.searchInput.oninput = (e) => {
                 const val = e.target.value.trim().toUpperCase();
                 if (!val) { el.searchResults.classList.add('hidden'); return; }
@@ -347,10 +382,10 @@
                     <button onclick='spotlight(${JSON.stringify(m)})' class="w-full text-left p-5 flex justify-between items-center border-b border-slate-100 last:border-0 active:bg-slate-50">
                         <div>
                             <p class="font-black text-slate-800 text-lg">${m.label}</p>
-                            <p class="text-[10px] font-bold text-slate-400 uppercase">${m.category || 'HOUSE'}</p>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${m.category || 'HOUSE'}</p>
                         </div>
                         <span class="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                         </span>
                     </button>
                 `).join('');
@@ -367,25 +402,38 @@
             el.cardTitle.innerText = item.label;
             el.cardCategory.innerText = (item.category || 'House').toUpperCase();
             el.selectionCard.classList.add('active');
-            el.controls.style.bottom = '22rem'; // Move controls up
+            el.controls.style.transform = 'translateY(-18rem)';
 
             refreshMarkers();
-            zoomMapTo(0.7); // Mobile-optimized zoom context
-
+            
+            // Set scale for spotlight
+            scale = 0.7; 
+            const vw = el.viewport.clientWidth, vh = el.viewport.clientHeight;
             const nw = el.parkMap.naturalWidth, nh = el.parkMap.naturalHeight;
-            setTimeout(() => {
-                el.container.scrollTo({
-                    left: (item.normalized_x * nw * zoom) - (el.container.clientWidth / 2),
-                    top: (item.normalized_y * nh * zoom) - (el.container.clientHeight / 2),
-                    behavior: 'smooth'
-                });
-            }, 100);
+            
+            translateX = (vw / 2) - (item.normalized_x * nw * scale);
+            translateY = (vh / 2.5) - (item.normalized_y * nh * scale); // Position target slightly above center for bottom sheet
+            
+            applyTransform();
+        }
+
+        function zoomMap(factor) {
+            const newScale = Math.min(Math.max(scale * factor, 0.05), 10);
+            const vw = el.viewport.clientWidth, vh = el.viewport.clientHeight;
+            
+            // Zoom to center of screen
+            const mouseX = (vw / 2 - translateX) / scale;
+            const mouseY = (vh / 2 - translateY) / scale;
+            
+            scale = newScale;
+            translateX = vw / 2 - mouseX * scale;
+            translateY = vh / 2 - mouseY * scale;
+            applyTransform();
         }
 
         function refreshMarkers() {
             el.markerLayer.innerHTML = '';
             if (!selectedItem) return;
-
             const html = `
                 <div class="spotlight-pin" style="left:${selectedItem.normalized_x*100}%; top:${selectedItem.normalized_y*100}%"></div>
                 <div class="spotlight-pulse" style="left:${selectedItem.normalized_x*100}%; top:${selectedItem.normalized_y*100}%"></div>
@@ -394,23 +442,24 @@
             el.markerLayer.innerHTML = html;
         }
 
-        function zoomMap(factor) { zoomMapTo(Math.min(Math.max(0.05, zoom * factor), 10)); }
-
-        function zoomMapTo(newZoom) {
-            const oldZoom = zoom;
-            zoom = newZoom;
-            const centerX = el.container.scrollLeft + (el.container.clientWidth / 2);
-            const centerY = el.container.scrollTop + (el.container.clientHeight / 2);
-            el.wrapper.style.transform = `scale(${zoom})`;
-            el.container.scrollLeft = (centerX * (zoom/oldZoom)) - (el.container.clientWidth / 2);
-            el.container.scrollTop = (centerY * (zoom/oldZoom)) - (el.container.clientHeight / 2);
-        }
-
         function clearSelection() {
             selectedItem = null;
             el.selectionCard.classList.remove('active');
             el.markerLayer.innerHTML = '';
-            el.controls.style.bottom = '2rem';
+            el.controls.style.transform = 'translateY(0)';
+        }
+
+        function handleManualUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    processJsonData(JSON.parse(e.target.result));
+                    showToast("✓ Database Loaded.");
+                } catch (err) { showToast("Error: Invalid JSON."); }
+            };
+            reader.readAsText(file);
         }
 
         function showToast(m, dur = 3500) {
