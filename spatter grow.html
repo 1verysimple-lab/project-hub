@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Spatial Sniper: Echo VIII</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        /* ECHO VIII ATMOSPHERIC PALETTE */
+        :root {
+            --bg: #0b1120;       
+            --panel: #1e293b;    
+            --accent: #10b981;   /* Emerald */
+            --gold: #f59e0b;     
+            --danger: #ef4444;   
+            --text: #e2e8f0;     
+        }
+
+        body {
+            margin: 0; height: 100vh;
+            background-color: var(--bg);
+            color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            overflow: hidden; user-select: none; -webkit-user-select: none;
+        }
+
+        /* --- SIGNATURE --- */
+        .credits {
+            position: absolute; bottom: 15px; right: 20px;
+            font-size: 10px; color: rgba(255, 255, 255, 0.1);
+            font-weight: 900; letter-spacing: 2px; text-transform: uppercase;
+            pointer-events: none; z-index: 999; font-family: monospace;
+        }
+
+        /* --- INTRO SCREEN --- */
+        #intro-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg); z-index: 500;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.8s ease-out;
+        }
+        #intro-screen.hidden { opacity: 0; pointer-events: none; }
+        
+        .logo-box {
+            border: 2px solid var(--accent); padding: 40px;
+            text-align: center; position: relative;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.2);
+            margin-bottom: 40px;
+            background: rgba(16, 185, 129, 0.05);
+        }
+        
+        h1 { margin: 0; font-size: 32px; letter-spacing: 4px; text-transform: uppercase; color: var(--text); }
+        .sub { display: block; margin-top: 10px; font-size: 12px; letter-spacing: 6px; color: var(--accent); }
+        
+        .start-btn {
+            background: transparent; border: 1px solid var(--accent); color: var(--accent);
+            padding: 15px 40px; font-size: 16px; letter-spacing: 2px;
+            cursor: pointer; transition: all 0.3s; text-transform: uppercase; font-weight: bold;
+        }
+        .start-btn:hover { background: var(--accent); color: var(--bg); box-shadow: 0 0 20px var(--accent); }
+
+        /* --- GAME LAYOUT --- */
+        #game-layout {
+            position: relative; width: 100%; max-width: 600px; height: 100%;
+            display: flex; flex-direction: column;
+            opacity: 0; transition: opacity 1s ease-in; 
+        }
+        #game-layout.visible { opacity: 1; }
+
+        /* --- 3D VIEWPORT --- */
+        #viewport {
+            position: relative; flex: 1; min-height: 50%;
+            background: linear-gradient(180deg, #0b1120 0%, #1e293b 100%);
+            overflow: hidden;
+            transition: box-shadow 0.2s;
+        }
+        #viewport.damage { box-shadow: inset 0 0 50px var(--danger); }
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* --- VISUAL TIMERS --- */
+        .bar-container { width: 100%; height: 6px; background-color: #0f172a; position: relative; z-index: 10; border-bottom: 1px solid #334155; }
+        
+        #timer-bar {
+            width: 100%; height: 100%; background-color: #3b82f6;
+            transform-origin: left; transform: scaleX(0);
+        }
+
+        #health-track {
+            width: 100%; height: 12px; background-color: #334155; 
+            border-bottom: 1px solid #000; position: relative;
+        }
+        #health-bar {
+            width: 100%; height: 100%; background-color: var(--accent);
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s;
+        }
+        .health-text {
+            position: absolute; top: 0; left: 10px; font-size: 9px; line-height: 12px;
+            font-weight: bold; color: rgba(0,0,0,0.5); letter-spacing: 1px;
+        }
+
+        /* --- GRID OVERLAY --- */
+        #grid-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+            transform: perspective(800px) rotateX(25deg) scale(0.85);
+            pointer-events: none;
+        }
+        .grid-btn {
+            pointer-events: auto; border: 1px solid rgba(255,255,255,0.05);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 900; color: rgba(255,255,255,0.2);
+            cursor: pointer; transition: background 0.1s;
+        }
+        .grid-btn:active { background: rgba(16, 185, 129, 0.2); }
+        .grid-btn.center { border: none; cursor: default; }
+
+        /* --- HUD --- */
+        #hud-panel {
+            background: var(--panel); padding: 15px;
+            display: flex; flex-direction: column; gap: 10px;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5); z-index: 20;
+        }
+
+        .stat-row { display: flex; justify-content: space-between; align-items: flex-end; }
+        .stat-box { 
+            text-align: center; width: 32%; background: rgba(0,0,0,0.3); 
+            padding: 8px 0; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); 
+        }
+        .stat-label { font-size: 10px; color: #94a3b8; letter-spacing: 1px; text-transform: uppercase; display: block; margin-bottom: 2px; }
+        .stat-val { font-size: 20px; font-weight: 800; color: #fff; font-family: monospace; }
+        
+        #score-val { color: var(--gold); }
+        
+        .controls { display: flex; gap: 10px; margin-top: 5px; }
+        
+        button {
+            flex: 1; padding: 14px; border: none; border-radius: 2px;
+            font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;
+            cursor: pointer; transition: transform 0.1s;
+        }
+        button:active { transform: translateY(2px); }
+        
+        .btn-primary { background: var(--accent); color: #0b1120; }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-ghost { background: #334155; color: #cbd5e1; }
+        .btn-small { padding: 8px; font-size: 11px; flex: 0 0 auto; width: 80px;}
+
+        /* --- AUDIO CONTROLS --- */
+        .audio-row {
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px;
+            margin-top: 5px; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .audio-label { font-size: 10px; color: #64748b; font-weight: bold; width: 40px; }
+        
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none; width: 100%; background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 12px; width: 12px;
+            border-radius: 50%; background: var(--accent);
+            cursor: pointer; margin-top: -5px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 2px; cursor: pointer; background: #334155;
+        }
+
+        #msg-overlay {
+            position: absolute; top: 20px; width: 100%; text-align: center;
+            font-weight: bold; color: var(--accent); text-transform: uppercase;
+            letter-spacing: 2px; pointer-events: none; text-shadow: 0 1px 4px #000;
+        }
+
+        /* --- POPUPS & MODALS --- */
+        .score-popup {
+            position: absolute; pointer-events: none; z-index: 100;
+            font-weight: 900; font-size: 24px; color: var(--gold);
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+            animation: flyUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes flyUp { 0%{transform:translate(-50%,0) scale(0.5); opacity:0} 20%{transform:translate(-50%,-20px) scale(1.2); opacity:1} 100%{transform:translate(-50%,-80px) scale(1); opacity:0} }
+
+        .modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(11, 17, 32, 0.98); z-index: 200;
+            display: none; flex-direction: column; padding: 20px; box-sizing: border-box;
+        }
+        .modal.active { display: flex; }
+        .modal-content { flex: 1; overflow-y: auto; text-align: left; }
+        
+        h2 { color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 10px; font-size: 18px; margin-top: 0;}
+        h3 { color: var(--gold); font-size: 14px; margin-top: 20px; margin-bottom: 5px; text-transform: uppercase; }
+        p, li { font-size: 13px; color: #94a3b8; line-height: 1.5; margin-bottom: 8px; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+        th { text-align: left; color: #64748b; padding: 5px; border-bottom: 1px solid #334155; }
+        td { padding: 8px 5px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #fff; font-family: monospace; }
+
+    </style>
+</head>
+<body>
+
+<div id="intro-screen">
+    <div class="logo-box">
+        <h1>Spatial Sniper</h1>
+        <span class="sub">ECHO VIII // AUDIO LINK</span>
+    </div>
+    <div style="font-size: 11px; color: #64748b; margin-bottom: 20px; max-width: 300px; text-align: center;">
+        WARNING: Stereo Headphones Required.<br>Loading Ambient Tracks...
+    </div>
+    <button class="start-btn" id="init-btn" onclick="UI.startExperience()" disabled>LOADING...</button>
+</div>
+
+<div class="credits">APP BY BLUES</div>
+
+<div id="game-layout">
+    
+    <div id="viewport">
+        <canvas id="three-canvas"></canvas>
+        <div id="grid-overlay">
+            <div class="grid-btn" data-idx="0">NW</div>
+            <div class="grid-btn" data-idx="1">N</div>
+            <div class="grid-btn" data-idx="2">NE</div>
+            <div class="grid-btn" data-idx="3">W</div>
+            <div class="grid-btn center"></div>
+            <div class="grid-btn" data-idx="5">E</div>
+            <div class="grid-btn" data-idx="6">SW</div>
+            <div class="grid-btn" data-idx="7">S</div>
+            <div class="grid-btn" data-idx="8">SE</div>
+        </div>
+        <div id="msg-overlay">System Offline</div>
+    </div>
+
+    <div id="health-track">
+        <div class="health-text">SYSTEM INTEGRITY</div>
+        <div id="health-bar"></div>
+    </div>
+
+    <div class="bar-container">
+        <div id="timer-bar"></div>
+    </div>
+
+    <div id="hud-panel">
+        <div class="stat-row">
+            <div class="stat-box">
+                <span class="stat-label">SCORE</span>
+                <div class="stat-val" id="ui-score">0</div>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">STREAK</span>
+                <div class="stat-val" id="ui-streak">0</div>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">LEVEL</span>
+                <div class="stat-val" id="ui-level">1</div>
+            </div>
+        </div>
+        
+        <div class="audio-row">
+            <div class="audio-label">BGM</div>
+            <input type="range" min="0" max="1" step="0.01" value="0.5" oninput="AudioEngine.setVolume(this.value)">
+            <button class="btn-ghost btn-small" id="track-btn" onclick="AudioEngine.toggleTrack()">TRK 1</button>
+        </div>
+
+        <div class="controls" id="menu-controls">
+            <button class="btn-ghost" onclick="UI.openModal('help')">INTEL</button>
+            <button class="btn-primary" id="btn-deploy" onclick="Game.start()">DEPLOY</button>
+        </div>
+        <div class="controls" id="game-controls" style="display:none;">
+            <button class="btn-danger" onclick="Game.gameOver()">ABORT MISSION</button>
+        </div>
+    </div>
+
+</div>
+
+<div id="modal-help" class="modal">
+    <div class="modal-content">
+        <h2>Tactical Briefing</h2>
+        <p>You are operating the Echo VIII Adaptive Grid.</p>
+        
+        <h3>Survival Mechanics</h3>
+        <ul>
+            <li><strong>Integrity (Health):</strong> Hitting 0% results in Mission Failure.</li>
+            <li><strong>Decay:</strong> Health drops every time the timer loops.</li>
+            <li><strong>Damage:</strong> Wrong guesses cause massive system damage.</li>
+        </ul>
+        
+        <h3>Audio Comms</h3>
+        <p>Background ambience can be adjusted via the BGM slider. Toggle TRK to switch frequencies or Mute.</p>
+    </div>
+    <button class="btn-primary" onclick="UI.closeModals()">CLOSE</button>
+</div>
+
+<div id="modal-lb" class="modal">
+    <div class="modal-content">
+        <h2>Mission Terminated</h2>
+        <div style="text-align:center; padding:10px; background:rgba(255,255,255,0.05); margin-bottom:15px; border-radius:4px;">
+            <span style="color:#94a3b8; font-size:10px;">FINAL SCORE</span><br>
+            <span id="lb-final-score" style="font-size:32px; font-weight:900; color:var(--gold);">0</span>
+        </div>
+        
+        <h3>Top Operatives</h3>
+        <table id="lb-table"></table>
+    </div>
+    <div class="controls">
+        <button class="btn-primary" onclick="UI.closeModals(); Game.start()">REDEPLOY</button>
+        <button class="btn-ghost" onclick="UI.closeModals()">MENU</button>
+    </div>
+</div>
+
+<script>
+/**
+ * SPATIAL SNIPER: ECHO VIII
+ * Dev: Blues
+ * Logic: Adaptive Difficulty + BGM Loader
+ */
+
+const CONST = {
+    TILES: [
+        {x:-5, z:-5}, {x:0, z:-5}, {x:5, z:-5}, 
+        {x:-5, z:0},  {x:0, z:0},  {x:5, z:0},  
+        {x:-5, z:5},  {x:0, z:5},  {x:5, z:5}   
+    ],
+    STORAGE_KEY: 'spatial_sniper_echo_viii_lb',
+    START_DURATION: 3000,
+    MIN_DURATION: 1200,
+    MAX_HEALTH: 100,
+    DAMAGE_MISS: 25,
+    DAMAGE_DECAY: 5,
+    HEAL_HIT: 15,
+    // EXACT FILENAMES AS PROVIDED
+    BGM_FILES: ['spatial amber.mp3', 'spatial amber (1).mp3']
+};
+
+// --- AUDIO ENGINE ---
+const AudioEngine = {
+    ctx: null, 
+    master: null, 
+    bgmGain: null,
+    bgmSource: null,
+    bgmBuffers: [],
+    bgmIndex: 0, // 0 = Track 1, 1 = Track 2, 2 = Muted
+    buffers: {}, 
+    panners: [], 
+
+    async init() {
+        if (this.ctx) return;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AC();
+        
+        // SFX Master Gain
+        this.master = this.ctx.createGain();
+        this.master.gain.value = 0.8;
+        this.master.connect(this.ctx.destination);
+
+        // BGM Gain (Independent)
+        this.bgmGain = this.ctx.createGain();
+        this.bgmGain.gain.value = 0.5; // Default half volume
+        this.bgmGain.connect(this.ctx.destination);
+
+        // Grid Panners
+        CONST.TILES.forEach(pos => {
+            const p = this.ctx.createPanner();
+            p.panningModel = 'HRTF'; p.distanceModel = 'inverse';
+            p.refDistance = 1; p.maxDistance = 10000;
+            p.positionX.value = pos.x; p.positionY.value = 0; p.positionZ.value = pos.z;
+            p.connect(this.master);
+            this.panners.push(p);
+        });
+
+        // Load SFX (Procedural)
+        this.buffers.ping = await this.synth('ping');
+        this.buffers.miss = await this.synth('miss'); 
+        this.buffers.success = await this.synth('success');
+        this.buffers.sweep = await this.synth('sweep');
+        this.buffers.fail = await this.synth('fail'); 
+        this.buffers.targetBase = await this.synth('targetBase'); 
+
+        // Load BGM (External Files)
+        await this.loadMusic();
+    },
+
+    async loadMusic() {
+        try {
+            for (let file of CONST.BGM_FILES) {
+                const response = await fetch(file);
+                const arrayBuffer = await response.arrayBuffer();
+                const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+                this.bgmBuffers.push(audioBuffer);
+            }
+            console.log("Music Loaded");
+            // Enable start button
+            const btn = document.getElementById('init-btn');
+            btn.disabled = false;
+            btn.innerText = "INITIALIZE";
+            btn.style.borderColor = "var(--accent)";
+        } catch (e) {
+            console.error("Failed to load BGM", e);
+            document.getElementById('init-btn').innerText = "AUDIO ERROR (CHECK CONSOLE)";
+        }
+    },
+
+    playTrack(index) {
+        // Stop current
+        if (this.bgmSource) {
+            try { this.bgmSource.stop(); } catch(e){}
+        }
+
+        if (index >= this.bgmBuffers.length) return; // Mute state
+
+        const source = this.ctx.createBufferSource();
+        source.buffer = this.bgmBuffers[index];
+        source.loop = true; // LOOPING ENABLED
+        source.connect(this.bgmGain);
+        source.start(0);
+        this.bgmSource = source;
+    },
+
+    setVolume(val) {
+        if(this.bgmGain) this.bgmGain.gain.value = val;
+    },
+
+    toggleTrack() {
+        this.bgmIndex = (this.bgmIndex + 1) % (this.bgmBuffers.length + 1);
+        
+        const btn = document.getElementById('track-btn');
+        
+        if (this.bgmIndex < this.bgmBuffers.length) {
+            this.playTrack(this.bgmIndex);
+            btn.innerText = `TRK ${this.bgmIndex + 1}`;
+            btn.style.color = "#cbd5e1";
+        } else {
+            // Mute State
+            if (this.bgmSource) try { this.bgmSource.stop(); } catch(e){}
+            btn.innerText = "MUTE";
+            btn.style.color = "var(--danger)";
+        }
+    },
+
+    // --- SFX SYNTHESIS ---
+    async synth(type) {
+        const sr = 44100;
+        let dur = 0.3; 
+        if (type === 'targetBase') dur = 1.0; 
+        if (type === 'sweep') dur = 1.5;
+        if (type === 'fail') dur = 1.0;
+
+        const off = new OfflineAudioContext(1, sr * dur, sr);
+        const osc = off.createOscillator();
+        const g = off.createGain();
+        osc.connect(g);
+        g.connect(off.destination);
+
+        const now = 0;
+
+        if (type === 'sweep') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(100, now);
+            osc.frequency.exponentialRampToValueAtTime(800, dur);
+            g.gain.setValueAtTime(0, now);
+            g.gain.linearRampToValueAtTime(0.5, dur/2);
+            g.gain.linearRampToValueAtTime(0, dur);
+        } else if (type === 'targetBase') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(1200, now);
+            osc.frequency.exponentialRampToValueAtTime(200, 0.5); 
+            g.gain.setValueAtTime(0, 0);
+            for(let i=0; i<5; i++) {
+                let t = i * 0.2;
+                g.gain.linearRampToValueAtTime(1, t + 0.05);
+                g.gain.linearRampToValueAtTime(0, t + 0.15);
+            }
+        } else if (type === 'success') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, now);
+            osc.frequency.exponentialRampToValueAtTime(1760, 0.1);
+            g.gain.setValueAtTime(0, now);
+            g.gain.linearRampToValueAtTime(0.5, 0.02);
+            g.gain.exponentialRampToValueAtTime(0.01, 0.3);
+        } else if (type === 'fail') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(100, now);
+            osc.frequency.linearRampToValueAtTime(50, dur);
+            g.gain.setValueAtTime(0.5, now);
+            g.gain.linearRampToValueAtTime(0, dur);
+        } else {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(100, now);
+            g.gain.setValueAtTime(0.3, now);
+            g.gain.exponentialRampToValueAtTime(0.01, 0.1);
+            dur = 0.1;
+        }
+
+        osc.start();
+        osc.stop(dur);
+        return await off.startRendering();
+    },
+
+    play(name, locIndex) {
+        if (!this.ctx) return;
+        const src = this.ctx.createBufferSource();
+        src.buffer = this.buffers[name];
+        if (locIndex !== null && this.panners[locIndex]) {
+            src.connect(this.panners[locIndex]);
+        } else {
+            src.connect(this.master);
+        }
+        src.start(this.ctx.currentTime);
+    },
+
+    playTarget(locIndex, difficultyLevel) {
+        if (!this.ctx) return;
+        let duration = Math.max(0.2, 0.7 - (difficultyLevel * 0.05));
+        const src = this.ctx.createBufferSource();
+        src.buffer = this.buffers.targetBase;
+        const env = this.ctx.createGain();
+        env.gain.setValueAtTime(1, this.ctx.currentTime);
+        env.gain.setValueAtTime(1, this.ctx.currentTime + duration - 0.05);
+        env.gain.linearRampToValueAtTime(0, this.ctx.currentTime + duration);
+        src.connect(env);
+        if (locIndex !== null && this.panners[locIndex]) {
+            env.connect(this.panners[locIndex]);
+        } else {
+            env.connect(this.master);
+        }
+        src.start(this.ctx.currentTime);
+        src.stop(this.ctx.currentTime + duration + 0.1);
+    },
+
+    playStereoTest() {
+        if (!this.ctx) return;
+        const src = this.ctx.createBufferSource();
+        src.buffer = this.buffers['sweep'];
+        const pan = this.ctx.createStereoPanner();
+        pan.pan.setValueAtTime(-1, this.ctx.currentTime);
+        pan.pan.linearRampToValueAtTime(1, this.ctx.currentTime + 1.5);
+        src.connect(pan);
+        pan.connect(this.master);
+        src.start(this.ctx.currentTime);
+    }
+};
+
+// --- VISUAL ENGINE (Three.js) ---
+const Visuals = {
+    scene: null, camera: null, renderer: null, meshes: [],
+    
+    init() {
+        const wrap = document.getElementById('viewport');
+        this.scene = new THREE.Scene();
+        this.scene.fog = new THREE.FogExp2(0x0b1120, 0.05);
+
+        this.camera = new THREE.PerspectiveCamera(60, wrap.clientWidth / wrap.clientHeight, 0.1, 100);
+        this.camera.position.set(0, 10, 14);
+        this.camera.lookAt(0, 0, 0);
+
+        this.renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('three-canvas'), alpha: true });
+        this.renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+
+        const amb = new THREE.AmbientLight(0xffffff, 0.3);
+        this.scene.add(amb);
+        const dir = new THREE.DirectionalLight(0x10b981, 0.6); 
+        dir.position.set(10, 20, 10);
+        this.scene.add(dir);
+
+        const grid = new THREE.GridHelper(30, 30, 0x1e293b, 0x0b1120);
+        this.scene.add(grid);
+
+        const geo = new THREE.BoxGeometry(2.8, 0.2, 2.8);
+        const mat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.2, metalness: 0.5, emissive: 0x000000 });
+        const pMat = new THREE.MeshStandardMaterial({ color: 0x10b981, emissive: 0x064e3b });
+
+        CONST.TILES.forEach((pos, i) => {
+            const isP = i === 4;
+            const m = new THREE.Mesh(geo, isP ? pMat : mat.clone());
+            m.position.set(pos.x, 0, pos.z);
+            this.scene.add(m);
+            this.meshes.push(m);
+        });
+
+        this.animate();
+        window.addEventListener('resize', () => {
+            this.camera.aspect = wrap.clientWidth / wrap.clientHeight;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+        });
+    },
+
+    animate() {
+        requestAnimationFrame(() => Visuals.animate());
+        const t = Date.now() * 0.0002;
+        Visuals.camera.position.x = Math.sin(t) * 2;
+        Visuals.camera.lookAt(0, 0, 0);
+        Visuals.renderer.render(Visuals.scene, Visuals.camera);
+    },
+
+    flash(idx, colorHex) {
+        if(!this.meshes[idx]) return;
+        const m = this.meshes[idx];
+        const old = m.material.color.getHex();
+        const oldE = m.material.emissive.getHex();
+        
+        m.material.color.setHex(colorHex);
+        m.material.emissive.setHex(colorHex);
+        m.scale.y = 3;
+
+        setTimeout(() => {
+            m.material.color.setHex(old);
+            m.material.emissive.setHex(oldE);
+            m.scale.y = 1;
+        }, 150);
+    },
+
+    shake() {
+        const v = document.getElementById('viewport');
+        v.classList.add('damage');
+        setTimeout(() => v.classList.remove('damage'), 200);
+    }
+};
+
+// --- GAME LOGIC ---
+const Game = {
+    active: false,
+    score: 0,
+    streak: 0,
+    correctCount: 0,
+    level: 1,
+    targetIdx: -1,
+    health: 100,
+    startTime: 0,
+    
+    async start() {
+        this.reset();
+        this.active = true;
+        
+        UI.switchScreen('game');
+        UI.updateStats();
+        UI.updateHealth(this.health);
+        
+        UI.msg("CALIBRATING...");
+        await this.runDemo();
+        
+        setTimeout(() => this.nextRound(), 500);
+    },
+
+    async runDemo() {
+        const seq = [1,5,7,3];
+        for(let s of seq) {
+            Visuals.flash(s, 0xf59e0b);
+            AudioEngine.play('miss', 4); 
+            await new Promise(r => setTimeout(r, 200));
+        }
+    },
+
+    reset() {
+        this.score = 0;
+        this.streak = 0;
+        this.correctCount = 0;
+        this.level = 1;
+        this.targetIdx = -1;
+        this.health = CONST.MAX_HEALTH;
+    },
+
+    // --- DIFFICULTY CALCULATOR ---
+    getDifficultyParams() {
+        const rawDur = CONST.START_DURATION * Math.pow(0.95, this.level - 1);
+        const loopDuration = Math.max(CONST.MIN_DURATION, Math.floor(rawDur));
+        return { loopDuration };
+    },
+
+    nextRound() {
+        if (!this.active) return;
+        this.stopLoop();
+
+        let next;
+        do {
+            next = [0,1,2,3,5,6,7,8][Math.floor(Math.random()*8)];
+        } while(next === this.targetIdx);
+        
+        this.targetIdx = next;
+        this.startTime = 0;
+
+        UI.msg(`LEVEL ${this.level} // SCANNING`);
+        this.runLoop();
+    },
+
+    runLoop() {
+        if (!this.active) return;
+
+        const { loopDuration } = this.getDifficultyParams();
+
+        UI.startTimer(loopDuration, () => {
+            if (!this.active) return;
+            
+            this.takeDamage(CONST.DAMAGE_DECAY);
+            if (!this.active) return; 
+
+            UI.msg(`DECAY DETECTED // SIGNAL RESET`);
+            AudioEngine.playTarget(this.targetIdx, this.level);
+            
+            this.startTime = Date.now();
+            this.runLoop(); 
+        });
+    },
+
+    stopLoop() {
+        UI.stopTimer();
+    },
+
+    takeDamage(amount) {
+        this.health -= amount;
+        if (this.health <= 0) {
+            this.health = 0;
+            this.gameOver();
+        } else {
+            if (amount > 10) Visuals.shake(); 
+            UI.updateHealth(this.health);
+        }
+    },
+
+    heal(amount) {
+        this.health = Math.min(CONST.MAX_HEALTH, this.health + amount);
+        UI.updateHealth(this.health);
+    },
+
+    handleInput(idx) {
+        if (!this.active || this.targetIdx === -1) return;
+        this.stopLoop();
+
+        let timeSec = (this.startTime === 0) ? 0 : (Date.now() - this.startTime) / 1000;
+
+        if (idx === this.targetIdx) {
+            // CORRECT
+            Visuals.flash(idx, 0x10b981); 
+            AudioEngine.play('success', 4);
+            
+            this.heal(CONST.HEAL_HIT);
+            const speedBonus = Math.max(0, 100 - (timeSec * 20));
+            this.streak++;
+            const roundScore = Math.floor((100 + speedBonus) * this.streak * this.level);
+            this.score += roundScore;
+            this.correctCount++;
+            this.level = 1 + Math.floor(this.correctCount / 5);
+
+            UI.spawnPopup(idx, `+${roundScore.toLocaleString()}`);
+            UI.updateStats();
+            setTimeout(() => this.nextRound(), 800);
+
+        } else {
+            // WRONG
+            Visuals.flash(idx, 0xef4444); 
+            AudioEngine.play('miss', 4); 
+            
+            this.streak = 0;
+            UI.updateStats();
+            UI.spawnPopup(idx, `-${CONST.DAMAGE_MISS}%`, "#ef4444");
+            this.takeDamage(CONST.DAMAGE_MISS);
+            
+            if (this.active) {
+                UI.msg("DAMAGE CRITICAL // RETRY");
+                setTimeout(() => this.runLoop(), 500);
+            }
+        }
+    },
+
+    gameOver() {
+        this.active = false;
+        this.stopLoop();
+        AudioEngine.play('fail', 4);
+        UI.updateHealth(0);
+        UI.msg("SYSTEM FAILURE");
+        setTimeout(() => this.checkLeaderboard(), 1500);
+    },
+
+    checkLeaderboard() {
+        if (this.score > 0) {
+            let name = prompt(`SYSTEM FAILURE\nScore: ${this.score}\nEnter Callsign (3 chars):`, "AAA");
+            if (!name) name = "UNK";
+            name = name.substring(0, 3).toUpperCase();
+            
+            const entry = {
+                name: name, score: this.score, level: this.level,
+                streak: this.streak, date: new Date().toISOString().split('T')[0]
+            };
+            Leaderboard.save(entry);
+        }
+        Leaderboard.show();
+    }
+};
+
+// --- LEADERBOARD ---
+const Leaderboard = {
+    get() { return JSON.parse(localStorage.getItem(CONST.STORAGE_KEY) || "[]"); },
+    save(entry) {
+        const data = this.get();
+        data.push(entry);
+        data.sort((a, b) => b.score - a.score);
+        localStorage.setItem(CONST.STORAGE_KEY, JSON.stringify(data.slice(0, 10)));
+    },
+    show() {
+        const data = this.get();
+        const table = document.getElementById('lb-table');
+        table.innerHTML = `<tr><th>RNK</th><th>SCORE</th><th>LVL</th><th>ID</th></tr>`;
+        data.forEach((r, i) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>#${i+1}</td><td>${r.score.toLocaleString()}</td><td>${r.level}</td><td>${r.name}</td>`;
+            table.appendChild(row);
+        });
+        document.getElementById('lb-final-score').innerText = Game.score.toLocaleString();
+        UI.openModal('lb');
+    }
+};
+
+// --- UI CONTROLLER ---
+const UI = {
+    msgEl: document.getElementById('msg-overlay'),
+    timerBar: document.getElementById('timer-bar'),
+    healthBar: document.getElementById('health-bar'),
+    currentTimerId: null,
+
+    async startExperience() {
+        // Start Audio Context & Play Stereo Test
+        await AudioEngine.init();
+        if (AudioEngine.ctx.state === 'suspended') AudioEngine.ctx.resume();
+        
+        AudioEngine.playStereoTest();
+        AudioEngine.playTrack(0); // Start BGM Track 1
+
+        const intro = document.getElementById('intro-screen');
+        intro.classList.add('hidden');
+        setTimeout(() => {
+            intro.style.display = 'none';
+            document.getElementById('game-layout').classList.add('visible');
+            Visuals.init();
+        }, 1000);
+    },
+    
+    switchScreen(state) {
+        document.getElementById('menu-controls').style.display = state === 'menu' ? 'flex' : 'none';
+        document.getElementById('game-controls').style.display = state === 'game' ? 'flex' : 'none';
+        if (state === 'game') this.msg("");
+    },
+
+    msg(txt) { this.msgEl.innerText = txt; },
+
+    updateHealth(pct) {
+        this.healthBar.style.width = pct + '%';
+        if (pct > 50) this.healthBar.style.backgroundColor = 'var(--accent)';
+        else if (pct > 25) this.healthBar.style.backgroundColor = '#facc15'; 
+        else this.healthBar.style.backgroundColor = '#ef4444'; 
+    },
+
+    startTimer(duration, callback) {
+        if(this.currentTimerId) clearTimeout(this.currentTimerId);
+        this.timerBar.style.transition = 'none';
+        this.timerBar.style.transform = 'scaleX(1)';
+        void this.timerBar.offsetWidth;
+        this.timerBar.style.transition = `transform ${duration}ms linear`;
+        this.timerBar.style.transform = 'scaleX(0)';
+        this.currentTimerId = setTimeout(callback, duration);
+    },
+
+    stopTimer() {
+        if(this.currentTimerId) clearTimeout(this.currentTimerId);
+        this.timerBar.style.transition = 'none';
+        this.timerBar.style.transform = 'scaleX(0)';
+    },
+
+    updateStats() {
+        document.getElementById('ui-score').innerText = Game.score.toLocaleString();
+        document.getElementById('ui-streak').innerText = Game.streak;
+        document.getElementById('ui-level').innerText = Game.level;
+    },
+
+    spawnPopup(idx, text, colorOverride) {
+        const btns = document.querySelectorAll('.grid-btn');
+        const rect = btns[idx].getBoundingClientRect();
+        const el = document.createElement('div');
+        el.className = 'score-popup';
+        el.innerText = text;
+        if(colorOverride) el.style.color = colorOverride;
+        el.style.left = (rect.left + rect.width/2) + 'px';
+        el.style.top = (rect.top + rect.height/2) + 'px';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 1000);
+    },
+
+    openModal(id) { document.getElementById(`modal-${id}`).classList.add('active'); },
+    closeModals() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); }
+};
+
+window.onload = () => {
+    // Start loading BGM immediately, but require user click to start audio context
+    AudioEngine.init();
+
+    document.querySelectorAll('.grid-btn').forEach(btn => {
+        btn.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            const idx = parseInt(e.target.dataset.idx);
+            if (!isNaN(idx)) Game.handleInput(idx);
+        });
+    });
+};
+
+</script>
+</body>
+</html>

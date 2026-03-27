@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Spatial Sniper: Project Echo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --accent: #4ade80; /* Green */
+            --gold: #facc15;   /* Bonus */
+            --danger: #ef4444; /* Red */
+            --enemy: #f43f5e;  /* Rose */
+            --text: #e2e8f0;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', monospace;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- LAYOUT --- */
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- 3D CANVAS & OVERLAY --- */
+        #canvas-wrap {
+            position: relative;
+            width: 100%;
+            height: 60%; /* Occupy top 60% */
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+            overflow: hidden;
+        }
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* The Grid UI (Transparent Buttons over 3D) */
+        #grid-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            /* Transform to match 3D perspective approx */
+            transform: perspective(600px) rotateX(20deg) scale(0.8);
+            pointer-events: none; /* Let clicks pass unless button */
+        }
+        .grid-btn {
+            pointer-events: auto;
+            border: 1px solid rgba(255,255,255,0.05);
+            background: transparent;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; color: rgba(255,255,255,0.3);
+            transition: background 0.1s;
+        }
+        .grid-btn:active { background: rgba(255,255,255,0.1); }
+        .grid-btn.center { border: none; cursor: default; }
+
+        /* --- HUD PANEL (Bottom) --- */
+        #hud-panel {
+            width: 100%;
+            height: 40%;
+            background: var(--panel);
+            border-top: 2px solid var(--accent);
+            padding: 15px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .hud-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: bold; }
+        
+        .bar-outer { width: 60%; height: 12px; background: #000; border-radius: 6px; overflow: hidden; position: relative; }
+        .bar-fill { height: 100%; width: 100%; transition: width 0.3s; }
+        #hp-fill { background: var(--accent); }
+        #enemy-fill { background: var(--enemy); }
+        .bar-text { position: absolute; width: 100%; text-align: center; font-size: 9px; line-height: 12px; text-shadow: 0 0 2px #000; }
+
+        #msg-box {
+            text-align: center; font-size: 16px; font-weight: bold; color: var(--accent);
+            height: 20px; letter-spacing: 1px;
+        }
+
+        .controls { display: flex; gap: 10px; justify-content: center; margin-top: auto; }
+        
+        button {
+            background: var(--accent); color: #000; border: none;
+            padding: 12px 24px; font-size: 14px; font-weight: bold;
+            border-radius: 4px; cursor: pointer; text-transform: uppercase;
+        }
+        button:active { transform: translateY(2px); }
+        button.secondary { background: #334155; color: #cbd5e1; }
+
+        /* --- POPUPS & VFX --- */
+        .dmg-popup {
+            position: absolute; font-weight: bold; font-size: 20px; pointer-events: none;
+            animation: floatUp 1s ease-out forwards; z-index: 20;
+            text-shadow: 0 2px 4px #000;
+        }
+        @keyframes floatUp { 0%{transform:translate(-50%,0); opacity:1} 100%{transform:translate(-50%,-50px); opacity:0} }
+        
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake { 10%,90%{transform:translate3d(-2px,0,0)} 20%,80%{transform:translate3d(2px,0,0)} }
+
+        #damage-flash {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, transparent 50%, rgba(239,68,68,0.5) 100%);
+            opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 5;
+        }
+
+        /* --- MODALS --- */
+        .modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.98); z-index: 100;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            padding: 20px; box-sizing: border-box; text-align: center;
+        }
+        .modal.active { display: flex; }
+        .info-scroll { overflow-y: auto; max-height: 80%; text-align: left; width: 100%; padding: 10px;}
+        h2 { color: var(--accent); margin: 0 0 5px 0; text-transform: uppercase; letter-spacing: 2px;}
+        h3 { color: var(--gold); border-bottom: 1px solid #334155; margin-top: 20px; font-size: 14px;}
+        p, li { font-size: 13px; color: #94a3b8; line-height: 1.5; }
+        .highlight { color: var(--accent); font-weight: bold; }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="damage-flash"></div>
+    
+    <div id="canvas-wrap">
+        <canvas id="three-canvas"></canvas>
+        <div id="grid-overlay">
+            <div class="grid-btn" data-idx="0">NW</div>
+            <div class="grid-btn" data-idx="1">N</div>
+            <div class="grid-btn" data-idx="2">NE</div>
+            <div class="grid-btn" data-idx="3">W</div>
+            <div class="grid-btn center"></div> <div class="grid-btn" data-idx="5">E</div>
+            <div class="grid-btn" data-idx="6">SW</div>
+            <div class="grid-btn" data-idx="7">S</div>
+            <div class="grid-btn" data-idx="8">SE</div>
+        </div>
+    </div>
+
+    <div id="hud-panel">
+        <div class="hud-row">
+            <span style="color:var(--accent)">OPERATOR</span>
+            <div class="bar-outer">
+                <div id="hp-fill" class="bar-fill"></div>
+                <div class="bar-text"><span id="hp-val">100</span>%</div>
+            </div>
+        </div>
+        <div class="hud-row">
+            <span style="color:var(--enemy)">TARGET</span>
+            <div class="bar-outer">
+                <div id="enemy-fill" class="bar-fill"></div>
+                <div class="bar-text"><span id="enemy-val">100</span>%</div>
+            </div>
+        </div>
+        <div class="hud-row">
+            <span>SCORE: <span id="score-val" style="color:var(--gold); font-size:16px;">0</span></span>
+            <button id="btn-restart" class="secondary" style="padding: 5px 10px; font-size:10px;">ABORT / RESTART</button>
+        </div>
+        
+        <div id="msg-box">AWAITING DEPLOYMENT</div>
+
+        <div class="controls">
+            <button id="btn-info" class="secondary">INTEL / HELP</button>
+            <button id="btn-deploy">DEPLOY</button>
+        </div>
+    </div>
+
+    <div id="menu-layer" class="modal active">
+        <h2>Spatial Sniper</h2>
+        <p style="margin-bottom: 20px; font-size: 11px;">PROJECT ECHO</p>
+        
+        <div class="info-scroll">
+            <h3>1. The Mission</h3>
+            <p>A hidden sniper will fire 3 shots. You have <strong>2.0 seconds</strong> to locate him using only sound.</p>
+            
+            <h3>2. Scoring Rules</h3>
+            <ul>
+                <li><span class="highlight">1st Hit (< 0.5s):</span> 15 Pts + 12 Dmg (Perfect)</li>
+                <li><span class="highlight">1st Hit (> 0.5s):</span> 10 Pts + 12 Dmg</li>
+                <li><span class="highlight">2nd Hit:</span> 5 Pts + 8 Dmg</li>
+                <li><span class="highlight">Miss:</span> You take damage. He stays put.</li>
+            </ul>
+
+            <h3>3. Spatial Audio (HRTF)</h3>
+            <p>This app uses <span class="highlight">Head-Related Transfer Functions</span>. It filters sound frequencies to trick your brain into hearing depth (Front vs Rear) on stereo headphones.</p>
+            <p style="font-style:italic;">*Headphones are mandatory.*</p>
+        </div>
+
+        <button id="btn-close-menu" style="margin-top:15px; width: 100%;">CLOSE INTEL</button>
+    </div>
+</div>
+
+<script>
+/**
+ * SPATIAL SNIPER: PROJECT ECHO
+ * Core Architecture:
+ * 1. AudioEngine: Generates buffers offline for zero latency.
+ * 2. VisualEngine: Three.js for 3D perspective.
+ * 3. GameLoop: Scoring, State Machine, Telemetry.
+ */
+
+// --- CONFIG ---
+const TILE_COORDS = [
+    {x:-5, z:-5}, {x:0, z:-5}, {x:5, z:-5}, // NW, N, NE
+    {x:-5, z:0},  {x:0, z:0},  {x:5, z:0},  // W, C, E
+    {x:-5, z:5},  {x:0, z:5},  {x:5, z:5}   // SW, S, SE
+];
+
+const GAME = {
+    playerHp: 100,
+    sniperHp: 100,
+    score: 0,
+    isPlaying: false,
+    sniperIndex: 1, // Current location index
+    attempts: 1,    // Attempts at current location
+    kevlar: true,   // Blocks first hit
+    windowMs: 2000,
+    roundStart: 0,
+    timer: null,
+    isWaiting: false // Waiting for player input
+};
+
+// --- AUDIO ENGINE ---
+const Audio = {
+    ctx: null,
+    buffers: {},
+    panners: [], // Pre-created panners for each tile
+    masterGain: null,
+
+    async init() {
+        if (this.ctx) return;
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.value = 0.9;
+        this.masterGain.connect(this.ctx.destination);
+
+        // Pre-render Sounds (Zero Latency)
+        this.buffers.volley = await this.renderBuffer('sawtooth', 1200, 200, 0.5, 'volley'); 
+        this.buffers.shot = await this.renderBuffer('square', 800, 0, 0.1, 'shot');
+        this.buffers.damage = await this.renderBuffer('sine', 80, 10, 0.4, 'drop'); // Deep thud
+        this.buffers.headshot = await this.renderBuffer('sine', 800, 2000, 0.3, 'chirp');
+        this.buffers.armor = await this.renderBuffer('square', 400, 400, 0.15, 'ping');
+
+        // Setup HRTF Grid
+        TILE_COORDS.forEach((pos, i) => {
+            const p = this.ctx.createPanner();
+            p.panningModel = 'HRTF';
+            p.distanceModel = 'inverse';
+            p.refDistance = 1;
+            p.maxDistance = 10000;
+            p.positionX.value = pos.x;
+            p.positionY.value = 0;
+            p.positionZ.value = pos.z;
+            p.connect(this.masterGain);
+            this.panners.push(p);
+        });
+        console.log("Audio Engine Ready");
+    },
+
+    async renderBuffer(type, freqStart, freqEnd, dur, mode) {
+        const sr = 44100;
+        const off = new OfflineAudioContext(1, sr * dur, sr);
+        const osc = off.createOscillator();
+        const g = off.createGain();
+        
+        osc.type = type;
+        osc.connect(g);
+        g.connect(off.destination);
+
+        // Envelope Logic
+        const now = 0;
+        if(mode === 'volley') {
+            // 3 rapid hits
+            osc.frequency.setValueAtTime(freqStart, now);
+            osc.frequency.exponentialRampToValueAtTime(freqEnd, dur*0.9);
+            [0.05, 0.15, 0.25].forEach(t => {
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(1, t + 0.02);
+                g.gain.linearRampToValueAtTime(0, t + 0.08);
+            });
+        } else if (mode === 'drop') {
+            // Bass drop
+            osc.frequency.setValueAtTime(freqStart, now);
+            osc.frequency.exponentialRampToValueAtTime(freqEnd, dur);
+            g.gain.setValueAtTime(1, now);
+            g.gain.exponentialRampToValueAtTime(0.01, dur);
+        } else if (mode === 'ping') {
+            // Metallic
+            osc.frequency.setValueAtTime(freqStart, now);
+            g.gain.setValueAtTime(0, now);
+            g.gain.linearRampToValueAtTime(0.5, 0.01);
+            g.gain.exponentialRampToValueAtTime(0.01, dur);
+        } else {
+            // Std Shot / Chirp
+            osc.frequency.setValueAtTime(freqStart, now);
+            if(freqEnd > 0) osc.frequency.linearRampToValueAtTime(freqEnd, dur);
+            g.gain.setValueAtTime(0, now);
+            g.gain.linearRampToValueAtTime(0.8, 0.01);
+            g.gain.exponentialRampToValueAtTime(0.01, dur);
+        }
+
+        osc.start(0);
+        osc.stop(dur);
+        return await off.startRendering();
+    },
+
+    play(bufferName, locIndex, delay = 0) {
+        if (!this.ctx || !this.buffers[bufferName]) return;
+        const src = this.ctx.createBufferSource();
+        src.buffer = this.buffers[bufferName];
+        
+        // Connect to specific panner for location, or master for 2D sounds
+        if (locIndex !== null && this.panners[locIndex]) {
+            src.connect(this.panners[locIndex]); // Spatial
+        } else {
+            src.connect(this.masterGain); // 2D (UI sounds)
+        }
+        
+        src.start(this.ctx.currentTime + delay);
+    }
+};
+
+// --- VISUAL ENGINE (Three.js) ---
+const View = {
+    scene: null, camera: null, renderer: null,
+    meshes: [],
+    
+    init() {
+        const canvas = document.getElementById('three-canvas');
+        const wrap = document.getElementById('canvas-wrap');
+        
+        this.scene = new THREE.Scene();
+        // Fog for atmosphere
+        this.scene.fog = new THREE.FogExp2(0x0f172a, 0.08);
+
+        this.camera = new THREE.PerspectiveCamera(50, wrap.clientWidth / wrap.clientHeight, 0.1, 100);
+        this.camera.position.set(0, 8, 12); // High angle
+        this.camera.lookAt(0, 0, 0);
+
+        this.renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+        this.renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+
+        // Lights
+        const amb = new THREE.AmbientLight(0xffffff, 0.4);
+        this.scene.add(amb);
+        const dir = new THREE.DirectionalLight(0x4ade80, 0.8); // Radar Green Light
+        dir.position.set(5, 10, 5);
+        this.scene.add(dir);
+
+        // Grid
+        const gridHelper = new THREE.GridHelper(20, 20, 0x1e293b, 0x0f172a);
+        this.scene.add(gridHelper);
+
+        // Tile Meshes
+        const geo = new THREE.BoxGeometry(2.5, 0.2, 2.5);
+        const mat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.2, metalness: 0.8 });
+        const playerMat = new THREE.MeshStandardMaterial({ color: 0x4ade80, emissive: 0x112211 });
+
+        TILE_COORDS.forEach((pos, i) => {
+            const isPlayer = (i === 4);
+            const m = new THREE.Mesh(geo, isPlayer ? playerMat : mat.clone());
+            m.position.set(pos.x, 0, pos.z);
+            this.scene.add(m);
+            this.meshes.push(m);
+        });
+
+        this.animate();
+        window.addEventListener('resize', () => {
+            this.camera.aspect = wrap.clientWidth / wrap.clientHeight;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+        });
+    },
+
+    animate() {
+        requestAnimationFrame(() => View.animate());
+        // Gentle idle sway
+        const t = Date.now() * 0.0005;
+        View.camera.position.x = Math.sin(t) * 1;
+        View.renderer.render(View.scene, View.camera);
+    },
+
+    pulseTile(index, colorHex) {
+        if(!this.meshes[index]) return;
+        const m = this.meshes[index];
+        const orig = m.material.color.getHex();
+        
+        m.material.color.setHex(colorHex);
+        m.scale.set(1.1, 2, 1.1); // Jump up
+        
+        setTimeout(() => {
+            m.material.color.setHex(orig);
+            m.scale.set(1, 1, 1);
+        }, 200);
+    },
+
+    updatePlayerColor(hpPct) {
+        // Shift from Green to Red
+        const hue = (hpPct / 100) * 120; // 0=Red, 120=Green
+        const color = new THREE.Color(`hsl(${hue}, 100%, 50%)`);
+        this.meshes[4].material.color = color;
+        this.meshes[4].material.emissive = new THREE.Color(`hsl(${hue}, 50%, 20%)`);
+    }
+};
+
+// --- GAME LOGIC ---
+const Logic = {
+    start() {
+        Audio.init();
+        if (Audio.ctx.state === 'suspended') Audio.ctx.resume();
+        
+        // Reset Stats
+        GAME.playerHp = 100;
+        GAME.sniperHp = 100;
+        GAME.score = 0;
+        GAME.attempts = 1;
+        GAME.kevlar = true;
+        GAME.isPlaying = true;
+        
+        UI.updateHUD();
+        UI.toggleMenu(false);
+        this.relocateSniper(true);
+        
+        UI.msg("CALIBRATING...", "#fff");
+        this.runCalibration().then(() => {
+            UI.msg("TARGET ACQUIRED", "var(--accent)");
+            setTimeout(() => this.startRound(), 1000);
+        });
+    },
+
+    async runCalibration() {
+        // Quick sound tour: Front, Right, Back, Left
+        const seq = [1, 5, 7, 3];
+        for (let idx of seq) {
+            View.pulseTile(idx, 0xfacc15); // Yellow
+            Audio.play('shot', idx);
+            await new Promise(r => setTimeout(r, 400));
+        }
+    },
+
+    relocateSniper(forceNew = false) {
+        let newIdx;
+        do {
+            newIdx = [0,1,2,3,5,6,7,8][Math.floor(Math.random()*8)];
+        } while(!forceNew && newIdx === GAME.sniperIndex);
+        
+        GAME.sniperIndex = newIdx;
+        GAME.attempts = 1; // Reset attempts for new spot
+    },
+
+    startRound() {
+        if (!GAME.isPlaying) return;
+        
+        // 1. Play Volley (Audio Cue)
+        Audio.play('volley', GAME.sniperIndex, 0.1);
+        
+        // 2. Set State
+        GAME.isWaiting = true;
+        GAME.roundStart = Date.now() + 100; // Offset for audio start
+        UI.msg("INCOMING!", "var(--danger)");
+
+        // 3. Timeout Logic
+        clearTimeout(GAME.timer);
+        GAME.timer = setTimeout(() => {
+            this.resolveShot(null); // Timeout = Miss
+        }, GAME.windowMs + 100);
+    },
+
+    input(tileIndex) {
+        if (!GAME.isPlaying || !GAME.isWaiting) return;
+        this.resolveShot(parseInt(tileIndex));
+    },
+
+    resolveShot(tileIdx) {
+        clearTimeout(GAME.timer);
+        GAME.isWaiting = false;
+        const rt = Date.now() - GAME.roundStart;
+
+        // --- HIT ---
+        if (tileIdx === GAME.sniperIndex) {
+            Audio.play('shot', 4); // Player shot sound
+            
+            // Scoring Math (Linear Decay)
+            let pts = 0;
+            let dmg = 0;
+            let isHeadshot = false;
+
+            if (GAME.attempts === 1) {
+                if (rt < 500) { pts = 15; dmg = 12; isHeadshot = true; Audio.play('headshot', GAME.sniperIndex, 0.1); }
+                else { pts = 10; dmg = 12; }
+            } else if (GAME.attempts === 2) {
+                pts = 5; dmg = 8;
+            } else {
+                pts = 1; dmg = 5;
+            }
+
+            GAME.score += pts;
+            GAME.sniperHp -= dmg;
+            
+            // Visuals
+            View.pulseTile(tileIdx, 0xb91c1c); // Red Blood
+            UI.spawnText(tileIdx, isHeadshot ? "HEADSHOT +15" : `+${pts}`, isHeadshot ? "gold" : "#fff");
+            
+            if (GAME.sniperHp <= 0) {
+                this.gameOver(true);
+            } else {
+                UI.msg("HIT - MOVING", "#fff");
+                this.relocateSniper();
+                setTimeout(() => this.startRound(), 1000);
+            }
+
+        } 
+        // --- MISS ---
+        else {
+            if(tileIdx !== null) Audio.play('shot', 4); // Player shot
+            
+            // Player takes damage
+            let pDmg = Math.ceil((rt / GAME.windowMs) * 10);
+            pDmg = Math.max(1, Math.min(10, pDmg));
+
+            if (GAME.kevlar) {
+                GAME.kevlar = false;
+                Audio.play('armor', 4);
+                UI.msg("ARMOR BLOCKED HIT", "#cbd5e1");
+                // 0 Damage
+            } else {
+                Audio.play('damage', 4);
+                GAME.playerHp -= pDmg;
+                UI.shake();
+                View.updatePlayerColor(GAME.playerHp);
+                UI.msg(tileIdx === null ? "TOO SLOW" : "MISSED TARGET", "var(--danger)");
+            }
+
+            if (GAME.playerHp <= 0) {
+                this.gameOver(false);
+            } else {
+                GAME.attempts++; // Sniper stays put
+                setTimeout(() => this.startRound(), 1000);
+            }
+        }
+        UI.updateHUD();
+    },
+
+    gameOver(win) {
+        GAME.isPlaying = false;
+        UI.msg(win ? "MISSION COMPLETE" : "UNIT LOST", win ? "gold" : "red");
+        setTimeout(() => {
+            alert(`GAME OVER\nFinal Score: ${GAME.score}`);
+            UI.toggleMenu(true);
+        }, 1000);
+    },
+
+    abort() {
+        GAME.isPlaying = false;
+        clearTimeout(GAME.timer);
+        UI.toggleMenu(true);
+    }
+};
+
+// --- UI MANAGER ---
+const UI = {
+    hudHp: document.getElementById('hp-fill'),
+    hudHpVal: document.getElementById('hp-val'),
+    hudEn: document.getElementById('enemy-fill'),
+    hudEnVal: document.getElementById('enemy-val'),
+    hudScore: document.getElementById('score-val'),
+    msg: (txt, col) => { 
+        const el = document.getElementById('msg-box'); 
+        el.innerText = txt; el.style.color = col; 
+    },
+    
+    updateHUD() {
+        this.hudHp.style.width = Math.max(0, GAME.playerHp) + "%";
+        this.hudHpVal.innerText = Math.max(0, GAME.playerHp);
+        
+        this.hudEn.style.width = Math.max(0, GAME.sniperHp) + "%";
+        this.hudEnVal.innerText = Math.max(0, GAME.sniperHp);
+        
+        this.hudScore.innerText = GAME.score;
+    },
+
+    spawnText(idx, text, color) {
+        // Map 3D index to 2D screen coords (Simplified: just use grid button pos)
+        const btns = document.querySelectorAll('.grid-btn');
+        const target = btns[idx];
+        const rect = target.getBoundingClientRect();
+        
+        const div = document.createElement('div');
+        div.className = 'dmg-popup';
+        div.innerText = text;
+        div.style.color = color;
+        div.style.left = (rect.left + rect.width/2) + 'px';
+        div.style.top = (rect.top + rect.height/2) + 'px';
+        document.body.appendChild(div);
+        setTimeout(() => div.remove(), 1000);
+    },
+
+    shake() {
+        document.body.classList.add('shake');
+        document.getElementById('damage-flash').style.opacity = 1;
+        setTimeout(() => {
+            document.body.classList.remove('shake');
+            document.getElementById('damage-flash').style.opacity = 0;
+        }, 400);
+    },
+
+    toggleMenu(show) {
+        const m = document.getElementById('menu-layer');
+        if(show) m.classList.add('active');
+        else m.classList.remove('active');
+    }
+};
+
+// --- INIT ---
+window.onload = () => {
+    View.init();
+    
+    document.getElementById('btn-deploy').onclick = () => Logic.start();
+    document.getElementById('btn-close-menu').onclick = () => UI.toggleMenu(false);
+    document.getElementById('btn-info').onclick = () => UI.toggleMenu(true);
+    document.getElementById('btn-restart').onclick = () => Logic.abort();
+
+    // Grid Input
+    document.querySelectorAll('.grid-btn').forEach(btn => {
+        btn.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            const idx = e.target.getAttribute('data-idx');
+            if(idx !== null) Logic.input(idx);
+        });
+    });
+};
+
+</script>
+</body>
+</html>

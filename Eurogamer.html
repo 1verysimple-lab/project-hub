@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erotic Challenge Game</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; color: #333; text-align: center; padding: 20px; }
+        h1 { color: #d9534f; }
+        #game-board { display: flex; justify-content: space-around; margin: 20px 0; }
+        .player { border: 1px solid #ccc; padding: 20px; width: 40%; background-color: white; border-radius: 10px; }
+        .player h2 { color: #5cb85c; }
+        #challenge-display { margin: 20px; padding: 15px; background-color: #fff; border: 1px solid #ddd; border-radius: 5px; min-height: 100px; }
+        button { background-color: #337ab7; color: white; border: none; padding: 10px 20px; margin: 5px; cursor: pointer; border-radius: 5px; }
+        button:hover { background-color: #286090; }
+        #dice-result { font-size: 24px; margin: 10px; }
+        #status { font-weight: bold; margin: 10px; color: #f0ad4e; }
+        .board { display: grid; grid-template-columns: repeat(10, 1fr); margin: 20px auto; width: 80%; }
+        .square { height: 30px; background-color: #eee; border: 1px solid #ddd; position: relative; }
+        .piece { width: 20px; height: 20px; border-radius: 50%; position: absolute; top: 5px; left: 5px; }
+        .him-piece { background-color: blue; }
+        .her-piece { background-color: pink; }
+    </style>
+</head>
+<body>
+    <h1>Erotic Challenge Game</h1>
+    <p>Welcome to your custom erotic game! It's a simple board game race: Move your piece along a 50-square path by rolling dice and completing challenges. Each successful challenge lets you move forward by the dice roll (1-6 squares). Skip a challenge (redraw once per turn) if you don't like it, but no movement that turn. No repeats. First to the end wins and chooses a real-life reward (e.g., a massage or fantasy fulfillment). Track scores via the board positions.</p>
+    
+    <div id="game-board">
+        <div class="player" id="him-player">
+            <h2>Him (Blue Piece)</h2>
+            <p>Position: <span id="him-position">0</span>/50</p>
+        </div>
+        <div class="player" id="her-player">
+            <h2>Her (Pink Piece)</h2>
+            <p>Position: <span id="her-position">0</span>/50</p>
+        </div>
+    </div>
+    
+    <div class="board" id="board"></div>
+    
+    <div id="controls">
+        <button id="start-turn">Start Your Turn</button>
+        <button id="roll-dice" disabled>Roll Dice</button>
+        <button id="draw-challenge" disabled>Draw Challenge</button>
+        <button id="redraw" disabled>Redraw (Once)</button>
+        <button id="complete" disabled>Complete & Move</button>
+        <button id="skip-turn" disabled>Skip Turn</button>
+    </div>
+    
+    <div id="dice-result"></div>
+    <div id="challenge-display"></div>
+    <div id="status"></div>
+
+    <script>
+        // Challenges lists
+        const himChallenges = [
+            "Use your tongue to trace teasing patterns on her inner thighs for 5 minutes, building anticipation without touching her core.",
+            "Perform a slow striptease to her favorite song, letting her film a short video clip of your reveal with the phone.",
+            "Massage her feet with your hands while whispering dirty secrets, then move up her legs inch by inch.",
+            "Tease her nipples with light flicks from your fingers, alternating speeds based on her reactions.",
+            "Use your breath to hover over her skin from neck to toes, building tension without touch at first.",
+            "Challenge yourself to make her moan using only your lips on her neck and ears for 10 minutes.",
+            "Pose erotically on the bed, flexing your arms and chest, and let her take photos with the phone for a private album.",
+            "Perform oral sex on her while she records audio on the phone describing her sensations in real-time.",
+            "Grind against her body in a rhythmic dance, syncing to your mutual breathing.",
+            "Use your erection to draw invisible shapes on her stomach and breasts, letting her guess what they are.",
+            "Kiss her entire back slowly, from shoulders to lower spine, while timing it mentally.",
+            "Masturbate slowly in front of her, maintaining eye contact and letting her direct the pace.",
+            "Finger her gently while she videos your hand movements for a playback session later.",
+            "Hold a plank position over her, lowering to kiss different body parts each time.",
+            "Whisper erotic stories into her ear while your hands explore her curves non-penetratively.",
+            "Use your phone to set a timer for edging her to near-orgasm three times with your tongue.",
+            "Let her direct you to pose naked in various positions, capturing them on video with the phone.",
+            "Suck on her toes one by one, building intensity as she watches.",
+            "Grind your hips against hers in a slow circle, mimicking penetration without entry.",
+            "Record a short video of yourself pleasuring her breasts with your mouth, for her eyes only.",
+            "Use your fingers to trace her labia lightly, teasing without insertion, for a set duration.",
+            "Perform a body worship ritual, kissing every inch from head to toe systematically.",
+            "Let her film you masturbating while you describe fantasies involving her.",
+            "Pin her wrists gently above her head and tease her with neck bites and licks.",
+            "Flex and pose for her, highlighting your body as she takes quick photos with the phone.",
+            "Challenge to bring her to orgasm using only external stimulation with your hands.",
+            "Rim her gently with your tongue, focusing on slow circles to build her pleasure.",
+            "Tease her clit with the tip of your tongue in varying patterns, letting her control via verbal cues.",
+            "Pose in a dominant stance over her, letting her take selfies with you in the frame using the phone.",
+            "Perform oral sex on her until she squirts, positioning to catch it in your mouth."
+        ];
+
+        const herChallenges = [
+            "Straddle his lap and grind slowly against him, timing the session mentally for buildup.",
+            "Use your breasts to massage his chest in circular motions, whispering teases.",
+            "Perform a sensual lap dance, ending with a full reveal as he watches intently.",
+            "Tease his nipples with your tongue, alternating between licks and gentle bites.",
+            "Guide his hands to your breasts while you moan instructions for how to touch.",
+            "Sit on his face and rock gently, controlling the pace yourself.",
+            "Finger yourself in front of him, letting him watch but not intervene, for a set duration.",
+            "Wrap your legs around his waist and squeeze rhythmically during a make-out session.",
+            "Use your vaginal muscles to pulse around his fingers during manual play.",
+            "Describe what you'll do to him next in a sexy voice, then act it out immediately.",
+            "Blow warm breath on his erection before taking it into your mouth slowly.",
+            "Pose provocatively on the bed, letting him film short clips with the phone.",
+            "Grind your hips against his thigh, building your own arousal vocally.",
+            "Use your mouth to explore his balls gently, with light suction and licks.",
+            "Tease him by rubbing your wetness along his shaft without penetration.",
+            "Let him take photos of you in erotic poses for a private collection.",
+            "Perform oral sex while focusing on deep, slow movements to edge him.",
+            "Straddle and ride his fingers, directing the depth and speed.",
+            "Use your breasts to envelop his erection in a titjob motion.",
+            "Film yourself masturbating while maintaining eye contact with him using the phone.",
+            "Kiss his inner thighs upward, teasing closer to his groin each time.",
+            "Challenge to edge him with your hand, pausing at his signals, for repeated cycles.",
+            "Pose with your back arched, letting him video your curves from different angles.",
+            "Use your tongue to trace lines from his navel down to his base.",
+            "Grind against his face while he lies back, controlling your own pleasure.",
+            "Record a video of you pleasuring him manually, for private viewing later.",
+            "Squeeze your pelvic floor muscles during penetration to vary sensations.",
+            "Tease his tip with your lips and breath, building tension slowly.",
+            "Dance erotically for him, incorporating body rolls as he films a clip.",
+            "Bring yourself to squirt during self-pleasure or his stimulation, aiming for his mouth."
+        ];
+
+        // Game state
+        let currentPlayer = 'him'; // Starts with him
+        let himUsed = new Set();
+        let herUsed = new Set();
+        let himPosition = 0;
+        let herPosition = 0;
+        let diceRoll = 0;
+        let canRedraw = true;
+        let currentChallenge = '';
+
+        // Board setup
+        const board = document.getElementById('board');
+        for (let i = 0; i < 50; i++) {
+            const square = document.createElement('div');
+            square.classList.add('square');
+            square.id = `square-${i}`;
+            board.appendChild(square);
+        }
+        updatePieces();
+
+        // Elements
+        const startTurnBtn = document.getElementById('start-turn');
+        const rollDiceBtn = document.getElementById('roll-dice');
+        const drawChallengeBtn = document.getElementById('draw-challenge');
+        const redrawBtn = document.getElementById('redraw');
+        const completeBtn = document.getElementById('complete');
+        const skipTurnBtn = document.getElementById('skip-turn');
+        const diceResult = document.getElementById('dice-result');
+        const challengeDisplay = document.getElementById('challenge-display');
+        const status = document.getElementById('status');
+
+        // Functions
+        function updatePieces() {
+            document.querySelectorAll('.piece').forEach(el => el.remove());
+            addPiece(himPosition, 'him-piece');
+            addPiece(herPosition, 'her-piece');
+            document.getElementById('him-position').textContent = himPosition;
+            document.getElementById('her-position').textContent = herPosition;
+            if (himPosition >= 50) {
+                status.textContent = 'Him wins! Choose your reward.';
+                disableAllButtons();
+            } else if (herPosition >= 50) {
+                status.textContent = 'Her wins! Choose your reward.';
+                disableAllButtons();
+            }
+        }
+
+        function addPiece(position, className) {
+            if (position >= 50) position = 49; // Stay at end
+            const square = document.getElementById(`square-${position}`);
+            const piece = document.createElement('div');
+            piece.classList.add('piece', className);
+            square.appendChild(piece);
+        }
+
+        function rollDice() {
+            diceRoll = Math.floor(Math.random() * 6) + 1;
+            diceResult.textContent = `Dice: ${diceRoll}`;
+            rollDiceBtn.disabled = true;
+            drawChallengeBtn.disabled = false;
+        }
+
+        function drawChallenge() {
+            const deck = currentPlayer === 'him' ? himChallenges : herChallenges;
+            const used = currentPlayer === 'him' ? himUsed : herUsed;
+            let available = deck.filter((_, idx) => !used.has(idx));
+            if (available.length === 0) {
+                status.textContent = 'No more challenges! Game over.';
+                disableAllButtons();
+                return;
+            }
+            const idx = Math.floor(Math.random() * available.length);
+            currentChallenge = available[idx];
+            const originalIdx = deck.indexOf(currentChallenge);
+            used.add(originalIdx);
+            challengeDisplay.textContent = currentChallenge;
+            drawChallengeBtn.disabled = true;
+            redrawBtn.disabled = !canRedraw;
+            completeBtn.disabled = false;
+            skipTurnBtn.disabled = false;
+        }
+
+        function redraw() {
+            const used = currentPlayer === 'him' ? himUsed : herUsed;
+            used.delete(deck.indexOf(currentChallenge)); // Remove the drawn one
+            canRedraw = false;
+            drawChallenge();
+            redrawBtn.disabled = true;
+        }
+
+        function completeChallenge() {
+            if (currentPlayer === 'him') {
+                himPosition += diceRoll;
+                if (himPosition > 50) himPosition = 50;
+            } else {
+                herPosition += diceRoll;
+                if (herPosition > 50) herPosition = 50;
+            }
+            updatePieces();
+            endTurn();
+        }
+
+        function skipTurn() {
+            const deck = currentPlayer === 'him' ? himChallenges : herChallenges;
+            const used = currentPlayer === 'him' ? himUsed : herUsed;
+            used.delete(deck.indexOf(currentChallenge)); // Allow redraw later
+            endTurn();
+        }
+
+        function endTurn() {
+            currentPlayer = currentPlayer === 'him' ? 'her' : 'him';
+            diceRoll = 0;
+            canRedraw = true;
+            currentChallenge = '';
+            diceResult.textContent = '';
+            challengeDisplay.textContent = '';
+            status.textContent = `Now ${currentPlayer === 'him' ? 'His' : 'Her'} turn!`;
+            resetButtons();
+        }
+
+        function resetButtons() {
+            startTurnBtn.disabled = false;
+            rollDiceBtn.disabled = true;
+            drawChallengeBtn.disabled = true;
+            redrawBtn.disabled = true;
+            completeBtn.disabled = true;
+            skipTurnBtn.disabled = true;
+        }
+
+        function disableAllButtons() {
+            document.querySelectorAll('button').forEach(btn => btn.disabled = true);
+        }
+
+        // Event listeners
+        startTurnBtn.addEventListener('click', () => {
+            status.textContent = `${currentPlayer === 'him' ? 'His' : 'Her'} turn started!`;
+            startTurnBtn.disabled = true;
+            rollDiceBtn.disabled = false;
+        });
+        rollDiceBtn.addEventListener('click', rollDice);
+        drawChallengeBtn.addEventListener('click', drawChallenge);
+        redrawBtn.addEventListener('click', redraw);
+        completeBtn.addEventListener('click', completeChallenge);
+        skipTurnBtn.addEventListener('click', skipTurn);
+
+        // Initial setup
+        resetButtons();
+        status.textContent = 'Click "Start Your Turn" to begin (Him goes first).';
+    </script>
+
+<!-- BLUES APP LOGO -->
+<div style="position: fixed; top: 1rem; right: 1rem; z-index: 9999; font-family: sans-serif;">
+    <a href="https://blueshub.netlify.app/" style="display: block; width: 200px; opacity: 0.8; transition: opacity 0.2s; background-color: rgba(15, 23, 42, 0.9); backdrop-filter: blur(4px); border-radius: 0.5rem; border: 1px solid #334155; padding: 0.5rem; text-decoration: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+        <div style="font-size: 0.75rem; text-align: center; color: #94a3b8; margin-bottom: 0.25rem;">Back to Hub</div>
+        <img src="logoani.svg" alt="App by Blues" style="width: 100%; height: auto; display: block;">
+    </a>
+</div>
+<!-- END BLUES APP LOGO -->
+
+</body>
+</html>
+
+<p>To play: Save this as an HTML file (e.g., erotic_game.html) and open it in your browser. It's fully self-contained—no server needed. Enjoy responsibly!</p>

@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clockwork Grid: 3D</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #050505; font-family: 'Courier New', Courier, monospace; }
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #dcdcdc;
+            pointer-events: none;
+            user-select: none;
+            z-index: 10;
+            background: rgba(10, 10, 10, 0.7);
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 3px solid #ffaa00; /* Orange for clockwork warning */
+            min-width: 220px;
+        }
+        h1 { margin: 0 0 10px 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 2px; color: #ffaa00; }
+        .stat { font-size: 0.9rem; margin-bottom: 5px; color: #aaa; }
+        .highlight { color: #fff; font-weight: bold; }
+        
+        #timer-bar {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            margin-top: 10px;
+            position: relative;
+        }
+        #timer-fill {
+            height: 100%;
+            background: #ffaa00;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 10, 10, 0.95);
+            color: white;
+            padding: 40px;
+            border-radius: 2px;
+            text-align: center;
+            display: none;
+            z-index: 20;
+            border: 1px solid #333;
+            box-shadow: 0 0 40px rgba(255, 170, 0, 0.2);
+            min-width: 320px;
+        }
+        #message h2 { margin-top: 0; font-size: 2rem; color: #ffaa00; }
+        button {
+            background: #ccc;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 25px;
+            font-weight: bold;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+        button:hover { background: #ffaa00; color: white; }
+        .controls-hint { font-size: 0.7rem; color: #555; margin-top: 15px; border-top: 1px solid #333; padding-top: 10px; }
+        .warning { color: #ff5555; font-size: 0.8rem; margin-top: 5px; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="ui-layer">
+        <h1>Clockwork Grid</h1>
+        <div class="stat">Moves: <span id="move-count" class="highlight">0</span></div>
+        <div class="stat" id="status-text">Grid rotates in...</div>
+        <div id="timer-bar"><div id="timer-fill"></div></div>
+        <div class="warning">Corners are safe zones.</div>
+        <div class="controls-hint">Arrows: Select | Space: Jump | R-Click: Orbit</div>
+    </div>
+
+    <div id="message">
+        <h2 id="msg-title">Grid Failure</h2>
+        <p id="msg-body">Player fell into the void.</p>
+        <button onclick="resetGame()">Respawn</button>
+    </div>
+
+    <script>
+        // --- Game Config ---
+        const BOARD_SIZE = 9;
+        const TILE_SIZE = 10;
+        const BOARD_OFFSET = (BOARD_SIZE * TILE_SIZE) / 2 - (TILE_SIZE / 2);
+        const ROTATION_INTERVAL = 3000; // 3 Seconds
+        
+        let moveCount = 0;
+        let playerPos = { x: 0, z: 0 };
+        // Cursor State
+        let cursorPos = { x: 0, z: 0 };
+        
+        const exitPos = { x: 8, z: 8 };
+        const startPos = { x: 0, z: 0 };
+        
+        // The Grid Data (Boolean: true = HOLE, false = SAFE)
+        let holeGrid = []; 
+        
+        let isMoving = false;
+        let isFalling = false;
+        let validMoves = [];
+        
+        let lastRotationTime = 0;
+        
+        // --- Three.js Globals ---
+        let scene, camera, renderer;
+        let raycaster, mouse;
+        let tiles = []; 
+        let playerGroup; 
+        let cursorMesh; // The selection box
+        let playerSpotLight;
+        let leftLeg, rightLeg, leftArm, rightArm;
+
+        // --- Initialization ---
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x050505);
+            scene.fog = new THREE.Fog(0x050505, 100, 400);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 140, 160);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); 
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(30, 100, 20);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            dirLight.shadow.camera.left = -60;
+            dirLight.shadow.camera.right = 60;
+            dirLight.shadow.camera.top = 60;
+            dirLight.shadow.camera.bottom = -60;
+            scene.add(dirLight);
+
+            // Spotlight
+            playerSpotLight = new THREE.SpotLight(0xffffff, 2.5);
+            playerSpotLight.angle = 1.0;
+            playerSpotLight.penumbra = 0.5;
+            playerSpotLight.decay = 1;
+            playerSpotLight.distance = 250;
+            playerSpotLight.castShadow = true;
+            playerSpotLight.shadow.mapSize.width = 1024;
+            playerSpotLight.shadow.mapSize.height = 1024;
+            playerSpotLight.position.set(0, 60, 0);
+            scene.add(playerSpotLight);
+            scene.add(playerSpotLight.target);
+
+            // Danger Glow
+            const pointLight = new THREE.PointLight(0xffaa00, 0.3, 200);
+            pointLight.position.set(0, -30, 0);
+            scene.add(pointLight);
+
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            createBoard();
+            createStickman();
+            createCursor(); // Add Cursor
+            resetGame();
+
+            window.addEventListener('resize', onWindowResize, false);
+            window.addEventListener('pointerdown', onPointerDown, false);
+            document.addEventListener('keydown', onKeyDown, false); // Keyboard input
+            document.addEventListener('contextmenu', e => e.preventDefault());
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', onMouseUp);
+            window.addEventListener('mousedown', (e) => {
+                if(e.button === 2) {
+                    isDragging = true;
+                    prevMouse = { x: e.offsetX, y: e.offsetY };
+                }
+            });
+
+            animate();
+        }
+
+        // --- Grid Logic ---
+
+        function generateRandomGrid() {
+            holeGrid = [];
+            for (let z = 0; z < BOARD_SIZE; z++) {
+                let row = [];
+                for (let x = 0; x < BOARD_SIZE; x++) {
+                    // 25% chance of hole
+                    row.push(Math.random() < 0.25);
+                }
+                holeGrid.push(row);
+            }
+        }
+
+        function rotateGridData() {
+            // Create new grid for 90 deg rotation
+            const newGrid = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(false));
+            
+            for (let z = 0; z < BOARD_SIZE; z++) {
+                for (let x = 0; x < BOARD_SIZE; x++) {
+                    // Rotate clockwise
+                    newGrid[x][BOARD_SIZE - 1 - z] = holeGrid[z][x];
+                }
+            }
+            holeGrid = newGrid;
+        }
+
+        function isSafeTile(x, z) {
+            // Corners are ALWAYS safe
+            if ((x === 0 && z === 0) || 
+                (x === 8 && z === 0) || 
+                (x === 0 && z === 8) || 
+                (x === 8 && z === 8)) {
+                return true;
+            }
+            return !holeGrid[z][x];
+        }
+
+        function createBoard() {
+            const geometry = new THREE.BoxGeometry(TILE_SIZE - 1, 2, TILE_SIZE - 1);
+            
+            for (let z = 0; z < BOARD_SIZE; z++) {
+                for (let x = 0; x < BOARD_SIZE; x++) {
+                    const isWhite = (x + z) % 2 === 0;
+                    const color = isWhite ? 0xdddddd : 0x333333;
+                    const material = new THREE.MeshStandardMaterial({ 
+                        color: color, 
+                        roughness: 0.6,
+                        transparent: true, // Enable transparency for fading
+                        opacity: 1.0
+                    });
+                    const tile = new THREE.Mesh(geometry, material);
+                    tile.position.set(x * TILE_SIZE - BOARD_OFFSET, -1, z * TILE_SIZE - BOARD_OFFSET);
+                    tile.receiveShadow = true;
+                    tile.userData = { gridX: x, gridZ: z, originalColor: color, isVisible: true };
+                    scene.add(tile);
+                    tiles.push(tile);
+                }
+            }
+        }
+
+        function updateBoardVisuals() {
+            tiles.forEach(tile => {
+                const x = tile.userData.gridX;
+                const z = tile.userData.gridZ;
+                
+                const safe = isSafeTile(x, z);
+                
+                // Reset opacity to full every time board updates (rotation complete)
+                tile.material.opacity = 1.0;
+                
+                if (!safe) {
+                    tile.visible = false;
+                    tile.userData.isVisible = false;
+                } else {
+                    tile.visible = true;
+                    tile.userData.isVisible = true;
+                    
+                    // Colors
+                    if (x === exitPos.x && z === exitPos.z) {
+                        tile.material.color.setHex(0x4ade80); 
+                        tile.material.emissive.setHex(0x004400);
+                    } else if (isCorner(x,z)) {
+                        tile.material.color.setHex(tile.userData.originalColor);
+                        tile.material.emissive.setHex(0x000033); // Safe zone hint
+                    } else {
+                        tile.material.color.setHex(tile.userData.originalColor);
+                        tile.material.emissive.setHex(0x000000);
+                    }
+                }
+            });
+        }
+
+        function updateTileFading(progress) {
+            tiles.forEach(tile => {
+                // Skip if invisible or already safely processed as safe
+                if (!tile.visible) return;
+                
+                const x = tile.userData.gridX;
+                const z = tile.userData.gridZ;
+
+                // Corners never fade
+                if (isCorner(x, z)) return;
+
+                const srcZ = BOARD_SIZE - 1 - x;
+                const srcX = z;
+                
+                const holeIncoming = holeGrid[srcZ][srcX];
+
+                if (holeIncoming) {
+                    const fade = Math.max(0, 1 - Math.pow(progress, 1.5));
+                    tile.material.opacity = fade;
+                    tile.material.emissive.setHex(0x550000);
+                } else {
+                    tile.material.opacity = 1.0;
+                    tile.material.emissive.setHex(0x000000);
+                }
+            });
+        }
+
+        function isCorner(x, z) {
+            return (x === 0 && z === 0) || (x === 8 && z === 0) || (x === 0 && z === 8) || (x === 8 && z === 8);
+        }
+
+        function calculateValidMoves() {
+            validMoves = [];
+            const directions = [{dx:1, dz:0}, {dx:-1, dz:0}, {dx:0, dz:1}, {dx:0, dz:-1}];
+            const steps = [1, 2];
+
+            directions.forEach(dir => {
+                steps.forEach(dist => {
+                    const tx = playerPos.x + (dir.dx * dist);
+                    const tz = playerPos.z + (dir.dz * dist);
+
+                    if (tx < 0 || tx >= BOARD_SIZE || tz < 0 || tz >= BOARD_SIZE) return;
+
+                    // Valid move logic
+                    if (!isSafeTile(tx, tz)) return;
+
+                    if (dist === 2) {
+                        const midX = playerPos.x + dir.dx;
+                        const midZ = playerPos.z + dir.dz;
+                        if (!isSafeTile(midX, midZ)) return;
+                    }
+
+                    validMoves.push({x: tx, z: tz});
+                    
+                    const targetTile = tiles.find(t => t.userData.gridX === tx && t.userData.gridZ === tz);
+                    if (targetTile) {
+                        targetTile.material.color.setHex(0xffaa00);
+                        targetTile.material.emissive.setHex(0x331100);
+                    }
+                });
+            });
+        }
+
+        // --- Stickman ---
+        function createStickman() {
+            playerGroup = new THREE.Group();
+            const mat = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
+
+            const lantern = new THREE.PointLight(0xffffee, 1.2, 50);
+            lantern.position.set(0, 10, 0);
+            playerGroup.add(lantern);
+
+            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 5, 8), mat);
+            torso.position.y = 6; torso.castShadow = true;
+            playerGroup.add(torso);
+
+            const head = new THREE.Mesh(new THREE.SphereGeometry(1.2, 16, 16), mat);
+            head.position.y = 9.2; head.castShadow = true;
+            playerGroup.add(head);
+
+            function makeLimb() {
+                const g = new THREE.Group();
+                const l = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 3.5, 8), mat);
+                l.position.y = -1.75; l.castShadow = true;
+                g.add(l);
+                return g;
+            }
+
+            leftLeg = makeLimb(); leftLeg.position.set(-0.8, 3.5, 0); playerGroup.add(leftLeg);
+            rightLeg = makeLimb(); rightLeg.position.set(0.8, 3.5, 0); playerGroup.add(rightLeg);
+            leftArm = makeLimb(); leftArm.position.set(-1.3, 8, 0); playerGroup.add(leftArm);
+            rightArm = makeLimb(); rightArm.position.set(1.3, 8, 0); playerGroup.add(rightArm);
+
+            scene.add(playerGroup);
+        }
+
+        // --- Cursor ---
+        function createCursor() {
+            const geometry = new THREE.BoxGeometry(TILE_SIZE, 3, TILE_SIZE);
+            // Create wireframe geometry
+            const edges = new THREE.EdgesGeometry(geometry);
+            cursorMesh = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x00ffff })); // Cyan
+            cursorMesh.position.set(0, 0, 0);
+            cursorMesh.visible = false;
+            scene.add(cursorMesh);
+        }
+
+        function updateCursorVisuals() {
+            cursorMesh.visible = true;
+            // Position
+            cursorMesh.position.set(
+                cursorPos.x * TILE_SIZE - BOARD_OFFSET, 
+                0, 
+                cursorPos.z * TILE_SIZE - BOARD_OFFSET
+            );
+            
+            // Check if valid move
+            const isValid = validMoves.some(m => m.x === cursorPos.x && m.z === cursorPos.z);
+            if (isValid) {
+                cursorMesh.material.color.setHex(0x00ff00); // Green if valid
+            } else {
+                cursorMesh.material.color.setHex(0xaa0000); // Red if invalid
+            }
+        }
+
+        // --- Game State ---
+
+        function resetGame() {
+            document.getElementById('message').style.display = 'none';
+            moveCount = 0;
+            document.getElementById('move-count').innerText = "0";
+            
+            playerPos = { ...startPos };
+            cursorPos = { ...startPos }; // Reset cursor
+            playerGroup.visible = true;
+            
+            generateRandomGrid();
+            updateBoardVisuals();
+            calculateValidMoves();
+            snapPlayerToGrid();
+            updateCursorVisuals();
+            
+            isMoving = false;
+            isFalling = false;
+            lastRotationTime = performance.now();
+        }
+
+        function snapPlayerToGrid() {
+            playerGroup.position.set(
+                playerPos.x * TILE_SIZE - BOARD_OFFSET,
+                0,
+                playerPos.z * TILE_SIZE - BOARD_OFFSET
+            );
+            playerGroup.rotation.set(0, Math.PI, 0);
+            resetLimbs();
+        }
+        
+        function resetLimbs() {
+            leftLeg.rotation.x = 0; rightLeg.rotation.x = 0;
+            leftArm.rotation.x = 0; rightArm.rotation.x = 0;
+        }
+
+        // --- Interaction ---
+
+        function onKeyDown(event) {
+            if (isMoving || isFalling) return;
+            
+            switch(event.code) {
+                case 'ArrowUp':
+                    if (cursorPos.z > 0) cursorPos.z--;
+                    updateCursorVisuals();
+                    event.preventDefault();
+                    break;
+                case 'ArrowDown':
+                    if (cursorPos.z < BOARD_SIZE - 1) cursorPos.z++;
+                    updateCursorVisuals();
+                    event.preventDefault();
+                    break;
+                case 'ArrowLeft':
+                    if (cursorPos.x > 0) cursorPos.x--;
+                    updateCursorVisuals();
+                    event.preventDefault();
+                    break;
+                case 'ArrowRight':
+                    if (cursorPos.x < BOARD_SIZE - 1) cursorPos.x++;
+                    updateCursorVisuals();
+                    event.preventDefault();
+                    break;
+                case 'Space':
+                    // Try move
+                    const isValid = validMoves.some(m => m.x === cursorPos.x && m.z === cursorPos.z);
+                    if (isValid) {
+                        startMove(cursorPos.x, cursorPos.z);
+                    }
+                    event.preventDefault();
+                    break;
+            }
+        }
+
+        function onPointerDown(event) {
+            if (isMoving || isFalling) return;
+            if (event.button !== 0) return;
+
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(tiles);
+
+            if (intersects.length > 0) {
+                const obj = intersects[0].object;
+                if (!obj.visible) return; // Can't click holes
+
+                const tData = obj.userData;
+                // Move cursor to clicked spot
+                cursorPos = { x: tData.gridX, z: tData.gridZ };
+                updateCursorVisuals();
+
+                const isValid = validMoves.some(m => m.x === tData.gridX && m.z === tData.gridZ);
+                if (isValid) startMove(tData.gridX, tData.gridZ);
+            }
+        }
+
+        // --- Animation & Timer Logic ---
+        
+        let targetPos = new THREE.Vector3();
+        let startVec = new THREE.Vector3();
+        let animStartTime = 0;
+        const moveSpeed = 0.4; 
+
+        function startMove(tx, tz) {
+            isMoving = true;
+            moveCount++;
+            document.getElementById('move-count').innerText = moveCount;
+            
+            startVec.copy(playerGroup.position);
+            playerPos = { x: tx, z: tz };
+            targetPos.set(tx * TILE_SIZE - BOARD_OFFSET, 0, tz * TILE_SIZE - BOARD_OFFSET);
+            playerGroup.lookAt(targetPos);
+            animStartTime = performance.now() / 1000;
+        }
+
+        function checkWinCondition() {
+            if (playerPos.x === exitPos.x && playerPos.z === exitPos.z) {
+                const msg = document.getElementById('message');
+                document.getElementById('msg-title').innerText = "Escaped!";
+                document.getElementById('msg-title').style.color = "#4ade80";
+                document.getElementById('msg-body').innerText = Survived in ${moveCount} moves.;
+                msg.style.display = 'block';
+                return true;
+            }
+            return false;
+        }
+
+        function triggerFall() {
+            if(isFalling) return;
+            isMoving = false;
+            isFalling = true;
+            animStartTime = performance.now() / 1000;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const now = performance.now();
+            
+            // --- Timer / Rotation Logic ---
+            if (!isFalling && document.getElementById('message').style.display === 'none') {
+                const delta = now - lastRotationTime;
+                
+                // Update UI Bar
+                const pct = Math.min(100, (delta / ROTATION_INTERVAL) * 100);
+                document.getElementById('timer-fill').style.width = pct + "%";
+                
+                // Handle Fading Visuals
+                updateTileFading(delta / ROTATION_INTERVAL);
+
+                if (delta > ROTATION_INTERVAL) {
+                    lastRotationTime = now;
+                    rotateGridData();
+                    updateBoardVisuals();
+                    calculateValidMoves(); // Re-calc moves after terrain shift
+                    
+                    // Check if player died due to rotation
+                    if (!isSafeTile(playerPos.x, playerPos.z)) {
+                        triggerFall();
+                    } else {
+                        // Re-validate cursor visuals if board changed under it
+                        updateCursorVisuals();
+                    }
+                }
+            }
+
+            // --- Move Animation ---
+            if (isMoving) {
+                const t = now / 1000;
+                const elapsed = t - animStartTime;
+                let prog = elapsed / moveSpeed;
+
+                if (prog >= 1) {
+                    prog = 1; 
+                    playerGroup.position.copy(targetPos);
+                    isMoving = false;
+                    resetLimbs();
+                    
+                    // Sync cursor to new player pos
+                    cursorPos = { ...playerPos };
+                    updateCursorVisuals();
+
+                    // Check Logic AFTER Move
+                    if(checkWinCondition()) return;
+                    
+                    // Check if we walked onto a tile that disappeared mid-walk (unlikely with this timing, but good practice)
+                    if (!isSafeTile(playerPos.x, playerPos.z)) {
+                        triggerFall();
+                    } else {
+                        calculateValidMoves();
+                        updateCursorVisuals(); // Update coloring based on new valid moves
+                    }
+                } else {
+                    playerGroup.position.lerpVectors(startVec, targetPos, prog);
+                    playerGroup.position.y = Math.abs(Math.sin(prog * Math.PI * 2)) * 1.5;
+
+                    const f = 20;
+                    leftLeg.rotation.x = Math.sin(elapsed * f);
+                    rightLeg.rotation.x = -Math.sin(elapsed * f);
+                    leftArm.rotation.x = -Math.sin(elapsed * f);
+                    rightArm.rotation.x = Math.sin(elapsed * f);
+                }
+            }
+
+            // --- Fall Animation ---
+            if (isFalling) {
+                const t = now / 1000;
+                const elapsed = t - animStartTime;
+                playerGroup.position.y -= elapsed * 1.5; 
+                playerGroup.rotation.x += 0.1;
+                
+                if (playerGroup.position.y < -50) {
+                    isFalling = false;
+                    playerGroup.visible = false;
+                    const msg = document.getElementById('message');
+                    document.getElementById('msg-title').innerText = "Time's Up";
+                    document.getElementById('msg-title').style.color = "#ffaa00";
+                    document.getElementById('msg-body').innerText = "The floor rotated beneath you.";
+                    msg.style.display = 'block';
+                }
+            }
+
+            // Spotlight Tracking
+            if (playerSpotLight && playerGroup) {
+                playerSpotLight.position.set(playerGroup.position.x, playerGroup.position.y + 60, playerGroup.position.z);
+                playerSpotLight.target.position.copy(playerGroup.position);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // --- Camera Orbit ---
+        let isDragging = false;
+        let prevMouse = { x: 0, y: 0 };
+        let camAngle = 0;
+        const camDist = 160;
+
+        function onMouseMove(e) {
+            if(isDragging) {
+                camAngle -= (e.offsetX - prevMouse.x) * 0.005;
+                camera.position.x = Math.sin(camAngle) * camDist;
+                camera.position.z = Math.cos(camAngle) * camDist;
+                camera.lookAt(0, 0, 0);
+                prevMouse = { x: e.offsetX, y: e.offsetY };
+            }
+        }
+        function onMouseUp() { isDragging = false; }
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        init();
+    </script>
+
+<!-- BLUES APP LOGO -->
+<div style="position: fixed; top: 1rem; right: 1rem; z-index: 9999; font-family: sans-serif;">
+    <a href="https://blueshub.netlify.app/" style="display: block; width: 200px; opacity: 0.8; transition: opacity 0.2s; background-color: rgba(15, 23, 42, 0.9); backdrop-filter: blur(4px); border-radius: 0.5rem; border: 1px solid #334155; padding: 0.5rem; text-decoration: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+        <div style="font-size: 0.75rem; text-align: center; color: #94a3b8; margin-bottom: 0.25rem;">Back to Hub</div>
+        <img src="logoani.svg" alt="App by Blues" style="width: 100%; height: auto; display: block;">
+    </a>
+</div>
+<!-- END BLUES APP LOGO -->
+
+</body>
+</html>

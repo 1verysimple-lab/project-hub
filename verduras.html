@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>ListaVert by blues – v1.0</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg-gradient-top: #0f172a;
+      --bg-gradient-bottom: #1e293b;
+      --card-bg: #0b1120;
+      --card-bg-soft: #020617;
+      --accent: #22c55e;
+      --accent-danger: #ef4444;
+      --text-main: #e5e7eb;
+      --text-muted: #9ca3af;
+      --radius-lg: 18px;
+      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.6);
+      --button-radius: 999px;
+      --gap: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1f2937 0, #020617 50%, #000 100%);
+      color: var(--text-main);
+    }
+
+    .app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 12px 24px;
+    }
+
+    .app-inner {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card {
+      background: linear-gradient(135deg, var(--card-bg-soft), var(--card-bg));
+      border-radius: var(--radius-lg);
+      padding: 14px 14px 16px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    .card-accent {
+      border: 1px solid rgba(34, 197, 94, 0.28);
+    }
+
+    .top-shell {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .app-title {
+      font-size: 1.35rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .app-title span.logo-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 12px rgba(34, 197, 94, 0.9);
+    }
+
+    .shop-info {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-top: 6px;
+    }
+
+    .shop-info strong {
+      color: #e5e7eb;
+      font-weight: 600;
+    }
+
+    .badge {
+      border-radius: var(--button-radius);
+      padding: 4px 9px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge span.dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .hint {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .progress {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .item-name {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin: 10px 0 4px;
+    }
+
+    .sub-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    /* Counter rows */
+    .counter-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin: 8px 0 4px;
+    }
+
+    .counter-row-half {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin: 4px 0 8px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .counter-btn {
+      padding: 10px 18px;
+      border-radius: 18px;
+      font-size: 1.4rem;
+      min-width: 54px;
+      min-height: 44px;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.05s ease, box-shadow 0.05s ease, background 0.15s ease;
+    }
+
+    .counter-btn-small {
+      padding: 6px 14px;
+      border-radius: 16px;
+      font-size: 0.95rem;
+      min-width: 52px;
+      min-height: 34px;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.05s ease, box-shadow 0.05s ease, background 0.15s ease;
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--text-main);
+      border: 1px solid rgba(148, 163, 184, 0.5);
+    }
+
+    .counter-btn:active,
+    .counter-btn-small:active {
+      transform: scale(0.96);
+      box-shadow: 0 0 0 rgba(0,0,0,0);
+    }
+
+    .counter-minus {
+      background: radial-gradient(circle at top, #fecaca 0, #ef4444 40%, #7f1d1d 100%);
+      color: #fee2e2;
+      box-shadow: 0 12px 22px rgba(239, 68, 68, 0.45);
+    }
+
+    .counter-plus {
+      background: radial-gradient(circle at top, #bbf7d0 0, #22c55e 40%, #14532d 100%);
+      color: #ecfdf5;
+      box-shadow: 0 12px 22px rgba(34, 197, 94, 0.45);
+    }
+
+    .counter-display {
+      font-size: 2rem;
+      font-weight: 600;
+      min-width: 68px;
+      text-align: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    /* Select */
+    label {
+      display: block;
+      margin-top: 8px;
+      font-size: 0.86rem;
+      color: var(--text-muted);
+    }
+
+    select {
+      width: 100%;
+      margin-top: 4px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text-main);
+      font-size: 0.9rem;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, #9ca3af 50%), linear-gradient(135deg, #9ca3af 50%, transparent 50%);
+      background-position: calc(100% - 18px) calc(50% - 3px), calc(100% - 12px) calc(50% - 3px);
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+    }
+
+    /* Buttons row */
+    .buttons {
+      display: flex;
+      gap: var(--gap);
+      margin-top: 14px;
+    }
+
+    button {
+      font-family: inherit;
+    }
+
+    .btn-chip,
+    .btn-main,
+    .btn-secondary,
+    .btn-outline {
+      border-radius: var(--button-radius);
+      padding: 10px 12px;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 42px;
+      transition: background 0.15s ease, transform 0.05s ease, box-shadow 0.1s ease;
+      white-space: nowrap;
+    }
+
+    .btn-main {
+      flex: 2;
+      background: linear-gradient(135deg, #4ade80, #16a34a);
+      color: #022c22;
+      font-weight: 600;
+      box-shadow: 0 10px 22px rgba(34, 197, 94, 0.45);
+    }
+
+    .btn-secondary {
+      flex: 1;
+      background: rgba(148, 163, 184, 0.14);
+      color: var(--text-main);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+    }
+
+    .btn-outline {
+      flex: 1;
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px dashed rgba(148, 163, 184, 0.5);
+    }
+
+    .btn-copy {
+      width: 100%;
+      margin-top: 10px;
+      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+      color: #0b1120;
+      font-weight: 600;
+      box-shadow: 0 10px 22px rgba(56, 189, 248, 0.45);
+    }
+
+    .btn-reset {
+      width: 100%;
+      margin-top: 8px;
+      background: rgba(30, 64, 175, 0.9);
+      color: #e5e7eb;
+      border: 1px solid rgba(129, 140, 248, 0.7);
+    }
+
+    .btn-options {
+      background: rgba(248, 250, 252, 0.02);
+      color: var(--text-muted);
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      padding: 6px 10px;
+      font-size: 0.78rem;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-chip {
+      font-size: 0.78rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--text-muted);
+    }
+
+    .btn-main:active,
+    .btn-secondary:active,
+    .btn-outline:active,
+    .btn-copy:active,
+    .btn-reset:active,
+    .btn-options:active,
+    .btn-chip:active {
+      transform: translateY(1px) scale(0.99);
+      box-shadow: none;
+    }
+
+    /* Summary */
+    #summary-section {
+      margin-top: 12px;
+      display: none;
+    }
+
+    #summary-text {
+      width: 100%;
+      height: 200px;
+      margin-top: 8px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      font-size: 0.9rem;
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--text-main);
+      white-space: pre-wrap;
+      resize: vertical;
+    }
+
+    #summary-list {
+      max-height: 240px;
+      overflow-y: auto;
+      margin-top: 8px;
+      padding-left: 18px;
+      font-size: 0.88rem;
+    }
+
+    #summary-list li {
+      padding: 1px 0;
+    }
+
+    /* Live list card */
+    #live-list {
+      font-size: 0.9rem;
+      max-height: 260px;
+      overflow-y: auto;
+      margin-top: 6px;
+      padding-left: 18px;
+    }
+
+    #live-list li {
+      padding: 1px 0;
+    }
+
+    .live-subtitle {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    /* Config card */
+    #config-list {
+      max-height: 240px;
+      overflow-y: auto;
+      margin-top: 8px;
+      border-top: 1px solid rgba(31, 41, 55, 0.9);
+      padding-top: 6px;
+    }
+
+    .config-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+      padding: 4px 0;
+    }
+
+    .config-item span {
+      flex: 1;
+      font-size: 0.88rem;
+    }
+
+    .btn-toggle {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text-muted);
+    }
+
+    .btn-toggle.active {
+      background: rgba(34, 197, 94, 0.12);
+      border-color: var(--accent);
+      color: #bbf7d0;
+    }
+
+    .config-row {
+      margin-top: 10px;
+    }
+
+    .config-row input[type="text"] {
+      width: 100%;
+      padding: 9px 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text-main);
+      font-size: 0.88rem;
+      outline: none;
+    }
+
+    .note {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    .footer-credit {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      margin-top: 8px;
+      text-align: center;
+      opacity: 0.75;
+    }
+
+    @media (max-width: 360px) {
+      .buttons {
+        flex-direction: column;
+      }
+      .btn-main,
+      .btn-secondary,
+      .btn-outline {
+        flex: initial;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="app-inner">
+      <!-- MAIN ORDER CARD -->
+      <div class="card card-accent">
+        <div class="top-shell">
+          <div>
+            <div class="app-title">
+              <span class="logo-dot"></span>
+              <span>ListaVert</span>
+            </div>
+            <p class="shop-info">
+              🏛️ Restaurante: <strong>Amb Gust Sitges</strong><br />
+              🥕 Proveedor: <strong>Frutas Claramunt</strong><br />
+              Tel proveedor: <strong>+34 636 86 71 07</strong>
+            </p>
+          </div>
+          <div style="text-align:right;">
+            <button type="button" class="btn-options" id="options-btn">
+              ⚙️ Editar lista
+            </button>
+            <div class="badge" style="margin-top:6px;">
+              <span class="dot"></span>
+              v1.0 by blues
+            </div>
+          </div>
+        </div>
+        <p class="hint">
+          Te pregunto uno a uno los productos. Si no necesitas algo hoy, pulsa <strong>“Saltar”</strong>.
+        </p>
+
+        <!-- QUESTION SECTION -->
+        <div id="question-section">
+          <p class="progress" id="progress"></p>
+          <p class="item-name" id="item-name"></p>
+          <p class="sub-label">Pulsa + / − para ajustar la cantidad (puedes usar ½ pasos).</p>
+
+          <div class="counter-row">
+            <button id="minus1-btn" class="counter-btn counter-minus">−1</button>
+            <div id="counter-display" class="counter-display">0</div>
+            <button id="plus1-btn" class="counter-btn counter-plus">+1</button>
+          </div>
+
+          <div class="counter-row-half">
+            <button id="minus05-btn" class="counter-btn-small">−0.5</button>
+            <span>Pasos de ½ unidad / kg</span>
+            <button id="plus05-btn" class="counter-btn-small">+0.5</button>
+          </div>
+
+          <label for="unit">Unidad</label>
+          <select id="unit">
+            <option value="kg">kg</option>
+            <option value="uds">uds</option>
+            <option value="manojo">manojo</option>
+            <option value="bolsa">bolsa</option>
+          </select>
+
+          <div class="buttons">
+            <button class="btn-outline" type="button" id="back-btn">⬅️ Anterior</button>
+            <button class="btn-secondary" type="button" id="skip-btn">Saltar</button>
+            <button class="btn-main" type="button" id="next-btn">Guardar y siguiente</button>
+          </div>
+        </div>
+
+        <!-- SUMMARY SECTION -->
+        <div id="summary-section">
+          <h2>Pedido final al proveedor</h2>
+          <p id="summary-message"></p>
+          <ul id="summary-list"></ul>
+
+          <p class="sub-label" style="margin-top:10px;">Texto listo para pegar en WhatsApp:</p>
+          <textarea id="summary-text" readonly></textarea>
+
+          <button class="btn-copy" type="button" id="copy-btn">📋 Copiar pedido</button>
+          <button class="btn-reset" type="button" id="reset-btn">🔄 Empezar de nuevo</button>
+        </div>
+
+        <p class="footer-credit">ListaVert by blues – v1.0</p>
+      </div>
+
+      <!-- LIVE LIST CARD -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <div>
+            <h2 style="margin-bottom:2px;">Lista actual</h2>
+            <p class="live-subtitle">
+              Se actualiza cada vez que guardas un producto. Puedes hacer scroll para ver todo.
+            </p>
+          </div>
+          <button type="button" class="btn-chip" id="end-btn">
+            ✅ Terminar pedido
+          </button>
+        </div>
+        <ul id="live-list"></ul>
+      </div>
+
+      <!-- CONFIG CARD -->
+      <div class="card" id="config-section" style="display:none;">
+        <h2>Opciones de productos</h2>
+        <p class="hint">
+          Activa o desactiva verduras, frutas y hierbas. También puedes añadir nuevos productos.
+        </p>
+
+        <div id="config-list"></div>
+
+        <div class="config-row">
+          <label for="new-product">Añadir producto (ej: aguacates)</label>
+          <input type="text" id="new-product" placeholder="Nombre del producto..." />
+          <div style="margin-top:8px;display:flex;gap:8px;">
+            <button type="button" class="btn-secondary" id="add-product-btn">➕ Añadir</button>
+            <button type="button" class="btn-outline" id="options-btn-close">Cerrar</button>
+          </div>
+        </div>
+        <p class="note">
+          La app recuerda la unidad habitual de cada producto (kg, uds, etc.) en este móvil.
+        </p>
+        <p class="footer-credit">ListaVert by blues – v1.0</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Lista base inicial (alfabética, verduras, frutas, hierbas)
+    const productosBase = [
+      "acelgas",
+      "aguacates",
+      "ajos",
+      "albahaca",
+      "alcachofas",
+      "apio",
+      "arándanos",
+      "berenjenas",
+      "brócoli",
+      "calabacines",
+      "calabaza",
+      "canónigos",
+      "cebollas",
+      "cebollino",
+      "cilantro",
+      "ciruelas",
+      "col china",
+      "col rizada",
+      "coliflor",
+      "endivias",
+      "espárragos",
+      "espinacas",
+      "fresas",
+      "frambuesas",
+      "jengibre",
+      "judías verdes",
+      "kale",
+      "kiwis",
+      "lechuga",
+      "limones",
+      "mandarinas",
+      "manzanas",
+      "melocotones",
+      "melón",
+      "menta",
+      "moras",
+      "naranjas",
+      "nabos",
+      "nectarinas",
+      "orégano",
+      "papaya",
+      "patatas",
+      "perejil",
+      "peras",
+      "pimientos rojos",
+      "pimientos verdes",
+      "puerros",
+      "rábanos",
+      "romero",
+      "salvia",
+      "sandía",
+      "tomates",
+      "tomillo",
+      "uvas",
+      "zanahorias"
+    ];
+
+    let productos = []; // { nombre: string, activo: bool }
+    let preferenciasUnidades = {}; // { nombre: unidad }
+    let indexActual = 0;
+    let respuestas = []; // { nombre, cantidad, unidad }
+    // contadorSteps: cada paso = 0.5 unidad
+    let contadorSteps = 0;
+
+    // Elementos DOM
+    const itemNameEl = document.getElementById("item-name");
+    const unitEl = document.getElementById("unit");
+    const progressEl = document.getElementById("progress");
+
+    const questionSection = document.getElementById("question-section");
+    const summarySection = document.getElementById("summary-section");
+    const summaryListEl = document.getElementById("summary-list");
+    const summaryTextEl = document.getElementById("summary-text");
+    const summaryMessageEl = document.getElementById("summary-message");
+
+    const nextBtn = document.getElementById("next-btn");
+    const skipBtn = document.getElementById("skip-btn");
+    const resetBtn = document.getElementById("reset-btn");
+    const backBtn = document.getElementById("back-btn");
+
+    const optionsBtn = document.getElementById("options-btn");
+    const optionsBtnClose = document.getElementById("options-btn-close");
+    const configSection = document.getElementById("config-section");
+    const configListEl = document.getElementById("config-list");
+    const addProductBtn = document.getElementById("add-product-btn");
+    const newProductInput = document.getElementById("new-product");
+
+    const plus1Btn = document.getElementById("plus1-btn");
+    const minus1Btn = document.getElementById("minus1-btn");
+    const plus05Btn = document.getElementById("plus05-btn");
+    const minus05Btn = document.getElementById("minus05-btn");
+    const counterDisplay = document.getElementById("counter-display");
+
+    const liveListEl = document.getElementById("live-list");
+    const endBtn = document.getElementById("end-btn");
+    const copyBtn = document.getElementById("copy-btn");
+
+    // --- LocalStorage helpers ---
+    function cargarProductos() {
+      let guardado = null;
+      try {
+        guardado = localStorage.getItem("productosLista");
+      } catch {
+        guardado = null;
+      }
+
+      let lista = [];
+      if (guardado) {
+        try {
+          const parsed = JSON.parse(guardado);
+          if (Array.isArray(parsed)) {
+            lista = parsed;
+          }
+        } catch {
+          lista = [];
+        }
+      }
+
+      const mapa = new Map();
+
+      // 1) Meter lo que ya estaba guardado
+      lista.forEach(p => {
+        if (p && typeof p.nombre === "string") {
+          const nombre = p.nombre.toLowerCase();
+          mapa.set(nombre, {
+            nombre,
+            activo: p.activo !== false
+          });
+        }
+      });
+
+      // 2) Añadir todos los de la lista base si faltan
+      productosBase.forEach(nombreBase => {
+        const key = nombreBase.toLowerCase();
+        if (!mapa.has(key)) {
+          mapa.set(key, { nombre: nombreBase, activo: true });
+        }
+      });
+
+      // 3) Pasar a array y ordenar alfabéticamente
+      productos = Array.from(mapa.values());
+      productos.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+
+      guardarProductos();
+    }
+
+    function guardarProductos() {
+      try {
+        localStorage.setItem("productosLista", JSON.stringify(productos));
+      } catch {
+        // ignorar errores
+      }
+    }
+
+    function cargarPreferenciasUnidades() {
+      let guardado = null;
+      try {
+        guardado = localStorage.getItem("preferenciasUnidades");
+      } catch {
+        guardado = null;
+      }
+
+      if (guardado) {
+        try {
+          preferenciasUnidades = JSON.parse(guardado) || {};
+        } catch {
+          preferenciasUnidades = {};
+        }
+      } else {
+        preferenciasUnidades = {};
+      }
+    }
+
+    function guardarPreferenciasUnidades() {
+      try {
+        localStorage.setItem(
+          "preferenciasUnidades",
+          JSON.stringify(preferenciasUnidades)
+        );
+      } catch {
+        // ignorar
+      }
+    }
+
+    function obtenerProductosActivos() {
+      return productos.filter(p => p.activo);
+    }
+
+    // --- Utilidad cantidad ---
+    function actualizarDisplayContador() {
+      const valor = contadorSteps / 2; // cada paso = 0.5
+      counterDisplay.textContent = String(valor);
+    }
+
+    function setCantidadDesdeNumero(n) {
+      const steps = Math.max(0, Math.round(Number(n || 0) * 2));
+      contadorSteps = steps;
+      actualizarDisplayContador();
+    }
+
+    function getCantidadNumero() {
+      return contadorSteps / 2;
+    }
+
+    // --- Live list ---
+    function actualizarListaEnVivo() {
+      liveListEl.innerHTML = "";
+      if (respuestas.length === 0) {
+        const li = document.createElement("li");
+        li.textContent = "Todavía no has añadido productos.";
+        li.style.color = "#9ca3af";
+        liveListEl.appendChild(li);
+        return;
+      }
+
+      respuestas.forEach(r => {
+        const li = document.createElement("li");
+        li.textContent = `${capitalizar(r.nombre)}: ${r.cantidad} ${r.unidad}`;
+        liveListEl.appendChild(li);
+      });
+
+      const last = liveListEl.lastElementChild;
+      if (last) {
+        last.scrollIntoView({ behavior: "smooth", block: "end" });
+      }
+    }
+
+    function capitalizar(str) {
+      if (!str) return "";
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    // --- Lógica principal ---
+    function mostrarProductoActual() {
+      const activos = obtenerProductosActivos();
+
+      if (activos.length === 0) {
+        questionSection.style.display = "none";
+        summarySection.style.display = "block";
+        summaryMessageEl.textContent =
+          "No hay productos activos. Activa alguno en “Editar lista”.";
+        summaryListEl.innerHTML = "";
+        summaryTextEl.value = "";
+        actualizarListaEnVivo();
+        return;
+      }
+
+      if (indexActual >= activos.length) {
+        mostrarResumen();
+        return;
+      }
+
+      const producto = activos[indexActual];
+      const nombre = producto.nombre;
+
+      itemNameEl.textContent = capitalizar(nombre);
+      progressEl.textContent = `Producto ${indexActual + 1} de ${activos.length}`;
+
+      const existente = respuestas.find(r => r.nombre === nombre);
+
+      if (existente) {
+        setCantidadDesdeNumero(existente.cantidad);
+        unitEl.value = existente.unidad || "kg";
+      } else {
+        setCantidadDesdeNumero(0);
+        const unidadPreferida = preferenciasUnidades[nombre];
+        unitEl.value = unidadPreferida || "kg";
+      }
+    }
+
+    function guardarYSeguir() {
+      const activos = obtenerProductosActivos();
+      if (activos.length === 0 || indexActual >= activos.length) {
+        mostrarResumen();
+        return;
+      }
+
+      const producto = activos[indexActual];
+      const nombre = producto.nombre;
+      const unidad = unitEl.value;
+      const cantidadNum = getCantidadNumero();
+
+      const existingIndex = respuestas.findIndex(r => r.nombre === nombre);
+
+      if (cantidadNum > 0) {
+        if (existingIndex >= 0) {
+          respuestas[existingIndex].cantidad = cantidadNum;
+          respuestas[existingIndex].unidad = unidad;
+        } else {
+          respuestas.push({
+            nombre,
+            cantidad: cantidadNum,
+            unidad: unidad
+          });
+        }
+
+        preferenciasUnidades[nombre] = unidad;
+        guardarPreferenciasUnidades();
+      } else {
+        if (existingIndex >= 0) {
+          respuestas.splice(existingIndex, 1);
+        }
+      }
+
+      actualizarListaEnVivo();
+      indexActual++;
+      mostrarProductoActual();
+    }
+
+    function saltar() {
+      const activos = obtenerProductosActivos();
+      if (activos.length === 0) {
+        mostrarResumen();
+        return;
+      }
+      indexActual++;
+      mostrarProductoActual();
+    }
+
+    function irAnterior() {
+      if (indexActual > 0) {
+        indexActual--;
+      } else {
+        indexActual = 0;
+      }
+      mostrarProductoActual();
+    }
+
+    function construirTextoPedido() {
+      if (respuestas.length === 0) {
+        return "";
+      }
+
+      const lineas = respuestas.map(
+        r => `- ${capitalizar(r.nombre)}: ${r.cantidad} ${r.unidad}`
+      );
+
+      const texto =
+        "Pedido de Amb Gust Sitges para Frutas Claramunt (Proveedor)\n" +
+        "Tel proveedor: +34 636 86 71 07\n\n" +
+        lineas.join("\n") +
+        "\n\nGracias.";
+
+      return texto;
+    }
+
+    function mostrarResumen() {
+      questionSection.style.display = "none";
+      summarySection.style.display = "block";
+
+      summaryListEl.innerHTML = "";
+      if (respuestas.length === 0) {
+        summaryMessageEl.textContent = "No has añadido ningún producto.";
+        summaryTextEl.value = "";
+        actualizarListaEnVivo();
+        return;
+      }
+
+      summaryMessageEl.textContent = "Aquí tienes tu lista lista para enviar:";
+
+      respuestas.forEach(r => {
+        const li = document.createElement("li");
+        li.textContent = `${capitalizar(r.nombre)}: ${r.cantidad} ${r.unidad}`;
+        summaryListEl.appendChild(li);
+      });
+
+      summaryTextEl.value = construirTextoPedido();
+      actualizarListaEnVivo();
+    }
+
+    function reiniciar() {
+      indexActual = 0;
+      respuestas = [];
+      contadorSteps = 0;
+      actualizarDisplayContador();
+      questionSection.style.display = "block";
+      summarySection.style.display = "none";
+      actualizarListaEnVivo();
+      mostrarProductoActual();
+    }
+
+    function terminarPedido() {
+      mostrarResumen();
+      summarySection.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function copiarPedido() {
+      const texto = summaryTextEl.value.trim();
+      if (!texto) {
+        return;
+      }
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(texto).then(
+          () => {
+            alert("Pedido copiado al portapapeles.");
+          },
+          () => {
+            summaryTextEl.select();
+            document.execCommand("copy");
+            alert("Pedido copiado al portapapeles.");
+          }
+        );
+      } else {
+        summaryTextEl.select();
+        document.execCommand("copy");
+        alert("Pedido copiado al portapapeles.");
+      }
+    }
+
+    // --- Configuración de productos ---
+    function renderConfigList() {
+      configListEl.innerHTML = "";
+      if (productos.length === 0) {
+        const p = document.createElement("p");
+        p.textContent = "No hay productos. Añade alguno abajo.";
+        p.className = "note";
+        configListEl.appendChild(p);
+        return;
+      }
+
+      productos.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+
+      productos.forEach((p, idx) => {
+        const row = document.createElement("div");
+        row.className = "config-item";
+
+        const span = document.createElement("span");
+        span.textContent = p.nombre + (p.activo ? "" : " (inactivo)");
+
+        const btn = document.createElement("button");
+        btn.className = "btn-toggle" + (p.activo ? " active" : "");
+        btn.textContent = p.activo ? "Quitar" : "Activar";
+
+        btn.addEventListener("click", () => {
+          productos[idx].activo = !productos[idx].activo;
+          guardarProductos();
+          renderConfigList();
+        });
+
+        row.appendChild(span);
+        row.appendChild(btn);
+        configListEl.appendChild(row);
+      });
+    }
+
+    function toggleConfigSection(forceState) {
+      const current = configSection.style.display;
+      const next =
+        typeof forceState === "string"
+          ? forceState
+          : current === "none" || current === ""
+          ? "block"
+          : "none";
+
+      configSection.style.display = next;
+      if (next === "block") {
+        renderConfigList();
+        configSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+
+    function añadirProducto() {
+      const nombre = newProductInput.value.trim().toLowerCase();
+      if (!nombre) return;
+
+      const yaExiste = productos.some(p => p.nombre === nombre);
+      if (!yaExiste) {
+        productos.push({ nombre, activo: true });
+        productos.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+        guardarProductos();
+        renderConfigList();
+      }
+      newProductInput.value = "";
+    }
+
+    // --- Eventos ---
+    nextBtn.addEventListener("click", guardarYSeguir);
+    skipBtn.addEventListener("click", saltar);
+    backBtn.addEventListener("click", irAnterior);
+    resetBtn.addEventListener("click", reiniciar);
+    copyBtn.addEventListener("click", copiarPedido);
+
+    optionsBtn.addEventListener("click", () => toggleConfigSection("block"));
+    optionsBtnClose.addEventListener("click", () => toggleConfigSection("none"));
+    addProductBtn.addEventListener("click", añadirProducto);
+    newProductInput.addEventListener("keyup", function (e) {
+      if (e.key === "Enter") {
+        añadirProducto();
+      }
+    });
+
+    plus1Btn.addEventListener("click", () => {
+      contadorSteps += 2; // +1
+      actualizarDisplayContador();
+    });
+
+    minus1Btn.addEventListener("click", () => {
+      contadorSteps = Math.max(0, contadorSteps - 2); // -1
+      actualizarDisplayContador();
+    });
+
+    plus05Btn.addEventListener("click", () => {
+      contadorSteps += 1; // +0.5
+      actualizarDisplayContador();
+    });
+
+    minus05Btn.addEventListener("click", () => {
+      contadorSteps = Math.max(0, contadorSteps - 1); // -0.5
+      actualizarDisplayContador();
+    });
+
+    endBtn.addEventListener("click", terminarPedido);
+
+    // --- Inicializar ---
+    cargarProductos();
+    cargarPreferenciasUnidades();
+    actualizarListaEnVivo();
+    actualizarDisplayContador();
+    mostrarProductoActual();
+  </script>
+
+<!-- BLUES APP LOGO -->
+<div style="position: fixed; top: 1rem; right: 1rem; z-index: 9999; font-family: sans-serif;">
+    <a href="https://blueshub.netlify.app/" style="display: block; width: 200px; opacity: 0.8; transition: opacity 0.2s; background-color: rgba(15, 23, 42, 0.9); backdrop-filter: blur(4px); border-radius: 0.5rem; border: 1px solid #334155; padding: 0.5rem; text-decoration: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+        <div style="font-size: 0.75rem; text-align: center; color: #94a3b8; margin-bottom: 0.25rem;">Back to Hub</div>
+        <img src="logoani.svg" alt="App by Blues" style="width: 100%; height: auto; display: block;">
+    </a>
+</div>
+<!-- END BLUES APP LOGO -->
+
+</body>
+</html>

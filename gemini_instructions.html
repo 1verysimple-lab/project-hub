@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Secret Weapon | Gemini for Unity</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .terminal-box {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col items-center py-12 px-4">
+
+    <!-- Header -->
+    <div class="max-w-2xl w-full text-center mb-12">
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">The "Secret Weapon" for Unity</h1>
+        <p class="text-lg text-gray-600">Because fixing compiler errors should be the computer's job, not yours.</p>
+    </div>
+
+    <!-- Section 1: The Pitch -->
+    <div class="max-w-2xl w-full bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+        <h2 class="text-2xl font-semibold mb-4 text-blue-600">What is this?</h2>
+        <p class="mb-4 leading-relaxed">
+            Blues thinks you're working too hard on cryptic Unity errors. This isn't just another ChatGPT window. 
+            This is <strong>Gemini CLI</strong>. It lives <em>inside</em> your project folder.
+        </p>
+        <ul class="list-disc list-inside space-y-2 text-gray-600 mb-4">
+            <li>It can read your C# scripts directly (no copy-pasting).</li>
+            <li>It sees the exact error Unity is shouting about.</li>
+            <li>It suggests fixes that actually fit your specific game logic.</li>
+        </ul>
+    </div>
+
+    <!-- Section 2: Demystifying the Terminal -->
+    <div class="max-w-2xl w-full bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+        <h2 class="text-2xl font-semibold mb-4 text-blue-600">"But I hate the Terminal..."</h2>
+        <p class="mb-4 leading-relaxed">
+            Don't worry. The "Terminal" (or PowerShell) is just the engine room. It looks scary because it's black with white text, 
+            but it's actually just a chat room where the only other participant is your computer.
+        </p>
+        <p class="leading-relaxed">
+            Instead of clicking buttons, you type text. That's it. <br>
+            You type: <span class="font-mono bg-gray-100 px-1 rounded text-sm">gemini fix this error</span><br>
+            It replies: <span class="font-mono bg-gray-100 px-1 rounded text-sm">You missed a semicolon in Player.cs. Want me to add it?</span>
+        </p>
+    </div>
+
+    <!-- Section 3: The Setup Wizard -->
+    <div class="max-w-2xl w-full bg-white rounded-lg shadow-lg border-t-4 border-blue-500 p-8">
+        <h2 class="text-2xl font-bold mb-6">Let's set it up</h2>
+
+        <div class="space-y-6">
+            <!-- Step 1 -->
+            <div>
+                <h3 class="font-semibold text-lg mb-2">1. Where is your project?</h3>
+                <p class="text-sm text-gray-500 mb-2">We need to install the brain. Click the button below to generate the installer script.</p>
+                <button onclick="downloadScript()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded transition-colors shadow-md flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                    Download Installer (Setup-Gemini.ps1)
+                </button>
+                <p id="download-msg" class="hidden text-green-600 text-sm mt-2">✓ Script downloaded! Check your downloads folder.</p>
+            </div>
+
+            <hr class="border-gray-100">
+
+            <!-- Step 2 -->
+            <div>
+                <h3 class="font-semibold text-lg mb-2">2. Install it</h3>
+                <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                    <li>Move the downloaded file <strong>(Setup-Gemini.ps1)</strong> into your main Unity Project folder.</li>
+                    <li>Right-click the file and select <span class="font-bold">"Run with PowerShell"</span>.</li>
+                    <li>A blue/black window will open. It might ask for permission—type <strong>Y</strong> or <strong>A</strong> and hit Enter.</li>
+                    <li>Wait for it to finish installing "Node.js" and "Gemini".</li>
+                </ol>
+            </div>
+
+            <hr class="border-gray-100">
+
+            <!-- Step 3 -->
+            <div>
+                <h3 class="font-semibold text-lg mb-2">3. How to use it efficiently</h3>
+                <p class="text-gray-700 mb-3">Whenever Unity gives you an error:</p>
+                <div class="bg-gray-100 p-4 rounded-md border border-gray-200">
+                    <ol class="list-decimal list-inside space-y-3 text-sm text-gray-800">
+                        <li>Go to your Project folder in Windows Explorer.</li>
+                        <li>Hold <span class="font-bold border border-gray-300 rounded px-1 bg-white">Shift</span> and <strong>Right-Click</strong> on empty space in the folder.</li>
+                        <li>Select <strong>"Open PowerShell window here"</strong> (or "Open in Terminal").</li>
+                        <li>Type <span class="font-mono text-blue-700">gemini</span> and hit Enter.</li>
+                        <li>Paste your error message and hit Enter.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function downloadScript() {
+            // The PowerShell Script Content
+            const scriptContent = `# Setup-Gemini.ps1
+# Automated installer for Bianca's Unity Assistant
+
+Write-Host "Hello! Setting up your AI assistant..." -ForegroundColor Cyan
+
+# 1. Check for Node.js (The engine)
+try {
+    $nodeVersion = node --version
+    Write-Host "Good news: Node.js is already installed ($nodeVersion)" -ForegroundColor Green
+}
+catch {
+    Write-Host "Node.js is missing. Installing it now (this might take a moment)..." -ForegroundColor Yellow
+    
+    # Use Winget to install Node LTS
+    winget install -e --id OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements
+    
+    Write-Host "Node.js installed." -ForegroundColor Green
+    
+    # Refresh environment variables so we can use it immediately
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+}
+
+# 2. Install Gemini CLI (The Brain)
+Write-Host "Installing Google Gemini..." -ForegroundColor Cyan
+try {
+    npm install -g @google/gemini-cli
+    Write-Host "Gemini installed successfully!" -ForegroundColor Green
+}
+catch {
+    Write-Host "Installing Gemini..."
+    Start-Sleep -Seconds 2
+    # Retry once in case path update was slow
+    npm install -g @google/gemini-cli
+}
+
+Write-Host ""
+Write-Host "------------------------------------------------" -ForegroundColor Cyan
+Write-Host "SETUP COMPLETE!" -ForegroundColor Green
+Write-Host "------------------------------------------------" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "To use it:"
+Write-Host "1. Open a terminal in this folder."
+Write-Host "2. Type 'gemini login' (do this once)."
+Write-Host "3. Then just type 'gemini' whenever you need help."
+Write-Host ""
+Write-Host "Press Enter to close this window..."
+Read-Host
+`;
+
+            const blob = new Blob([scriptContent], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'Setup-Gemini.ps1';
+            
+            document.body.appendChild(a);
+            a.click();
+            
+            window.URL.revokeObjectURL(url);
+            document.getElementById('download-msg').classList.remove('hidden');
+        }
+    </script>
+
+<!-- BLUES APP LOGO -->
+<div style="position: fixed; top: 1rem; right: 1rem; z-index: 9999; font-family: sans-serif;">
+    <a href="https://blueshub.netlify.app/" style="display: block; width: 200px; opacity: 0.8; transition: opacity 0.2s; background-color: rgba(15, 23, 42, 0.9); backdrop-filter: blur(4px); border-radius: 0.5rem; border: 1px solid #334155; padding: 0.5rem; text-decoration: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+        <div style="font-size: 0.75rem; text-align: center; color: #94a3b8; margin-bottom: 0.25rem;">Back to Hub</div>
+        <img src="logoani.svg" alt="App by Blues" style="width: 100%; height: auto; display: block;">
+    </a>
+</div>
+<!-- END BLUES APP LOGO -->
+
+</body>
+</html>

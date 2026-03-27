@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wikipedia Q-Gen v2.0 (Wikidata)</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --border: #333;
+            --text-main: #e0e0e0;
+            --text-muted: #888;
+            --accent: #4a90e2; 
+            --accent-hover: #357abd;
+            --success: #2e7d32;
+            --danger: #cf6679;
+            --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+        }
+
+        [data-theme="light"] {
+            --bg: #f5f5f5;
+            --surface: #ffffff;
+            --border: #ddd;
+            --text-main: #222;
+            --text-muted: #666;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: var(--font-stack);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* LAYOUT */
+        header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--surface);
+        }
+        h1 { margin: 0; font-size: 1rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+        
+        .layout { display: flex; flex: 1; overflow: hidden; }
+        
+        /* SIDEBAR CONTROLS */
+        aside {
+            width: 300px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold; }
+        
+        select, input {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.8rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        
+        button.primary {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            transition: 0.2s;
+        }
+        button.primary:hover { background: var(--accent-hover); }
+        button.primary:disabled { opacity: 0.5; cursor: wait; }
+
+        /* MAIN STAGE */
+        main {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* CARDS */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .card-header { 
+            display: flex; justify-content: space-between; margin-bottom: 1rem; 
+            border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;
+        }
+        .tag { font-size: 0.75rem; background: var(--bg); padding: 2px 6px; border-radius: 4px; color: var(--accent); }
+
+        .q-text { font-size: 1.1rem; margin-bottom: 1rem; display: block; width: 100%; background: transparent; border: none; color: var(--text-main); font-family: inherit; resize: none; }
+        
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 10px;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+        .option-btn:hover { border-color: var(--accent); }
+        .option-btn.correct { border-color: var(--success); color: var(--success); }
+        
+        .actions { margin-top: 1rem; display: flex; gap: 10px; justify-content: flex-end; }
+        .btn-small { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 5px 10px; cursor: pointer; border-radius: 4px; font-size: 0.8rem; }
+        .btn-small:hover { color: var(--text-main); border-color: var(--text-main); }
+        .btn-approve { background: var(--success); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+
+        /* JSON PREVIEW */
+        .export-bar {
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #json-count { font-weight: bold; color: var(--accent); }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>WikiQ-Gen v2.0 <span style="color:var(--text-muted); font-size:0.8em;">// Structured Data Engine</span></h1>
+    <button class="btn-small" onclick="APP.toggleTheme()">☀/☾</button>
+</header>
+
+<div class="layout">
+    <aside>
+        <div class="control-group">
+            <label>Topic Schema</label>
+            <select id="schemaSelect">
+                <option value="capitals">Geography: Capitals</option>
+                <option value="elements">Science: Chemical Elements</option>
+                <option value="presidents">History: US Presidents</option>
+                <option value="authors">Literature: Classic Authors</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>Batch Size</label>
+            <input type="number" id="batchSize" value="5" min="1" max="20">
+        </div>
+
+        <button class="primary" id="genBtn" onclick="APP.generate()">Fetch & Generate</button>
+        
+        <div style="margin-top: auto;">
+            <label>System Log</label>
+            <div id="status" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">Ready.</div>
+        </div>
+    </aside>
+
+    <main id="stage">
+        <div style="text-align: center; color: var(--text-muted); margin-top: 50px;">
+            Select a schema and click Generate.
+        </div>
+    </main>
+</div>
+
+<div class="export-bar">
+    <div style="font-size: 0.9rem;">Export Pool: <span id="json-count">0</span> items</div>
+    <div style="display:flex; gap:10px;">
+        <button class="btn-small" onclick="APP.clearPool()">Clear</button>
+        <button class="btn-approve" onclick="APP.copyJSON()">Copy JSON</button>
+    </div>
+</div>
+
+<script>
+const APP = {
+    pool: [],
+    
+    // --- SCHEMAS (SPARQL QUERIES) ---
+    // These queries fetch a list of [Item, Answer]. 
+    // We pick one pair as the Question/Answer, and 3 other 'Answers' as distractors.
+    schemas: {
+        capitals: {
+            // Country -> Capital
+            query: `
+                SELECT DISTINCT ?itemLabel ?answerLabel WHERE {
+                  ?item wdt:P31 wd:Q6256; wdt:P36 ?answer.
+                  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+                } LIMIT 100
+            `,
+            qFormat: "What is the capital city of {item}?"
+        },
+        elements: {
+            // Element -> Symbol
+            query: `
+                SELECT DISTINCT ?itemLabel ?answerLabel WHERE {
+                  ?item wdt:P31 wd:Q11344; wdt:P246 ?answer.
+                  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+                } LIMIT 100
+            `,
+            qFormat: "What is the chemical symbol for {item}?"
+        },
+        presidents: {
+            // President -> Party (Harder? No let's do President Name context)
+            // Let's do: President -> Year of Birth? No, boring.
+            // Let's do: Who was the Xth President?
+            // Query: President, Position (P1545)
+            query: `
+                SELECT DISTINCT ?itemLabel ?answerLabel WHERE {
+                  ?item wdt:P39 wd:Q11696; p:P39 ?statement.
+                  ?statement ps:P39 wd:Q11696; pq:P1545 ?answer.
+                  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+                } LIMIT 50
+            `,
+            qFormat: "Who was the {answer}th President of the United States?",
+            swap: true // We ask "Who was 1st?" Answer: "Washington". The query returns [Washington, 1]. We swap them for the Q.
+        },
+        authors: {
+            // Book -> Author
+            query: `
+                SELECT DISTINCT ?itemLabel ?answerLabel WHERE {
+                  ?item wdt:P31 wd:Q571; wdt:P50 ?answer.
+                  ?item wdt:P136 wd:Q8253. 
+                  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+                } LIMIT 100
+            `,
+            qFormat: "Who wrote the book '{item}'?"
+        }
+    },
+
+    // --- CORE ---
+
+    generate: async () => {
+        const btn = document.getElementById('genBtn');
+        const schemaKey = document.getElementById('schemaSelect').value;
+        const count = parseInt(document.getElementById('batchSize').value);
+        
+        btn.disabled = true;
+        APP.status("Querying Wikidata...");
+        document.getElementById('stage').innerHTML = ''; // Clear stage
+
+        try {
+            const schema = APP.schemas[schemaKey];
+            const data = await APP.fetchSPARQL(schema.query);
+            
+            if (data.length < 4) throw new Error("Not enough data points found.");
+
+            APP.status(`Processing ${data.length} records...`);
+
+            // Generate N questions
+            for(let i=0; i<count; i++) {
+                const qObj = APP.buildQuestion(data, schema);
+                APP.renderCard(qObj, i);
+            }
+            APP.status("Done.");
+
+        } catch (e) {
+            APP.status("Error: " + e.message);
+            console.error(e);
+        }
+        btn.disabled = false;
+    },
+
+    fetchSPARQL: async (sparql) => {
+        const url = `https://query.wikidata.org/sparql?format=json&query=${encodeURIComponent(sparql)}`;
+        const res = await fetch(url);
+        const json = await res.json();
+        return json.results.bindings.map(b => ({
+            item: b.itemLabel.value,
+            answer: b.answerLabel.value
+        }));
+    },
+
+    buildQuestion: (data, schema) => {
+        // 1. Pick a random target row
+        const targetRow = data[Math.floor(Math.random() * data.length)];
+        
+        // 2. Prepare Question Text
+        let qText = "";
+        let correctAnswer = "";
+
+        if (schema.swap) {
+            // Case: "Who was the {1st} President?" Answer: "Washington"
+            // Data is [Item: Washington, Answer: 1]
+            qText = schema.qFormat.replace('{answer}', targetRow.answer);
+            correctAnswer = targetRow.item;
+        } else {
+            // Case: "Capital of {France}?" Answer: "Paris"
+            qText = schema.qFormat.replace('{item}', targetRow.item);
+            correctAnswer = targetRow.answer;
+        }
+
+        // 3. Generate Distractors
+        // We need 3 UNIQUE answers from OTHER rows
+        let distractors = new Set();
+        while(distractors.size < 3) {
+            const randomRow = data[Math.floor(Math.random() * data.length)];
+            const val = schema.swap ? randomRow.item : randomRow.answer;
+            
+            // Check: Must not be the correct answer, and not already in set
+            if (val !== correctAnswer) {
+                distractors.add(val);
+            }
+        }
+
+        // 4. Shuffle Options
+        let options = [correctAnswer, ...Array.from(distractors)];
+        options = APP.shuffle(options);
+        
+        return {
+            q: qText,
+            o: options,
+            a: options.indexOf(correctAnswer), // Find index
+            c: 0 // Placeholder category ID
+        };
+    },
+
+    // --- UI RENDERER ---
+
+    renderCard: (qObj, index) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+            <div class="card-header">
+                <span class="tag">Draft ${index+1}</span>
+            </div>
+            <input class="q-text" value="${qObj.q}" />
+            <div class="options-grid">
+                ${qObj.o.map((opt, i) => `
+                    <div class="option-btn ${i === qObj.a ? 'correct' : ''}">
+                        ${opt} ${i === qObj.a ? '✓' : ''}
+                    </div>
+                `).join('')}
+            </div>
+            <div class="actions">
+                <button class="btn-small" onclick="this.closest('.card').remove()">Discard</button>
+                <button class="btn-approve" onclick='APP.saveToPool(${JSON.stringify(qObj).replace(/'/g, "&#39;")}, this)'>Approve</button>
+            </div>
+        `;
+        document.getElementById('stage').appendChild(card);
+    },
+
+    saveToPool: (qObj, btnElement) => {
+        APP.pool.push(qObj);
+        document.getElementById('json-count').innerText = APP.pool.length;
+        
+        // Visual feedback
+        const card = btnElement.closest('.card');
+        card.style.opacity = '0.5';
+        card.style.pointerEvents = 'none';
+        btnElement.innerText = "Saved";
+    },
+
+    // --- UTILS ---
+
+    shuffle: (array) => {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    },
+
+    status: (msg) => { document.getElementById('status').innerText = msg; },
+
+    toggleTheme: () => {
+        const body = document.body;
+        body.setAttribute('data-theme', body.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+    },
+
+    clearPool: () => {
+        APP.pool = [];
+        document.getElementById('json-count').innerText = '0';
+    },
+
+    copyJSON: () => {
+        const str = JSON.stringify(APP.pool, null, 2);
+        const ta = document.createElement('textarea');
+        ta.value = str;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        alert('JSON Copied to Clipboard');
+    }
+};
+</script>
+</body>
+</html>

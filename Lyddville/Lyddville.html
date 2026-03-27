@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Config -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <!-- Base Styles -->
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7f7f7; color: #333; } /* Neutral background for content */
+        .glass {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .dark .glass {
+            background: rgba(25, 25, 25, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-white p-8 shadow-lg">
+        <div class="text-center">
+            <h1 class="text-3xl font-bold tracking-wide text-gray-800 mb-4">Lydd: A Historical Gem</h1>
+            <p class="text-lg text-gray-600 mb-4">Discover the rich history and attractions of Lydd.</p>
+        </div>
+    </header>
+
+    <!-- Content Sections -->
+    <main class="container mx-auto py-8">
+
+        <!-- Section 1: Historical Overview -->
+        <section class="mb-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">A Journey Through Time</h2>
+            <p class="text-gray-600">Lydd's history stretches back to Roman times, with significant influences from Saxon and Norman periods.  Explore its strategic importance and fascinating stories...</p>
+            <p><em>(Expand this with key historical periods, Roman remains, Saxon settlements, etc.)</em></p>
+膚質和顏色的差異和不一致會導致您的眼睛疲勞或出現嚴重的眼部問題。</p>
+        </section>
+
+        <!-- Section 2: Attractions & Landmarks -->
+        <section class="mb-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">What to See & Do</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-gray-100 rounded-lg p-4">
+                    <img src="lydd-castle-placeholder.jpg" alt="Lydd Castle" class="w-full h-48 object-cover">
+                    <h3 class="text-lg font-semibold text-gray-800 mt-4">Lydd Castle</h3>
+                    <p class="text-gray-600">A historic Norman castle – explore its ruins and learn about its role in medieval Lydd.</p>
+                </div>
+                <div class="bg-gray-100 rounded-lg p-4">
+                    <img src="lydd-beach-placeholder.jpg" alt="Lydd Beach" class="w-full h-48 object-cover">
+                    <h3 class="text-lg font-semibold text-gray-800 mt-4">Lydd Beach</h3>
+                    <p class="text-gray-600">A vast expanse of shingle beach, popular with birdwatchers and walkers.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Local Activities & Information -->
+        <section class="mb-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Planning Your Visit</h2>
+            <p class="text-gray-600">Useful information for visitors, including local amenities, accommodation, and events.</p>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 py-4 text-white">
+        <p class="text-center">Copyright &copy; 2024 Lydd Tourism</p>
+    </footer>
+</body>
+</html>

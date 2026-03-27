@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wikipedia Question Generator — v1.0.0</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    :root {
+      --bg: #0b0b0f;
+      --fg: #f5f5f7;
+      --card-bg: #15151c;
+      --accent: #4da3ff;
+      --accent-soft: rgba(77,163,255,0.15);
+      --shadow: 0 10px 30px rgba(0,0,0,0.6);
+      --border-subtle: #2a2a35;
+    }
+
+    .light {
+      --bg: #f5f5f7;
+      --fg: #111118;
+      --card-bg: #ffffff;
+      --accent: #0066cc;
+      --accent-soft: rgba(0,102,204,0.08);
+      --shadow: 0 10px 30px rgba(0,0,0,0.15);
+      --border-subtle: #d0d0dd;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #181824 0, var(--bg) 45%);
+      color: var(--fg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: linear-gradient(to bottom, rgba(10,10,16,0.96), rgba(10,10,16,0.9));
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      opacity: 0.9;
+    }
+
+    header .version {
+      font-size: 12px;
+      opacity: 0.7;
+    }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 16px 12px 80px;
+    }
+
+    section {
+      margin-bottom: 18px;
+    }
+
+    h2 {
+      font-size: 15px;
+      margin: 0 0 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0.8;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    button, input {
+      font: inherit;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(10,10,16,0.9);
+      color: var(--fg);
+      padding: 7px 12px;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: linear-gradient(to bottom right, rgba(255,255,255,0.02), rgba(0,0,0,0.4));
+      box-shadow: 0 1px 0 rgba(255,255,255,0.04);
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.08s ease;
+    }
+
+    button:active {
+      transform: translateY(1px) scale(0.99);
+      box-shadow: 0 0 0 rgba(0,0,0,0.4);
+    }
+
+    button.primary {
+      background: linear-gradient(135deg, var(--accent), #7bc4ff);
+      color: #050510;
+      border-color: transparent;
+      box-shadow: 0 8px 20px rgba(77,163,255,0.45);
+    }
+
+    button.danger {
+      background: linear-gradient(135deg, #ff4d6a, #ff8a9a);
+      color: #050510;
+      border-color: transparent;
+      box-shadow: 0 8px 20px rgba(255,77,106,0.45);
+    }
+
+    button.chip {
+      border-radius: 999px;
+      padding-inline: 10px;
+      font-size: 13px;
+      background: rgba(255,255,255,0.02);
+    }
+
+    button.chip.active {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    input[type="number"],
+    input[type="text"] {
+      border-radius: 999px;
+      padding-inline: 12px;
+      background: rgba(10,10,16,0.9);
+      border: 1px solid var(--border-subtle);
+      color: var(--fg);
+      min-width: 0;
+    }
+
+    input::placeholder {
+      opacity: 0.5;
+    }
+
+    .pill-label {
+      font-size: 13px;
+      opacity: 0.7;
+    }
+
+    .card {
+      background: radial-gradient(circle at top left, rgba(255,255,255,0.04), transparent 55%), var(--card-bg);
+      border-radius: 18px;
+      padding: 14px 14px 12px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,0.03);
+    }
+
+    .card + .card {
+      margin-top: 12px;
+    }
+
+    .subtle {
+      font-size: 12px;
+      opacity: 0.7;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .progress-shell {
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), #9ad3ff);
+      transition: width 0.15s ease-out;
+    }
+
+    #statusLog {
+      font-size: 12px;
+      line-height: 1.4;
+      max-height: 180px;
+      overflow-y: auto;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.04);
+      margin-top: 8px;
+      white-space: pre-line;
+    }
+
+    .q-card-header {
+      font-size: 12px;
+      opacity: 0.75;
+      margin-bottom: 6px;
+    }
+
+    .q-source {
+      font-size: 12px;
+      opacity: 0.7;
+      margin-bottom: 4px;
+    }
+
+    .q-pattern {
+      font-size: 11px;
+      opacity: 0.6;
+      margin-bottom: 8px;
+    }
+
+    .q-field {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(5,5,10,0.9);
+      color: var(--fg);
+      padding: 6px 8px;
+      margin-top: 4px;
+      font-size: 14px;
+    }
+
+    .opt-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+
+    .opt-row input[type="text"] {
+      flex: 1;
+      border-radius: 999px;
+      padding: 6px 10px;
+    }
+
+    .opt-row input[type="radio"] {
+      accent-color: var(--accent);
+    }
+
+    footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 8px 12px;
+      font-size: 11px;
+      text-align: center;
+      background: linear-gradient(to top, rgba(5,5,10,0.96), rgba(5,5,10,0.7));
+      border-top: 1px solid var(--border-subtle);
+      backdrop-filter: blur(10px);
+      opacity: 0.8;
+    }
+
+    @media (min-width: 720px) {
+      main {
+        padding-inline: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Wikipedia Question Generator</h1>
+    <div class="version">v1.0.0</div>
+    <button id="themeToggle" class="chip">🌑 / 🌕</button>
+  </header>
+
+  <main>
+    <!-- Mode -->
+    <section>
+      <h2>Mode</h2>
+      <div class="row">
+        <label class="pill-label">
+          <input type="radio" name="mode" value="auto" checked> Automatic
+        </label>
+        <label class="pill-label">
+          <input type="radio" name="mode" value="curated"> Curated
+        </label>
+      </div>
+    </section>
+
+    <!-- Category -->
+    <section>
+      <h2>Category Bias</h2>
+      <div class="row" id="categoryRow"></div>
+      <div class="subtle" style="margin-top:4px;">Bias, not guarantee.</div>
+    </section>
+
+    <!-- Automatic Mode -->
+    <section id="autoSection">
+      <h2>Automatic Generation</h2>
+      <div class="card">
+        <div class="row" style="margin-bottom:8px;">
+          <span class="pill-label">Number of questions:</span>
+        </div>
+        <div class="row" style="margin-bottom:10px;">
+          <button class="chip autoCount" data-n="1">1</button>
+          <button class="chip autoCount" data-n="5">5</button>
+          <button class="chip autoCount" data-n="10">10</button>
+          <button class="chip autoCount" data-n="20">20</button>
+          <input id="customCount" type="number" min="1" placeholder="Custom" style="width:90px;">
+        </div>
+        <div class="row" style="margin-bottom:8px;">
+          <button id="startAuto" class="primary">Generate</button>
+          <button id="cancelAuto" class="danger hidden">Cancel</button>
+        </div>
+        <div id="autoProgressWrap" class="hidden">
+          <div class="subtle">Progress: <span id="autoProgressText">0/0</span></div>
+          <div class="progress-shell">
+            <div id="autoProgressBar" class="progress-bar"></div>
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <div class="subtle">Status</div>
+          <div id="statusLog"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Curated Mode -->
+    <section id="curatedSection" class="hidden">
+      <h2>Curated Generation</h2>
+      <div class="card">
+        <div class="row" style="margin-bottom:10px;">
+          <button id="generateOne" class="primary">Generate One Question</button>
+          <input id="forceArticle" type="text" placeholder="Force article (optional)" style="flex:1; min-width:140px;">
+        </div>
+        <div id="curatedCards"></div>
+      </div>
+    </section>
+
+    <!-- Export -->
+    <section>
+      <h2>Export Pool</h2>
+      <div class="card">
+        <div class="row" style="justify-content:space-between; margin-bottom:8px;">
+          <div>Questions approved: <strong id="exportCount">0</strong></div>
+        </div>
+        <div class="row">
+          <button id="copyJSON">Copy JSON</button>
+          <button id="downloadJSON">Download JSON</button>
+          <button id="clearPool">Clear Pool</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>app by Blues</footer>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const state = {
+        mode: "auto",
+        category: 0,
+        exportPool: [],
+        dark: true,
+        autoCount: 0,
+        autoRunning: false,
+        autoAbortController: null,
+        cancelRequested: false,
+        distractorPool: []
+      };
+
+      const categories = [
+        { id: 1, name: "Technology", keywords: ["software","computer","technology","internet","programming","electronics","digital","computing"] },
+        { id: 2, name: "Science",    keywords: ["physics","chemistry","biology","scientist","research","experiment","theory","astronomy","geology"] },
+        { id: 3, name: "History",    keywords: ["war","revolution","king","empire","dynasty","historical","ancient","medieval","treaty"] },
+        { id: 4, name: "Geography",  keywords: ["city","country","river","mountain","region","continent","island","capital","sea","ocean"] },
+        { id: 5, name: "Culture",    keywords: ["music","art","film","literature","culture","tradition","festival","religion","language"] },
+        { id: 0, name: "Mixed",      keywords: [] }
+      ];
+
+      const categoryRow = document.getElementById("categoryRow");
+      categories.forEach(cat => {
+        const btn = document.createElement("button");
+        btn.textContent = cat.name;
+        btn.className = "chip";
+        if (cat.id === 0) btn.classList.add("active");
+        btn.addEventListener("click", () => {
+          state.category = cat.id;
+          [...categoryRow.children].forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+        });
+        categoryRow.appendChild(btn);
+      });
+
+      const themeToggle = document.getElementById("themeToggle");
+      themeToggle.addEventListener("click", () => {
+        state.dark = !state.dark;
+        document.body.classList.toggle("light", !state.dark);
+      });
+
+      const autoSection = document.getElementById("autoSection");
+      const curatedSection = document.getElementById("curatedSection");
+      document.querySelectorAll("input[name='mode']").forEach(r => {
+        r.addEventListener("change", () => {
+          state.mode = r.value;
+          autoSection.classList.toggle("hidden", state.mode !== "auto");
+          curatedSection.classList.toggle("hidden", state.mode !== "curated");
+        });
+      });
+
+      const statusLog = document.getElementById("statusLog");
+      function logStatus(msg) {
+        const time = new Date().toLocaleTimeString();
+        statusLog.textContent += `[${time}] ${msg}\n`;
+        statusLog.scrollTop = statusLog.scrollHeight;
+      }
+
+      const autoCountButtons = document.querySelectorAll(".autoCount");
+      const customCountInput = document.getElementById("customCount");
+      autoCountButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          autoCountButtons.forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          state.autoCount = Number(btn.dataset.n);
+          customCountInput.value = "";
+        });
+      });
+      customCountInput.addEventListener("input", e => {
+        autoCountButtons.forEach(b => b.classList.remove("active"));
+        const v = Number(e.target.value);
+        state.autoCount = v > 0 ? v : 0;
+      });
+
+      const startAutoBtn = document.getElementById("startAuto");
+      const cancelAutoBtn = document.getElementById("cancelAuto");
+      const autoProgressWrap = document.getElementById("autoProgressWrap");
+      const autoProgressText = document.getElementById("autoProgressText");
+      const autoProgressBar = document.getElementById("autoProgressBar");
+
+      startAutoBtn.addEventListener("click", async () => {
+        if (state.autoRunning) return;
+        if (!state.autoCount || state.autoCount < 1) {
+          alert("Choose how many questions to generate.");
+          return;
+        }
+
+        state.autoRunning = true;
+        state.cancelRequested = false;
+        state.autoAbortController = null;
+        statusLog.textContent = "";
+        autoProgressWrap.classList.remove("hidden");
+        autoProgressText.textContent = `0/${state.autoCount}`;
+        autoProgressBar.style.width = "0%";
+        startAutoBtn.classList.add("hidden");
+        cancelAutoBtn.classList.remove("hidden");
+        logStatus(`Starting batch of ${state.autoCount} question(s)…`);
+
+        let completed = 0;
+
+        for (let i = 0; i < state.autoCount; i++) {
+          if (state.cancelRequested) {
+            logStatus("Generation cancelled by user.");
+            break;
+          }
+
+          logStatus(`\n[${i+1}/${state.autoCount}] Selecting article (soft category bias)…`);
+          try {
+            const controller = new AbortController();
+            state.autoAbortController = controller;
+            const q = await generateQuestionWithEngine(state.category, controller.signal, logStatus);
+            state.autoAbortController = null;
+
+            if (!q) {
+              logStatus("✗ Failed to build a valid question, skipping.");
+            } else {
+              state.exportPool.push({
+                q: q.q,
+                o: q.o,
+                a: q.a,
+                c: state.category
+              });
+              updateExportCount();
+              completed++;
+              logStatus("✓ Added to export pool.");
+            }
+          } catch (err) {
+            logStatus(`✗ Error: ${err && err.name === "AbortError" ? "Fetch aborted" : "Unexpected error"}.`);
+            if (state.cancelRequested) {
+              logStatus("Generation cancelled by user.");
+              break;
+            }
+          }
+
+          autoProgressText.textContent = `${completed}/${state.autoCount}`;
+          autoProgressBar.style.width = `${(completed / state.autoCount) * 100}%`;
+        }
+
+        state.autoRunning = false;
+        state.autoAbortController = null;
+        cancelAutoBtn.classList.add("hidden");
+        startAutoBtn.classList.remove("hidden");
+        logStatus(`\nBatch complete. Generated ${completed} question(s).`);
+      });
+
+      cancelAutoBtn.addEventListener("click", () => {
+        if (!state.autoRunning) return;
+        state.cancelRequested = true;
+        if (state.autoAbortController) {
+          try {
+            state.autoAbortController.abort();
+          } catch (e) {}
+        }
+        logStatus("Cancelling…");
+      });
+
+      const curatedCards = document.getElementById("curatedCards");
+      const generateOneBtn = document.getElementById("generateOne");
+      const forceArticleInput = document.getElementById("forceArticle");
+
+      generateOneBtn.addEventListener("click", async () => {
+        const forced = forceArticleInput.value.trim() || null;
+        logStatus("\n[Curated] Generating one question" + (forced ? ` for article: "${forced}"…` : "…"));
+        try {
+          const controller = new AbortController();
+          const q = await generateQuestionWithEngine(state.category, controller.signal, logStatus, forced);
+          if (!q) {
+            logStatus("[Curated] ✗ Failed to build a valid question.");
+            alert("Failed to generate a question. Try again.");
+            return;
+          }
+          addCuratedCard(q);
+          logStatus("[Curated] ✓ Question ready for review.");
+        } catch (err) {
+          logStatus("[Curated] ✗ Error while generating question.");
+          alert("Error while generating question.");
+        }
+      });
+
+      function addCuratedCard(q) {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const header = document.createElement("div");
+        header.className = "q-card-header";
+        header.textContent = q.title;
+        card.appendChild(header);
+
+        const src = document.createElement("div");
+        src.className = "q-source";
+        src.textContent = `Source: ${q.sourceSentence}`;
+        card.appendChild(src);
+
+        const pat = document.createElement("div");
+        pat.className = "q-pattern";
+        pat.textContent = `Pattern: ${q.pattern}`;
+        card.appendChild(pat);
+
+        const qLabel = document.createElement("label");
+        qLabel.textContent = "Question:";
+        qLabel.style.fontSize = "13px";
+        const qInput = document.createElement("input");
+        qInput.type = "text";
+        qInput.className = "q-field";
+        qInput.value = q.q;
+        qLabel.appendChild(qInput);
+        card.appendChild(qLabel);
+
+        const optsTitle = document.createElement("div");
+        optsTitle.textContent = "Options:";
+        optsTitle.style.marginTop = "8px";
+        optsTitle.style.fontSize = "13px";
+        card.appendChild(optsTitle);
+
+        const optContainer = document.createElement("div");
+        q.o.forEach((opt, idx) => {
+          const row = document.createElement("div");
+          row.className = "opt-row";
+
+          const radio = document.createElement("input");
+          radio.type = "radio";
+          radio.name = "correct-" + q.id;
+          radio.checked = idx === q.a;
+
+          const text = document.createElement("input");
+          text.type = "text";
+          text.value = opt;
+
+          row.appendChild(radio);
+          row.appendChild(text);
+          optContainer.appendChild(row);
+        });
+        card.appendChild(optContainer);
+
+        const row1 = document.createElement("div");
+        row1.className = "row";
+        row1.style.marginTop = "10px";
+
+        const regenAnswersBtn = document.createElement("button");
+        regenAnswersBtn.textContent = "Regenerate Answers";
+        const regenQuestionBtn = document.createElement("button");
+        regenQuestionBtn.textContent = "Regenerate Question";
+
+        row1.appendChild(regenAnswersBtn);
+        row1.appendChild(regenQuestionBtn);
+        card.appendChild(row1);
+
+        const row2 = document.createElement("div");
+        row2.className = "row";
+        row2.style.marginTop = "8px";
+
+        const approveBtn = document.createElement("button");
+        approveBtn.textContent = "Approve";
+        approveBtn.className = "primary";
+
+        const discardBtn = document.createElement("button");
+        discardBtn.textContent = "Discard";
+
+        row2.appendChild(approveBtn);
+        row2.appendChild(discardBtn);
+        card.appendChild(row2);
+
+        regenAnswersBtn.addEventListener("click", async () => {
+          logStatus("[Curated] Regenerating answers…");
+          try {
+            const controller = new AbortController();
+            const newQ = await regenerateAnswers(q, controller.signal, logStatus);
+            if (!newQ) {
+              logStatus("[Curated] ✗ Failed to regenerate answers.");
+              return;
+            }
+            q.o = newQ.o;
+            q.a = newQ.a;
+            while (optContainer.firstChild) optContainer.removeChild(optContainer.firstChild);
+            newQ.o.forEach((opt, idx) => {
+              const row = document.createElement("div");
+              row.className = "opt-row";
+              const radio = document.createElement("input");
+              radio.type = "radio";
+              radio.name = "correct-" + q.id;
+              radio.checked = idx === newQ.a;
+              const text = document.createElement("input");
+              text.type = "text";
+              text.value = opt;
+              row.appendChild(radio);
+              row.appendChild(text);
+              optContainer.appendChild(row);
+            });
+            logStatus("[Curated] ✓ Answers regenerated.");
+          } catch (err) {
+            logStatus("[Curated] ✗ Error while regenerating answers.");
+          }
+        });
+
+        regenQuestionBtn.addEventListener("click", async () => {
+          logStatus("[Curated] Regenerating whole question…");
+          try {
+            const controller = new AbortController();
+            const newQ = await generateQuestionWithEngine(state.category, controller.signal, logStatus, q.title);
+            if (!newQ) {
+              logStatus("[Curated] ✗ Failed to regenerate question.");
+              return;
+            }
+            q.q = newQ.q;
+            q.o = newQ.o;
+            q.a = newQ.a;
+            q.sourceSentence = newQ.sourceSentence;
+            q.pattern = newQ.pattern;
+
+            header.textContent = newQ.title;
+            src.textContent = `Source: ${newQ.sourceSentence}`;
+            pat.textContent = `Pattern: ${newQ.pattern}`;
+            qInput.value = newQ.q;
+
+            while (optContainer.firstChild) optContainer.removeChild(optContainer.firstChild);
+            newQ.o.forEach((opt, idx) => {
+              const row = document.createElement("div");
+              row.className = "opt-row";
+              const radio = document.createElement("input");
+              radio.type = "radio";
+              radio.name = "correct-" + q.id;
+              radio.checked = idx === newQ.a;
+              const text = document.createElement("input");
+              text.type = "text";
+              text.value = opt;
+              row.appendChild(radio);
+              row.appendChild(text);
+              optContainer.appendChild(row);
+            });
+            logStatus("[Curated] ✓ Question regenerated.");
+          } catch (err) {
+            logStatus("[Curated] ✗ Error while regenerating question.");
+          }
+        });
+
+        approveBtn.addEventListener("click", () => {
+          const qText = qInput.value.trim();
+          if (!qText) {
+            alert("Question text cannot be empty.");
+            return;
+          }
+          const optRows = optContainer.querySelectorAll(".opt-row");
+          const options = [];
+          let correctIndex = -1;
+          optRows.forEach((row, idx) => {
+            const radio = row.querySelector("input[type='radio']");
+            const text = row.querySelector("input[type='text']");
+            options.push(text.value.trim());
+            if (radio.checked) correctIndex = idx;
+          });
+          if (options.some(o => !o)) {
+            alert("All options must be filled.");
+            return;
+          }
+          if (correctIndex < 0) {
+            alert("Select the correct answer.");
+            return;
+          }
+          state.exportPool.push({
+            q: qText,
+            o: options,
+            a: correctIndex,
+            c: state.category
+          });
+          updateExportCount();
+          card.remove();
+        });
+
+        discardBtn.addEventListener("click", () => {
+          card.remove();
+        });
+
+        curatedCards.prepend(card);
+      }
+
+      const exportCountEl = document.getElementById("exportCount");
+      function updateExportCount() {
+        exportCountEl.textContent = state.exportPool.length;
+      }
+
+      const copyBtn = document.getElementById("copyJSON");
+      const downloadBtn = document.getElementById("downloadJSON");
+      const clearBtn = document.getElementById("clearPool");
+
+      copyBtn.addEventListener("click", () => {
+        const json = JSON.stringify(state.exportPool, null, 2);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(json).then(() => {
+            alert("JSON copied to clipboard.");
+          }).catch(() => {
+            fallbackCopy(json);
+          });
+        } else {
+          fallbackCopy(json);
+        }
+      });
+
+      function fallbackCopy(text) {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand("copy");
+          alert("JSON copied.");
+        } catch (e) {
+          alert("Copy failed. You can select and copy manually from the export.");
+        }
+        document.body.removeChild(ta);
+      }
+
+      downloadBtn.addEventListener("click", () => {
+        const json = JSON.stringify(state.exportPool, null, 2);
+        try {
+          const blob = new Blob([json], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "questions.json";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        } catch (e) {
+          alert("Download not supported here. You can copy the JSON instead.");
+        }
+      });
+
+      clearBtn.addEventListener("click", () => {
+        if (!confirm("Clear all approved questions?")) return;
+        state.exportPool = [];
+        updateExportCount();
+      });
+
+      async function generateQuestionWithEngine(categoryId, signal, log, forcedTitle = null) {
+        const cat = categories.find(c => c.id === categoryId) || categories.find(c => c.id === 0);
+        const keywords = cat.keywords || [];
+
+        let summaryData = null;
+        if (forcedTitle) {
+          log(`Fetching forced article: "${forcedTitle}"…`);
+          summaryData = await fetchSummaryByTitle(forcedTitle, signal);
+        } else {
+          summaryData = await fetchBiasedRandomSummary(keywords, signal, log);
+        }
+        if (!summaryData) {
+          log("No suitable article found.");
+          return null;
+        }
+
+        log(`Using article: "${summaryData.title}"`);
+        const text = summaryData.extract || summaryData.description || "";
+        if (!text || text.split(" ").length < 6) {
+          log("Article summary too short, skipping.");
+          return null;
+        }
+
+        log("Cleaning and segmenting text…");
+        const sentences = splitIntoSentences(text);
+        if (!sentences.length) {
+          log("No usable sentences found.");
+          return null;
+        }
+
+        log("Detecting pattern…");
+        const patternResult = detectPattern(summaryData.title, sentences);
+        if (!patternResult) {
+          log("No suitable pattern found.");
+          return null;
+        }
+
+        log(`Pattern detected: ${patternResult.pattern}`);
+        const questionText = patternResult.question;
+        const correctAnswer = patternResult.answer;
+        if (!questionText || !correctAnswer) {
+          log("Failed to build question/answer.");
+          return null;
+        }
+
+        log("Building distractors…");
+        const distractors = await buildDistractors(correctAnswer, categoryId, signal, log, state);
+        if (!distractors || distractors.length < 3) {
+          log("Not enough distractors, skipping.");
+          return null;
+        }
+
+        const options = [correctAnswer, ...distractors];
+        const shuffled = shuffleWithIndex(options);
+        const q = {
+          id: Date.now() + Math.random(),
+          title: summaryData.title,
+          q: questionText,
+          o: shuffled.items,
+          a: shuffled.correctIndex,
+          sourceSentence: patternResult.sourceSentence,
+          pattern: patternResult.pattern
+        };
+        return q;
+      }
+
+      async function fetchSummaryByTitle(title, signal) {
+        const encoded = encodeURIComponent(title);
+        const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encoded}`;
+        const res = await fetch(url, { signal });
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (data.type === "disambiguation") return null;
+        return data;
+      }
+
+      async function fetchRandomSummary(signal) {
+        const url = "https://en.wikipedia.org/api/rest_v1/page/random/summary";
+        const res = await fetch(url, { signal });
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (data.type === "disambiguation") return null;
+        return data;
+      }
+
+      async function fetchBiasedRandomSummary(keywords, signal, log) {
+        if (!keywords || keywords.length === 0) {
+          log("No category keywords, using pure random.");
+          return await fetchRandomSummary(signal);
+        }
+
+        const maxAttempts = 4;
+        for (let i = 0; i < maxAttempts; i++) {
+          const data = await fetchRandomSummary(signal);
+          if (!data) continue;
+          const text = (data.extract || data.description || "").toLowerCase();
+          const title = (data.title || "").toLowerCase();
+          const haystack = title + " " + text;
+          const match = keywords.some(k => haystack.includes(k));
+          if (match) {
+            log(`Category bias hit on attempt ${i+1}.`);
+            return data;
+          }
+        }
+        log("No strong category match, falling back to random.");
+        return await fetchRandomSummary(signal);
+      }
+
+      function splitIntoSentences(text) {
+        return text
+          .replace(/\s+/g, " ")
+          .split(/(?<=[.!?])\s+/)
+          .map(s => s.trim())
+          .filter(s => s.length > 0);
+      }
+
+      function detectPattern(title, sentences) {
+        const t = title.trim();
+        for (const s of sentences) {
+          const lower = s.toLowerCase();
+
+          if (lower.startsWith((t + " is ").toLowerCase()) || lower.startsWith((t + " was ").toLowerCase())) {
+            const question = `What is ${t}?`;
+            const answer = s.replace(new RegExp("^" + t + "\\s+(is|was)\\s+", "i"), "").replace(/\.$/, "").trim();
+            if (answer.split(" ").length > 2) {
+              return { pattern: "definition", question, answer, sourceSentence: s };
+            }
+          }
+
+          if (lower.includes("known for")) {
+            const question = `What is ${t} known for?`;
+            const idx = lower.indexOf("known for");
+            const answer = s.slice(idx + "known for".length).replace(/^[^a-zA-Z0-9]+/, "").replace(/\.$/, "").trim();
+            if (answer.split(" ").length > 2) {
+              return { pattern: "known-for", question, answer, sourceSentence: s };
+            }
+          }
+
+          const dateMatch = s.match(/(in|on)\s+(\d{3,4})/);
+          if (dateMatch && s.toLowerCase().includes(t.toLowerCase())) {
+            const question = `When did ${t} ${inferVerbFromSentence(s)}?`;
+            const answer = dateMatch[2];
+            return { pattern: "date", question, answer, sourceSentence: s };
+          }
+
+          const whereMatch = s.match(/\b(in|at|on)\s+([A-Z][A-Za-z0-9\s\-]+)\b/);
+          if (whereMatch && s.toLowerCase().includes(t.toLowerCase())) {
+            const question = `Where is ${t} located?`;
+            const answer = whereMatch[2].trim().replace(/\.$/, "");
+            return { pattern: "location", question, answer, sourceSentence: s };
+          }
+
+          if (lower.includes("was a") || lower.includes("is a")) {
+            const question = `Who is ${t}?`;
+            const answer = s.replace(new RegExp("^" + t + "\\s+(is|was)\\s+", "i"), "").replace(/\.$/, "").trim();
+            if (answer.split(" ").length > 2) {
+              return { pattern: "person", question, answer, sourceSentence: s };
+            }
+          }
+        }
+
+        const fallback = sentences[0];
+        const answer = fallback.replace(/\.$/, "").trim();
+        const question = `What is ${title}?`;
+        return { pattern: "fallback", question, answer, sourceSentence: fallback };
+      }
+
+      function inferVerbFromSentence(s) {
+        const lower = s.toLowerCase();
+        if (lower.includes("born")) return "born";
+        if (lower.includes("founded")) return "form";
+        if (lower.includes("established")) return "established";
+        if (lower.includes("created")) return "created";
+        if (lower.includes("discovered")) return "discovered";
+        return "do";
+      }
+
+      async function buildDistractors(correctAnswer, categoryId, signal, log, state) {
+        const targetType = classifyAnswerType(correctAnswer);
+        const distractors = [];
+        const maxTries = 12;
+
+        const pool = state.distractorPool.slice();
+        while (pool.length < maxTries) {
+          const data = await fetchRandomSummary(signal);
+          if (!data) break;
+          const title = data.title || "";
+          const extract = data.extract || data.description || "";
+          if (!title || !extract) continue;
+          pool.push({ title, extract });
+        }
+        state.distractorPool = pool.slice(-40);
+
+        for (const item of pool) {
+          if (distractors.length >= 3) break;
+          const candidate = buildCandidateAnswer(item);
+          if (!candidate) continue;
+          if (candidate === correctAnswer) continue;
+          if (classifyAnswerType(candidate) !== targetType) continue;
+          if (Math.abs(candidate.length - correctAnswer.length) > 25) continue;
+          distractors.push(candidate);
+        }
+
+        while (distractors.length < 3) {
+          const filler = generateGenericDistractor(correctAnswer);
+          if (!distractors.includes(filler) && filler !== correctAnswer) {
+            distractors.push(filler);
+          } else {
+            break;
+          }
+        }
+
+        return distractors.slice(0, 3);
+      }
+
+      function classifyAnswerType(answer) {
+        if (/^\d{3,4}$/.test(answer.trim())) return "year";
+        if (answer.split(" ").length <= 3 && /^[A-Z]/.test(answer.trim())) return "proper";
+        return "phrase";
+      }
+
+      function buildCandidateAnswer(item) {
+        const text = item.extract || "";
+        const firstSentence = splitIntoSentences(text)[0] || "";
+        const cleaned = firstSentence.replace(/\.$/, "").trim();
+        if (!cleaned) return null;
+        if (cleaned.length > 120) return null;
+        return cleaned;
+      }
+
+      function generateGenericDistractor(correctAnswer) {
+        if (/^\d{3,4}$/.test(correctAnswer.trim())) {
+          const year = Number(correctAnswer.trim());
+          const delta = [1, 2, 5, 10][Math.floor(Math.random() * 4)];
+          const sign = Math.random() < 0.5 ? -1 : 1;
+          return String(year + sign * delta);
+        }
+        const words = correctAnswer.split(" ");
+        if (words.length <= 3) {
+          const prefixes = ["Ancient", "Modern", "Central", "Northern", "Southern", "Eastern", "Western"];
+          const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+          return prefix + " " + words[words.length - 1];
+        }
+        return correctAnswer.split(" ").slice(0, 3).join(" ") + " context";
+      }
+
+      function shuffleWithIndex(arr) {
+        const items = arr.slice();
+        let correctIndex = 0;
+        const original = arr[0];
+        for (let i = items.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [items[i], items[j]] = [items[j], items[i]];
+        }
+        correctIndex = items.indexOf(original);
+        return { items, correctIndex };
+      }
+    });
+  </script>
+</body>
+</html>

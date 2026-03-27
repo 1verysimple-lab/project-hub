@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sentence Reader — Open Text File</title>
+<style>
+  :root{--bg:#071021;--panel:#0b1220;--text:#e6eef8;--accent:#ffd166;--muted:#9fb0c8;}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#071021 0%, #0b1220 100%);color:var(--text);}
+  .app{width:960px;max-width:96%;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:18px;box-shadow:0 8px 30px rgba(2,6,23,0.6);}
+  header{display:flex;gap:12px;align-items:center;margin-bottom:10px;}
+  h1{font-size:18px;margin:0;color:var(--accent);}
+  .controls{display:flex;gap:10px;align-items:center;margin-left:auto;flex-wrap:wrap;}
+  label{font-size:13px;color:var(--muted);}
+  .file-row{display:flex;gap:10px;align-items:center;margin-top:8px;}
+  input[type=file]{display:none;}
+  .file-btn{background:var(--panel);color:var(--text);border:1px solid rgba(255,255,255,0.03);padding:8px 12px;border-radius:8px;cursor:pointer;}
+  textarea{width:100%;height:220px;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02);color:var(--text);resize:vertical;font-size:15px;line-height:1.5;overflow:auto;}
+  .reader{height:160px;display:flex;align-items:center;justify-content:center;margin-top:12px;border-radius:10px;background:#071428;border:1px solid rgba(255,255,255,0.03);padding:18px;overflow:hidden;position:relative;}
+  .sentence{font-size:26px;font-weight:600;color:var(--muted);text-align:center;line-height:1.3;max-width:100%;}
+  .sentence .highlight{color:var(--accent);background:rgba(255,209,102,0.06);padding:6px 10px;border-radius:8px;}
+  .toolbar{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap;}
+  button{background:var(--panel);color:var(--text);border:1px solid rgba(255,255,255,0.03);padding:8px 12px;border-radius:8px;cursor:pointer;}
+  button.primary{background:var(--accent);color:#071428;font-weight:700;}
+  input[type=range]{width:160px;}
+  .status{margin-left:auto;color:var(--muted);font-size:13px;}
+  .progress{height:8px;background:rgba(255,255,255,0.03);border-radius:6px;overflow:hidden;margin-top:10px;}
+  .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#ffb86b);width:0%;}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px;}
+  .dropzone{border:2px dashed rgba(255,255,255,0.03);padding:8px;border-radius:8px;color:var(--muted);font-size:13px;}
+</style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="Sentence reader with file open">
+    <header>
+      <h1>Sentence Reader</h1>
+      <div class="controls">
+        <label>WPM <span id="wpmLabel">300</span></label>
+        <input id="wpm" type="range" min="80" max="1200" value="300" step="10" aria-label="Words per minute">
+        <label>Font <span id="fontLabel">26</span>px</label>
+        <input id="font" type="range" min="14" max="48" value="26" step="1" aria-label="Font size">
+      </div>
+    </header>
+
+    <div class="file-row">
+      <label class="file-btn" id="openFileBtn">Open text file</label>
+      <input id="fileInput" type="file" accept=".txt,text/plain">
+      <div class="dropzone" id="dropzone" style="flex:1">Or drag & drop a .txt file here</div>
+      <button id="loadTextareaBtn" title="Load from textarea">Load from textarea</button>
+    </div>
+
+    <label class="small" style="margin-top:10px">The textarea shows the full text. The reader displays one full sentence at a time and will scroll the textarea to the current sentence.</label>
+    <textarea id="inputText" placeholder="Paste or open a text file..."></textarea>
+
+    <div class="reader" id="reader" tabindex="0" aria-live="polite" aria-atomic="true">
+      <div class="sentence" id="sentence">Press Start to begin</div>
+    </div>
+
+    <div class="toolbar">
+      <button id="startBtn" class="primary">Start</button>
+      <button id="pauseBtn">Pause</button>
+      <button id="prevBtn" title="Previous sentence">Prev</button>
+      <button id="nextBtn" title="Next sentence">Next</button>
+      <button id="jumpBtn" title="Jump to selection">Jump to selection</button>
+      <div class="status" id="status">0 / 0 sentences</div>
+    </div>
+
+    <div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
+    <div class="hint">Space toggles pause/resume. Left/Right arrows step sentences. Click the reader to focus keyboard controls.</div>
+  </div>
+
+<script>
+(function(){
+  const fileInput = document.getElementById('fileInput');
+  const openFileBtn = document.getElementById('openFileBtn');
+  const dropzone = document.getElementById('dropzone');
+  const input = document.getElementById('inputText');
+  const loadTextareaBtn = document.getElementById('loadTextareaBtn');
+
+  const startBtn = document.getElementById('startBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const jumpBtn = document.getElementById('jumpBtn');
+  const sentenceEl = document.getElementById('sentence');
+  const wpmRange = document.getElementById('wpm');
+  const wpmLabel = document.getElementById('wpmLabel');
+  const fontRange = document.getElementById('font');
+  const fontLabel = document.getElementById('fontLabel');
+  const status = document.getElementById('status');
+  const progressBar = document.getElementById('progressBar');
+  const reader = document.getElementById('reader');
+
+  let sentences = []; // {text, start, end, words}
+  let idx = 0;
+  let timer = null;
+  let playing = false;
+
+  // File open handlers
+  openFileBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    if(f) readFile(f);
+    fileInput.value = '';
+  });
+
+  // Drag & drop
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = 'rgba(255,209,102,0.6)'; });
+  dropzone.addEventListener('dragleave', () => { dropzone.style.borderColor = 'rgba(255,255,255,0.03)'; });
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = 'rgba(255,255,255,0.03)';
+    const f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if(f) readFile(f);
+  });
+
+  function readFile(file){
+    if(!file.type && !file.name.endsWith('.txt')) {
+      // still allow reading by extension
+    }
+    const readerFile = new FileReader();
+    readerFile.onload = () => {
+      input.value = String(readerFile.result || '');
+      loadSentences();
+      // move focus to reader for keyboard control
+      reader.focus();
+    };
+    readerFile.onerror = () => alert('Could not read file.');
+    readerFile.readAsText(file, 'utf-8');
+  }
+
+  // Sentence splitting
+  function splitIntoSentences(text){
+    const result = [];
+    // Regex finds sequences ending with .!? possibly followed by quotes/parentheses, or final fragment
+    const re = /[^.!?]+[.!?]+["')\]]*|[^.!?]+$/g;
+    let m;
+    while((m = re.exec(text)) !== null){
+      const s = m[0].trim();
+      if(s.length === 0) continue;
+      result.push({ text: s, start: m.index, end: m.index + m[0].length });
+    }
+    if(result.length === 0 && text.trim().length > 0){
+      result.push({ text: text.trim(), start: 0, end: text.length });
+    }
+    result.forEach(r => r.words = r.text.replace(/\s+/g,' ').trim().split(' ').filter(Boolean).length || 1);
+    return result;
+  }
+
+  function loadSentences(){
+    const t = input.value || '';
+    sentences = splitIntoSentences(t);
+    idx = 0;
+    updateDisplay();
+  }
+
+  function updateDisplay(){
+    if(sentences.length === 0){
+      sentenceEl.innerHTML = 'No text to read';
+      status.textContent = '0 / 0 sentences';
+      progressBar.style.width = '0%';
+      return;
+    }
+    const s = sentences[idx].text;
+    sentenceEl.innerHTML = '<span class="highlight">' + escapeHtml(s) + '</span>';
+    status.textContent = (idx+1) + ' / ' + sentences.length + ' sentences';
+    progressBar.style.width = ((idx+1)/sentences.length*100) + '%';
+    scrollTextareaTo(sentences[idx].start, sentences[idx].end);
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]); });
+  }
+
+  function intervalFromWpm(wpm){
+    return 60000 / Math.max(1, wpm);
+  }
+
+  function scheduleNext(){
+    clearTimeout(timer);
+    if(!playing) return;
+    if(sentences.length === 0) { stop(); return; }
+    const words = sentences[idx].words || 1;
+    const base = intervalFromWpm(Number(wpmRange.value));
+    const extra = 0.12 * base;
+    const delay = Math.round(words * base + extra);
+    timer = setTimeout(() => {
+      idx++;
+      if(idx >= sentences.length){
+        idx = sentences.length - 1;
+        stop();
+        return;
+      }
+      updateDisplay();
+      scheduleNext();
+    }, delay);
+  }
+
+  function play(){
+    if(sentences.length === 0) return;
+    if(playing) return;
+    playing = true;
+    pauseBtn.textContent = 'Pause';
+    startBtn.disabled = true;
+    scheduleNext();
+  }
+
+  function pause(){
+    if(!playing) return;
+    playing = false;
+    clearTimeout(timer);
+    pauseBtn.textContent = 'Resume';
+    startBtn.disabled = false;
+  }
+
+  function stop(){
+    playing = false;
+    clearTimeout(timer);
+    pauseBtn.textContent = 'Pause';
+    startBtn.disabled = false;
+  }
+
+  function prev(){
+    idx = Math.max(0, idx - 1);
+    updateDisplay();
+  }
+
+  function next(){
+    idx = Math.min(sentences.length - 1, idx + 1);
+    updateDisplay();
+  }
+
+  function scrollTextareaTo(start, end){
+    try{
+      input.focus();
+      input.setSelectionRange(start, end);
+      const ratio = start / Math.max(1, input.value.length);
+      const maxScroll = input.scrollHeight - input.clientHeight;
+      input.scrollTop = Math.round(maxScroll * ratio);
+    }catch(e){}
+  }
+
+  function jumpToSelection(){
+    const selStart = input.selectionStart;
+    for(let i=0;i<sentences.length;i++){
+      if(selStart >= sentences[i].start && selStart <= sentences[i].end){
+        idx = i; updateDisplay(); return;
+      }
+    }
+    // nearest fallback
+    let nearest = 0, best = Infinity;
+    for(let i=0;i<sentences.length;i++){
+      const d = Math.abs(selStart - sentences[i].start);
+      if(d < best){ best = d; nearest = i; }
+    }
+    idx = nearest; updateDisplay();
+  }
+
+  // UI events
+  startBtn.addEventListener('click', () => { if(sentences.length === 0) loadSentences(); play(); });
+  pauseBtn.addEventListener('click', () => { if(playing) pause(); else play(); });
+  prevBtn.addEventListener('click', () => { prev(); if(playing) scheduleNext(); });
+  nextBtn.addEventListener('click', () => { next(); if(playing) scheduleNext(); });
+  jumpBtn.addEventListener('click', () => jumpToSelection());
+  loadTextareaBtn.addEventListener('click', () => { loadSentences(); reader.focus(); });
+
+  wpmRange.addEventListener('input', () => { wpmLabel.textContent = wpmRange.value; if(playing) scheduleNext(); });
+  fontRange.addEventListener('input', () => { fontLabel.textContent = fontRange.value; document.querySelector('.sentence').style.fontSize = fontRange.value + 'px'; });
+
+  // keyboard controls
+  window.addEventListener('keydown', (e) => {
+    if(e.code === 'Space'){
+      e.preventDefault();
+      if(playing) pause(); else play();
+    } else if(e.key === 'ArrowRight'){
+      e.preventDefault();
+      next(); if(playing) scheduleNext();
+    } else if(e.key === 'ArrowLeft'){
+      e.preventDefault();
+      prev(); if(playing) scheduleNext();
+    } else if(e.key === 'Home'){
+      e.preventDefault();
+      idx = 0; updateDisplay(); if(playing) scheduleNext();
+    } else if(e.key === 'End'){
+      e.preventDefault();
+      idx = Math.max(0, sentences.length - 1); updateDisplay(); stop();
+    }
+  });
+
+  reader.addEventListener('click', () => reader.focus());
+
+  // update sentences when textarea changes (debounced)
+  let lastLoadTimer = null;
+  input.addEventListener('input', () => {
+    clearTimeout(lastLoadTimer);
+    lastLoadTimer = setTimeout(() => {
+      const caret = input.selectionStart;
+      loadSentences();
+      for(let i=0;i<sentences.length;i++){
+        if(caret >= sentences[i].start && caret <= sentences[i].end){ idx = i; break; }
+      }
+      updateDisplay();
+    }, 300);
+  });
+
+  // initialize
+  document.querySelector('.sentence').style.fontSize = fontRange.value + 'px';
+  loadSentences();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Scrabble Word Calculator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Courier, monospace;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #121212;
+      color: #eeeeee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      border: 2px solid #eeeeee;
+      padding: 24px;
+      width: 420px;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 20px 0;
+      font-size: 20px;
+      letter-spacing: 1px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      font-size: 18px;
+      background: #121212;
+      color: #eeeeee;
+      border: 2px solid #eeeeee;
+      outline: none;
+      margin-bottom: 16px;
+    }
+
+    input::placeholder {
+      color: #888;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 18px;
+      background: #121212;
+      color: #eeeeee;
+      border: 2px solid #eeeeee;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1a1a1a;
+    }
+
+    .result {
+      margin-top: 24px;
+      border: 2px solid #eeeeee;
+      padding: 20px;
+      font-size: 28px;
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>SCRABBLE WORD CALCULATOR</h1>
+
+    <input
+      type="text"
+      id="wordInput"
+      placeholder="TYPE A WORD"
+      autocomplete="off"
+    />
+
+    <button onclick="calculateScore()">CALCULATE</button>
+
+    <div class="result" id="result">
+      SCORE: 0
+    </div>
+  </div>
+
+  <script>
+    function calculateScore() {
+      const word = document.getElementById("wordInput").value.toUpperCase();
+      let score = 0;
+
+      const vowels = ["A", "E", "I", "O", "U"];
+      const highValue = ["K", "J", "X", "Q", "Z"];
+
+      for (let char of word) {
+        if (char < "A" || char > "Z") continue;
+
+        if (vowels.includes(char)) {
+          score += 1;
+        } else if (highValue.includes(char)) {
+          score += 10;
+        } else {
+          score += 2;
+        }
+      }
+
+      document.getElementById("result").textContent = "SCORE: " + score;
+    }
+  </script>
+</body>
+</html>
+

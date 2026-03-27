@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bianca's ADHD Referral Mission</title>
+    <style>
+        :root {
+            /* Calming but high-contrast colours */
+            --primary: #2563eb;       /* Royal Blue */
+            --primary-dark: #1e40af;
+            --success: #059669;       /* Green for action items */
+            --bg: #f3f4f6;            /* Light grey background reduces glare */
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #4b5563;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-main);
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        /* Typography */
+        h1 {
+            color: var(--text-main);
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        h2 {
+            color: var(--primary);
+            font-size: 1.4rem;
+            margin-top: 40px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        h2 span {
+            background: var(--primary);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            margin-right: 12px;
+        }
+
+        p { margin-bottom: 15px; color: var(--text-muted); }
+
+        /* Action Buttons */
+        .btn {
+            display: inline-block;
+            background-color: var(--primary);
+            color: white;
+            padding: 14px 28px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+            transition: background 0.2s;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .btn:hover { background-color: var(--primary-dark); }
+        .btn-outline { background-color: transparent; border: 2px solid var(--primary); color: var(--primary); }
+        .btn-outline:hover { background-color: #eff6ff; }
+        
+        /* The Text Box */
+        .copy-wrapper {
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .email-text {
+            background-color: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px dashed #cbd5e1;
+            font-family: monospace;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+            color: #334155;
+        }
+
+        #copyBtn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        /* Checklist */
+        .checklist-item {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .checklist-item input {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+
+        /* Mobile tweaks */
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            h1 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🚀 Bianca's ADHD Referral Mission</h1>
+    <p style="text-align: center;">Let's get this sorted. Follow these 3 steps.</p>
+
+    <h2><span>1</span> The Form (Boring but Vital)</h2>
+    <p>You need to fill out the ASRS Form. This is the "ticket" to get the referral. Be honest—answer based on your <strong>worst days</strong>, not your good ones.</p>
+    
+    <a href="https://add.org/wp-content/uploads/2015/03/adhd-questionnaire-ASRS111.pdf" target="_blank" class="btn btn-outline">📄 Download ASRS PDF</a>
+    <p style="font-size: 0.85rem; margin-top: 10px; text-align: center;"><em>Download it, fill it out, and save it to your phone/computer.</em></p>
+
+    <h2><span>2</span> The Message (Copy This)</h2>
+    <p>Don't worry about writing an email. I've written it for you. It uses the correct legal words to stop them saying "no."</p>
+
+    <div class="copy-wrapper">
+        <button id="copyBtn" onclick="copyText()">Copy Text</button>
+        <div class="email-text" id="emailContent">Subject: Right to Choose Referral Request - ADHD Assessment - Bianca Beaney
+
+Dear Referrals Team,
+
+I am writing to exercise my legal right to choose my mental healthcare provider under the NHS Constitution. I would like to be referred to **Psicon Ltd** for an Adult ADHD assessment and medication titration.
+
+**Why I am choosing this provider:**
+I understand that Psicon is a commissioned provider for the Kent & Medway ICB. As a local provider based in Canterbury, they offer the stability of face-to-face support if required and are aligned with local Shared Care protocols.
+
+**Provider Details for Referral:**
+• Provider: Psicon Ltd
+• NHS Email: kmicb.psicon.adults@nhs.net
+• Address: Delandale House, 37 Old Dover Road, Canterbury, CT1 3JF
+
+**My Request:**
+1. Please complete the standard "Kent & Medway Adult RTC Referral Form".
+2. Please attach my completed ASRS v1.1 Self-Report Form (attached to this message).
+3. Could you please confirm that if Psicon diagnoses me and stabilises me on medication, the practice is willing to accept a Shared Care Agreement for ongoing prescriptions?
+
+Thank you,
+Bianca Beaney</div>
+    </div>
+
+    <h2><span>3</span> The Delivery (Send it)</h2>
+    <p>Click the link for your surgery below. Look for the "Contact us online" or "Consult with your doctor online" button.</p>
+    
+    <div style="display: grid; gap: 10px;">
+        <a href="https://www.orchardhousesurgery.nhs.uk" target="_blank" class="btn">🏥 Orchard House (Lydd) Website</a>
+        <a href="https://www.churchlanesurgerynewromney.nhs.uk" target="_blank" class="btn" style="background-color: #4b5563;">🏥 Church Lane (New Romney) Website</a>
+    </div>
+
+    <p style="margin-top: 20px;"><strong>Instructions once you click:</strong><br>
+    1. Select "Admin Request" or "Referrals".<br>
+    2. Paste the text you copied above.<br>
+    3. <strong>Upload</strong> the PDF form you filled out in Step 1.</p>
+
+    <hr style="margin: 30px 0; border: 0; border-top: 1px solid #e5e7eb;">
+
+    <h3>✅ Final Checklist</h3>
+    <div class="checklist-item">
+        <input type="checkbox" id="c1">
+        <label for="c1">I have filled out the PDF form.</label>
+    </div>
+    <div class="checklist-item">
+        <input type="checkbox" id="c2">
+        <label for="c2">I have pasted the text into the GP website.</label>
+    </div>
+    <div class="checklist-item">
+        <input type="checkbox" id="c3">
+        <label for="c3">I have uploaded/attached the PDF.</label>
+    </div>
+
+</div>
+
+<script>
+    function copyText() {
+        const text = document.getElementById('emailContent').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = document.getElementById('copyBtn');
+            btn.innerText = "Copied! 👍";
+            btn.style.backgroundColor = "#059669";
+            setTimeout(() => {
+                btn.innerText = "Copy Text";
+            }, 2000);
+        });
+    }
+</script>
+
+
+<!-- BLUES APP LOGO -->
+<div style="position: fixed; top: 1rem; right: 1rem; z-index: 9999; font-family: sans-serif;">
+    <a href="https://blueshub.netlify.app/" style="display: block; width: 200px; opacity: 0.8; transition: opacity 0.2s; background-color: rgba(15, 23, 42, 0.9); backdrop-filter: blur(4px); border-radius: 0.5rem; border: 1px solid #334155; padding: 0.5rem; text-decoration: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+        <div style="font-size: 0.75rem; text-align: center; color: #94a3b8; margin-bottom: 0.25rem;">Back to Hub</div>
+        <img src="logoani.svg" alt="App by Blues" style="width: 100%; height: auto; display: block;">
+    </a>
+</div>
+<!-- END BLUES APP LOGO -->
+
+</body>
+</html>

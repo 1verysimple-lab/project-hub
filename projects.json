@@ -1,5 +1,12 @@
 [
     {
+        "filename": "cambermap/camber_sands_map.html",
+        "title": "Camber Sands Map",
+        "description": "An interactive map of Camber Sands.",
+        "type": "Tool",
+        "date_added": "2026-03-27"
+    },
+    {
         "filename": "layout.html",
         "title": "rr2 lay",
         "description": "red dead 2",
