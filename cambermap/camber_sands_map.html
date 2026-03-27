@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Camber Pro - Spotlight Finder</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Camber Finder Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -13,21 +13,28 @@
             --bg: #f8fafc; 
         }
 
+        * {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
         body { 
-            background-color: var(--bg); 
+            background-color: #cbd5e1; 
             height: 100vh; 
             overflow: hidden; 
             font-family: 'Plus Jakarta Sans', sans-serif; 
+            margin: 0;
         }
         
         .map-container {
-            position: relative; 
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
             overflow: auto; 
             cursor: grab; 
             user-select: none;
-            height: calc(100vh - 4rem); 
             background: #cbd5e1;
             scroll-behavior: smooth;
+            z-index: 1;
         }
         .map-container:active { cursor: grabbing; }
         
@@ -67,105 +74,146 @@
             z-index: 101; pointer-events: none;
         }
 
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
+        /* Glass UI */
+        .glass-ui {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
         }
 
         #toast {
-            position: fixed; bottom: 2rem; left: 50%; transform: translate(-50%, 200%);
+            position: fixed; top: 1rem; left: 50%; transform: translate(-50%, -200%);
             padding: 0.75rem 1.5rem; background: #1e293b; color: white; border-radius: 99px;
             box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.3);
             transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            z-index: 1000; font-size: 0.875rem; font-weight: 600;
+            z-index: 2000; font-size: 0.875rem; font-weight: 600; width: max-content;
         }
         #toast.show { transform: translate(-50%, 0); }
+
+        /* Search Bar Overlay */
+        .search-container {
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 2rem);
+            max-width: 500px;
+            z-index: 100;
+        }
+
+        .results-overlay {
+            max-height: 50vh;
+            overflow-y: auto;
+            border-radius: 1.5rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Floating Actions */
+        .floating-controls {
+            position: fixed;
+            right: 1rem;
+            bottom: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            z-index: 50;
+            transition: bottom 0.3s ease;
+        }
+
+        .floating-btn {
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #475569;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Bottom Info Sheet */
+        .bottom-sheet {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            right: 0;
+            z-index: 150;
+            transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .bottom-sheet.active {
+            bottom: 0;
+        }
     </style>
 </head>
-<body class="flex flex-col">
+<body>
 
-    <header class="h-16 bg-white border-b flex items-center justify-between px-6 z-40 shadow-sm">
-        <div class="flex items-center gap-4">
-            <div class="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center shadow-lg">
-                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+    <!-- Floating Search Bar -->
+    <div class="search-container">
+        <div class="glass-ui rounded-3xl p-2 flex items-center shadow-lg">
+            <div class="w-10 h-10 bg-red-500 rounded-2xl flex items-center justify-center text-white shrink-0 ml-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             </div>
-            <div>
-                <h1 class="text-lg font-black text-slate-800 tracking-tight leading-none">Camber Finder</h1>
-                <p id="db-status" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Attempting Auto-Sync...</p>
-            </div>
+            <input type="text" id="searchInput" placeholder="Search house # or facility..." 
+                class="bg-transparent border-none focus:ring-0 w-full px-4 font-bold text-slate-700 text-base" autocomplete="off">
+            <button onclick="autoZoomToFit()" class="p-2 mr-1 text-slate-400 hover:text-red-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+            </button>
         </div>
+        
+        <!-- Search Results -->
+        <div id="searchResults" class="results-overlay glass-ui hidden"></div>
+    </div>
 
-        <div class="flex items-center gap-3">
-            <button onclick="autoZoomToFit()" class="text-[10px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-full hover:bg-blue-100 transition-all mr-2 shadow-sm uppercase">Fit Whole Park</button>
-            <div class="bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200 flex items-center gap-4">
-                <button onclick="zoomMap(0.7)" class="text-slate-400 hover:text-blue-600 font-bold">－</button>
-                <span id="zoom-label" class="text-[10px] font-black text-slate-600 min-w-[35px] text-center">100%</span>
-                <button onclick="zoomMap(1.4)" class="text-slate-400 hover:text-blue-600 font-bold">＋</button>
-            </div>
-        </div>
-    </header>
+    <!-- Floating Controls -->
+    <div class="floating-controls" id="floatingControls">
+        <button onclick="zoomMap(1.4)" class="floating-btn glass-ui font-black">＋</button>
+        <button onclick="zoomMap(0.7)" class="floating-btn glass-ui font-black">－</button>
+    </div>
 
-    <main class="flex-1 flex overflow-hidden">
-        <aside class="w-80 bg-white border-r flex flex-col z-30 shadow-2xl relative">
-            <div class="p-5 space-y-6 flex-1 overflow-y-auto">
+    <!-- Info Sheet -->
+    <div id="selectionCard" class="bottom-sheet">
+        <div class="mx-auto max-w-xl">
+            <div class="glass-ui rounded-t-[2.5rem] p-6 pb-10 shadow-2xl relative">
+                <!-- Pull Handle -->
+                <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6"></div>
                 
-                <section id="searchSection" class="opacity-30 pointer-events-none transition-opacity duration-500">
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">House Search</h3>
-                    <div class="relative group">
-                        <input type="text" id="searchInput" placeholder="Enter House # (e.g. M409)" 
-                            class="w-full pl-10 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-red-500 focus:bg-white outline-none transition-all text-sm font-bold shadow-sm">
-                        <div class="absolute left-3.5 top-4 text-slate-400 group-focus-within:text-red-500">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        </div>
+                <div class="flex items-start justify-between">
+                    <div>
+                        <span id="cardCategory" class="text-[10px] font-black text-red-500 uppercase tracking-widest bg-red-50 px-2.5 py-1 rounded-full mb-2 inline-block">LOCATION</span>
+                        <h2 id="cardTitle" class="text-4xl font-black text-slate-800 tracking-tighter leading-none">--</h2>
                     </div>
-                    <div id="searchResults" class="mt-4 space-y-2"></div>
-                </section>
-
-                <section id="selectionCard" class="hidden">
-                    <div class="p-5 glass-card rounded-3xl border border-blue-100 shadow-xl shadow-blue-50/50">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-[9px] font-black text-red-500 uppercase tracking-widest" id="cardCategory">Location</span>
-                            <button onclick="clearSelection()" class="text-slate-300 hover:text-slate-500">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
-                        </div>
-                        <h2 id="cardTitle" class="text-3xl font-black text-slate-800 tracking-tighter mb-4">--</h2>
-                        <div class="pt-4 border-t border-slate-100">
-                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Pinpointed on map</p>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Sync Fallback / Manual Button -->
-                <section class="pt-4 border-t border-slate-100">
-                    <button onclick="document.getElementById('fileInput').click()" class="w-full flex items-center justify-center gap-2 py-3 bg-slate-100 text-slate-500 rounded-xl text-[10px] font-black hover:bg-slate-200 transition-all">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                        MANUAL JSON SYNC
+                    <button onclick="clearSelection()" class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
-                    <input type="file" id="fileInput" class="hidden" accept=".json" onchange="handleManualUpload(event)">
-                </section>
+                </div>
 
-                <div class="pt-2">
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tight mb-2">Hosting Info</p>
-                    <p class="text-[10px] text-slate-400 leading-relaxed italic">
-                        Place this file, <b>cambersands.jpg</b>, and <b>camber_coords.json</b> in the same folder (GitHub repo) for auto-loading.
-                    </p>
+                <div class="mt-8 grid grid-cols-2 gap-4">
+                    <div class="bg-slate-50 p-4 rounded-3xl border border-slate-100">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Status</p>
+                        <p class="text-xs font-black text-slate-600">PINPOINT ACTIVE</p>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-3xl border border-slate-100">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Database</p>
+                        <p id="dbLabel" class="text-xs font-black text-slate-600 truncate">LOCAL SYNC</p>
+                    </div>
                 </div>
             </div>
-            <div class="p-5 bg-slate-50 border-t border-slate-100">
-                <span id="locations-count" class="text-[10px] font-black text-slate-400 uppercase tracking-tighter">0 LOCATIONS LOADED</span>
-            </div>
-        </aside>
+        </div>
+    </div>
 
-        <div class="flex-1 map-container" id="container">
-            <div class="map-wrapper" id="wrapper">
-                <!-- Using relative path for GitHub compatibility -->
-                <img src="cambersands.jpg" id="park-map" alt="Park Map">
-                <div id="markerLayer"></div>
-            </div>
+    <!-- Main Viewport -->
+    <main class="map-container" id="container">
+        <div class="map-wrapper" id="wrapper">
+            <img src="cambersands.jpg" id="park-map" alt="Camber Sands Map">
+            <div id="markerLayer"></div>
         </div>
     </main>
+
+    <!-- Invisible Sync Input -->
+    <input type="file" id="fileInput" class="hidden" accept=".json" onchange="handleManualUpload(event)">
 
     <div id="toast"></div>
 
@@ -186,107 +234,69 @@
             selectionCard: document.getElementById('selectionCard'),
             cardTitle: document.getElementById('cardTitle'),
             cardCategory: document.getElementById('cardCategory'),
-            dbStatus: document.getElementById('db-status'),
-            searchSection: document.getElementById('searchSection'),
-            countDisplay: document.getElementById('locations-count')
+            dbLabel: document.getElementById('dbLabel'),
+            controls: document.getElementById('floatingControls'),
+            toast: document.getElementById('toast')
         };
 
         window.onload = () => {
             initInteraction();
-            
-            // 1. Start Auto-Sync
             attemptAutoSync();
-
-            // 2. Setup Map image behavior
             if (el.parkMap.complete) autoZoomToFit();
             else el.parkMap.onload = autoZoomToFit;
         };
 
-        /**
-         * Automatically looks for 'camber_coords.json' in the same folder.
-         * Works on local servers and GitHub Pages.
-         */
         async function attemptAutoSync() {
             try {
-                // We use './' to ensure it looks in the same directory relative to index.html
                 const response = await fetch('./camber_coords.json');
-                if (!response.ok) throw new Error("File not found");
-                
+                if (!response.ok) throw new Error();
                 const json = await response.json();
                 processJsonData(json);
-                
-                el.dbStatus.innerText = "Database Auto-Synced • Ready";
-                el.dbStatus.className = "text-[10px] text-green-500 font-bold uppercase tracking-widest mt-1";
-                showToast("✓ Database loaded automatically from server.");
+                el.dbLabel.innerText = "AUTO SYNCED";
+                showToast("✓ Database loaded.");
             } catch (err) {
-                console.warn("Auto-sync failed. Waiting for manual upload.", err);
-                el.dbStatus.innerText = "Auto-Sync Failed • Manual Upload Required";
-                el.dbStatus.className = "text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-1";
+                el.dbLabel.innerText = "MANUAL SYNC REQ";
+                showToast("Data file not found. Tap to sync.", 6000);
+                el.dbLabel.parentElement.onclick = () => document.getElementById('fileInput').click();
             }
         }
 
         function handleManualUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
-                    const json = JSON.parse(e.target.result);
-                    processJsonData(json);
-                    el.dbStatus.innerText = "Manual Sync Complete • Ready";
-                    el.dbStatus.className = "text-[10px] text-blue-500 font-bold uppercase tracking-widest mt-1";
-                    showToast("✓ Manual sync successful.");
-                } catch (err) {
-                    showToast("Error: Invalid JSON format.");
-                }
+                    processJsonData(JSON.parse(e.target.result));
+                    el.dbLabel.innerText = "MANUAL SYNCED";
+                    showToast("✓ Sync successful.");
+                } catch (err) { showToast("Error: Invalid JSON."); }
             };
             reader.readAsText(file);
         }
 
         function processJsonData(json) {
-            // Support multiple formats: Array or Object with categories
-            if (Array.isArray(json)) {
-                dynamicData = json;
-            } else if (json.caravans || json.facilities || json.all_locations) {
-                dynamicData = [
-                    ...(json.caravans || []),
-                    ...(json.facilities || []),
-                    ...(json.all_locations || [])
-                ];
-            } else {
-                throw new Error("Format not recognized");
-            }
-
+            dynamicData = Array.isArray(json) ? json : [...(json.caravans || []), ...(json.facilities || []), ...(json.all_locations || [])];
             // Deduplicate
             const seen = new Set();
-            dynamicData = dynamicData.filter(item => {
-                const key = (item.label || '') + (item.normalized_x || 0) + (item.normalized_y || 0);
-                if (seen.has(key)) return false;
-                seen.add(key);
-                return true;
+            dynamicData = dynamicData.filter(i => {
+                const k = (i.label || '') + i.normalized_x + i.normalized_y;
+                return seen.has(k) ? false : seen.add(k);
             });
-
-            // Unlock UI
-            el.searchSection.style.opacity = "1";
-            el.searchSection.style.pointerEvents = "all";
-            el.countDisplay.innerText = `${dynamicData.length} LOCATIONS LOADED`;
         }
 
         function autoZoomToFit() {
-            const nw = el.parkMap.naturalWidth;
-            const nh = el.parkMap.naturalHeight;
-            const cw = el.container.clientWidth;
-            const ch = el.container.clientHeight;
-            if (!nw || !nh || !cw || !ch) return;
-
-            const fitZoom = Math.min(cw / nw, ch / nh) * 0.98;
+            const nw = el.parkMap.naturalWidth, nh = el.parkMap.naturalHeight;
+            const cw = el.container.clientWidth, ch = el.container.clientHeight;
+            if (!nw || !nh) return;
+            const fitZoom = Math.min(cw / nw, ch / nh) * 0.95;
             zoomMapTo(fitZoom);
             el.container.scrollLeft = (nw * zoom - cw) / 2;
             el.container.scrollTop = (nh * zoom - ch) / 2;
         }
 
         function initInteraction() {
+            // Drag handling
             el.container.onmousedown = (e) => {
                 isDragging = true;
                 startX = e.pageX - el.container.offsetLeft;
@@ -301,6 +311,22 @@
                 el.container.scrollTop = scrollTop - (e.pageY - el.container.offsetTop - startY);
             };
 
+            // Touch support for dragging
+            el.container.ontouchstart = (e) => {
+                isDragging = true;
+                startX = e.touches[0].pageX - el.container.offsetLeft;
+                startY = e.touches[0].pageY - el.container.offsetTop;
+                scrollLeft = el.container.scrollLeft;
+                scrollTop = el.container.scrollTop;
+            };
+            el.container.ontouchend = () => isDragging = false;
+            el.container.ontouchmove = (e) => {
+                if (!isDragging) return;
+                el.container.scrollLeft = scrollLeft - (e.touches[0].pageX - el.container.offsetLeft - startX);
+                el.container.scrollTop = scrollTop - (e.touches[0].pageY - el.container.offsetTop - startY);
+            };
+
+            // Wheel zoom
             el.container.addEventListener('wheel', (e) => {
                 if (e.ctrlKey || e.metaKey) {
                     e.preventDefault();
@@ -308,80 +334,64 @@
                 }
             }, { passive: false });
 
+            // Search
             el.searchInput.oninput = (e) => {
                 const val = e.target.value.trim().toUpperCase();
-                if (!val) { el.searchResults.innerHTML = ''; return; }
-                
+                if (!val) { el.searchResults.classList.add('hidden'); return; }
                 const matches = dynamicData.filter(i => {
-                    const label = String(i.label).toUpperCase();
-                    return label.includes(val) || (val.startsWith('M') && label.includes(val.substring(1)));
+                    const l = String(i.label).toUpperCase();
+                    return l.includes(val) || (val.startsWith('M') && l.includes(val.substring(1)));
                 }).slice(0, 10);
                 
-                renderResults(matches);
+                el.searchResults.innerHTML = matches.map(m => `
+                    <button onclick='spotlight(${JSON.stringify(m)})' class="w-full text-left p-5 flex justify-between items-center border-b border-slate-100 last:border-0 active:bg-slate-50">
+                        <div>
+                            <p class="font-black text-slate-800 text-lg">${m.label}</p>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">${m.category || 'HOUSE'}</p>
+                        </div>
+                        <span class="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                        </span>
+                    </button>
+                `).join('');
+                el.searchResults.classList.toggle('hidden', matches.length === 0);
             };
-        }
-
-        function renderResults(results) {
-            el.searchResults.innerHTML = results.map(m => `
-                <button onclick='spotlight(${JSON.stringify(m)})' class="w-full text-left p-4 bg-white border border-slate-100 rounded-2xl flex justify-between items-center transition-all shadow-sm hover:border-red-500 hover:shadow-md group">
-                    <div>
-                        <p class="font-black text-slate-800">${m.label}</p>
-                        <p class="text-[9px] font-bold text-slate-300 uppercase mt-0.5">${m.category || 'LOCATION'}</p>
-                    </div>
-                    <span class="text-[10px] font-black text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">SPOTLIGHT →</span>
-                </button>
-            `).join('') || '<div class="p-4 text-xs text-slate-400 italic">No building found.</div>';
         }
 
         function spotlight(item) {
             selectedItem = item;
-            el.selectionCard.classList.remove('hidden');
+            el.searchResults.classList.add('hidden');
+            el.searchInput.value = '';
+            el.searchInput.blur();
+            
             el.cardTitle.innerText = item.label;
             el.cardCategory.innerText = (item.category || 'House').toUpperCase();
-            el.searchResults.innerHTML = '';
-            el.searchInput.value = '';
+            el.selectionCard.classList.add('active');
+            el.controls.style.bottom = '22rem'; // Move controls up
 
             refreshMarkers();
-            
-            // Better context zoom level
-            zoomMapTo(0.6);
+            zoomMapTo(0.7); // Mobile-optimized zoom context
 
-            const nw = el.parkMap.naturalWidth || el.parkMap.width;
-            const nh = el.parkMap.naturalHeight || el.parkMap.height;
-
+            const nw = el.parkMap.naturalWidth, nh = el.parkMap.naturalHeight;
             setTimeout(() => {
                 el.container.scrollTo({
                     left: (item.normalized_x * nw * zoom) - (el.container.clientWidth / 2),
                     top: (item.normalized_y * nh * zoom) - (el.container.clientHeight / 2),
                     behavior: 'smooth'
                 });
-            }, 50);
-
-            showToast(`Pinpointing ${item.label}`);
+            }, 100);
         }
 
         function refreshMarkers() {
             el.markerLayer.innerHTML = '';
             if (!selectedItem) return;
 
-            const pin = document.createElement('div');
-            pin.className = 'spotlight-pin';
-            pin.style.left = `${selectedItem.normalized_x * 100}%`;
-            pin.style.top = `${selectedItem.normalized_y * 100}%`;
-            el.markerLayer.appendChild(pin);
-
-            const pulse = document.createElement('div');
-            pulse.className = 'spotlight-pulse';
-            pulse.style.left = `${selectedItem.normalized_x * 100}%`;
-            pulse.style.top = `${selectedItem.normalized_y * 100}%`;
-            el.markerLayer.appendChild(pulse);
-
-            const label = document.createElement('div');
-            label.className = 'spotlight-label';
-            label.style.left = `${selectedItem.normalized_x * 100}%`;
-            label.style.top = `${selectedItem.normalized_y * 100}%`;
-            label.innerText = selectedItem.label;
-            el.markerLayer.appendChild(label);
+            const html = `
+                <div class="spotlight-pin" style="left:${selectedItem.normalized_x*100}%; top:${selectedItem.normalized_y*100}%"></div>
+                <div class="spotlight-pulse" style="left:${selectedItem.normalized_x*100}%; top:${selectedItem.normalized_y*100}%"></div>
+                <div class="spotlight-label" style="left:${selectedItem.normalized_x*100}%; top:${selectedItem.normalized_y*100}%">${selectedItem.label}</div>
+            `;
+            el.markerLayer.innerHTML = html;
         }
 
         function zoomMap(factor) { zoomMapTo(Math.min(Math.max(0.05, zoom * factor), 10)); }
@@ -392,21 +402,20 @@
             const centerX = el.container.scrollLeft + (el.container.clientWidth / 2);
             const centerY = el.container.scrollTop + (el.container.clientHeight / 2);
             el.wrapper.style.transform = `scale(${zoom})`;
-            document.getElementById('zoom-label').innerText = `${Math.round(zoom * 100)}%`;
             el.container.scrollLeft = (centerX * (zoom/oldZoom)) - (el.container.clientWidth / 2);
             el.container.scrollTop = (centerY * (zoom/oldZoom)) - (el.container.clientHeight / 2);
         }
 
         function clearSelection() {
             selectedItem = null;
-            el.selectionCard.classList.add('hidden');
+            el.selectionCard.classList.remove('active');
             el.markerLayer.innerHTML = '';
+            el.controls.style.bottom = '2rem';
         }
 
-        function showToast(m) {
-            const t = document.getElementById('toast');
-            t.innerText = m; t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 4000);
+        function showToast(m, dur = 3500) {
+            el.toast.innerText = m; el.toast.classList.add('show');
+            setTimeout(() => el.toast.classList.remove('show'), dur);
         }
     </script>
 </body>
